@@ -1,0 +1,18 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Prevent committing directly to main branch
+      - id: no-commit-to-branch
+        args: ["--branch", "main"]
+      # Remove trailing whitespace
+      - id: trailing-whitespace
+      # Ensure files end with a newline
+      - id: end-of-file-fixer
+      # Check for files larger than 500KB
+      - id: check-added-large-files
+      # Converts all line endings to LF
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
