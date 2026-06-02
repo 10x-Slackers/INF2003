@@ -15,9 +15,7 @@
   "postCreateCommand": "pre-commit install",
   "customizations": {
     "vscode": {
-      "extensions": [
-        "mtxr.sqltools"
-      ]
+      "extensions": ["mtxr.sqltools"]
     }
   },
   "remoteUser": "root",
