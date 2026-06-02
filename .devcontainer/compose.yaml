@@ -3,19 +3,31 @@ services:
     image: ghcr.io/commit2main/universal:latest
     command: sleep infinity
     depends_on:
-      - db
+      - mariadb
+      - mongo
     volumes:
       - ../:/workspaces/INF2003
 
-  db:
-    image: mariadb:lts
+  mariadb:
+    image: mariadb:12
     restart: unless-stopped
     environment:
-      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
-      MARIADB_ROOT_PASSWORD: ""
+      MARIADB_ROOT_PASSWORD: P@ssw0rd
+      MARIADB_DATABASE: inf2003
     volumes:
-      - db_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: P@ssw0rd
+    volumes:
+      - mongo_data:/data/db
 
 volumes:
-  db_data:
+  mariadb_data:
+    driver: local
+  mongo_data:
     driver: local

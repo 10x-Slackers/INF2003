@@ -15,7 +15,11 @@
   "postCreateCommand": "pre-commit install",
   "customizations": {
     "vscode": {
-      "extensions": ["mtxr.sqltools"]
+      "extensions": [
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-mysql",
+        "ms-azuretools.vscode-documentdb"
+      ]
     }
   },
   "remoteUser": "root",

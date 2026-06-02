@@ -52,6 +52,20 @@ HDB Resale Analytics and Tracker Web Application
 
 4. Start working!
 
+### Database Connection
+
+1. MariaDB:
+   - Host: `mariadb`
+   - Port: `3306`
+   - User: `root`
+   - Password: `P@ssw0rd`
+   - Database: `inf2003`
+2. MongoDB:
+  - Host: `mongodb`
+  - Port: `27017`
+  - User: `root`
+  - Password: `P@ssw0rd`
+
 ## Developer Tooling
 
 - Dev Containers
