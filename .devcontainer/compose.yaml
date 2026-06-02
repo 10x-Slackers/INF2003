@@ -1,0 +1,21 @@
+services:
+  devcontainer:
+    image: ghcr.io/commit2main/universal:latest
+    command: sleep infinity
+    depends_on:
+      - db
+    volumes:
+      - ../:/workspaces/INF2003
+
+  db:
+    image: mariadb:lts
+    restart: unless-stopped
+    environment:
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
+      MARIADB_ROOT_PASSWORD: ""
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
+    driver: local
