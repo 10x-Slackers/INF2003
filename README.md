@@ -61,7 +61,8 @@ HDB Resale Analytics and Tracker Web Application
    - Password: `P@ssw0rd`
    - Database: `inf2003`
 2. MongoDB:
-  - Host: `mongodb`
+  - Connection String: `mongodb://root:P@ssw0rd@mongo:27017/`
+  - Host: `mongo`
   - Port: `27017`
   - User: `root`
   - Password: `P@ssw0rd`
