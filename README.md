@@ -1,9 +1,9 @@
-# project_title
+# INF2003 Database Systems Project
 
 > [!NOTE]
 > WIP, remove this note when project is ready.
 
-project_description
+HDB Resale Analytics and Tracker Web Application
 
 ---
 
@@ -31,7 +31,7 @@ project_description
 - [VS Code](https://code.visualstudio.com/download)
   - [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension
 
-> [!WARNING]  
+> [!WARNING]
 > Do not use GitHub Desktop! All interactions (files, git, runtime, etc.) should be done through the Dev Container within VS Code.
 
 ### Installation
@@ -39,23 +39,33 @@ project_description
 1. Clone the repo
 
    ```sh
-   git clone git@github.com:10x-Slackers/repo_name.git
+   git clone git@github.com:10x-Slackers/INF2003.git
    ```
 
 2. Open the repository in VS Code
 
    ```sh
-   code repo_name/
+   code INF2003/
    ```
 
 3. Click on the "Re-open in Dev Container" prompt
-4. Install the pre-commit hooks
 
-   ```sh
-   pre-commit install
-   ```
+4. Start working!
 
-5. Start working!
+### Database Connection
+
+1. MariaDB:
+   - Host: `mariadb`
+   - Port: `3306`
+   - User: `root`
+   - Password: `P@ssw0rd`
+   - Database: `inf2003`
+2. MongoDB:
+  - Connection String: `mongodb://root:P@ssw0rd@mongo:27017/`
+  - Host: `mongo`
+  - Port: `27017`
+  - User: `root`
+  - Password: `P@ssw0rd`
 
 ## Developer Tooling
 
