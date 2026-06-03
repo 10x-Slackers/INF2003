@@ -1,114 +1,187 @@
+from __future__ import annotations
+
 import argparse
 import os
+import re
+import sys
+from dataclasses import dataclass
 from pathlib import Path
 
-import mariadb
+
+DEFAULT_HOST = "mariadb"
+DEFAULT_PORT = 3306
+DEFAULT_USER = "root"
+DEFAULT_PASSWORD = "P@ssw0rd"
+DEFAULT_DATABASE = "inf2003"
+DEFAULT_SCHEMA_PATH = Path("sql/schema.sql")
+
+SAFE_IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
-DATASETS_DIR = ROOT_DIR / "datasets"
-SCHEMA_PATH = ROOT_DIR / "sql" / "schema.sql"
-TEARDOWN_PATH = ROOT_DIR / "sql" / "teardown.sql"
-
-TOWNS_CSV = DATASETS_DIR / "towns_flattened_data.csv"
-RESALE_CSV = (
-    DATASETS_DIR / "ResaleflatpricesbasedonregistrationdatefromJan2017onwards.csv"
-)
-SCHOOLS_CSV = DATASETS_DIR / "Generalinformationofschools.csv"
-PARKS_CSV = DATASETS_DIR / "parks_clean.csv"
-GYMS_CSV = DATASETS_DIR / "gyms_clean.csv"
-
-BATCH_SIZE = 1000
+@dataclass(frozen=True)
+class DatabaseConfig:
+    host: str
+    port: int
+    user: str
+    password: str
+    database: str
+    schema_path: Path
 
 
-class Database:
-    def __init__(self, user, password, host, port, database):
-        self.user = user
-        self.password = password
-        self.host = host
-        self.port = port
-        self.database = database
-        self.conn = None
-        self.cursor = None
-
-    def connect(self):
-        try:
-            self.conn = mariadb.connect(
-                user=self.user,
-                password=self.password,
-                host=self.host,
-                port=self.port,
-                autocommit=False,
-            )
-            self.cursor = self.conn.cursor()
-            self.cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{self.database}`")
-            self.cursor.execute(f"USE `{self.database}`")
-            print(f"Connected to MariaDB database `{self.database}`.")
-        except mariadb.Error as e:
-            raise RuntimeError(f"Error connecting to MariaDB: {e}") from e
-
-    def close(self):
-        if self.cursor:
-            self.cursor.close()
-        if self.conn:
-            self.conn.close()
-
-
-def execute_schema(cursor):
-    with open(SCHEMA_PATH, "r") as f:
-        schema_sql = f.read()
-    statements = schema_sql.split(";")
-    for stmt in statements:
-        stmt = stmt.strip()
-        if stmt:
-            cursor.execute(stmt)
-
-
-def reset_tables(cursor):
-    with open(TEARDOWN_PATH, "r") as f:
-        teardown_sql = f.read()
-    statements = teardown_sql.split(";")
-    for stmt in statements:
-        stmt = stmt.strip()
-        if stmt:
-            cursor.execute(stmt)
-
-
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Create and seed the INF2003 MariaDB database."
+        description="Initialize or teardown the INF2003 MariaDB/MySQL database."
     )
     parser.add_argument(
         "--teardown",
         action="store_true",
-        help="Drop all tables before loading data.",
+        help="Drop the configured database and exit. This deletes all tables and data.",
     )
     return parser.parse_args()
 
 
-def main():
-    args = parse_args()
-    db = Database(
-        os.getenv("DB_USER", "root"),
-        os.getenv("DB_PASSWORD", "P@ssw0rd"),
-        os.getenv("DB_HOST", "mariadb"),
-        int(os.getenv("DB_PORT", "3306")),
-        os.getenv("DB_NAME", "inf2003"),
-    )
+def load_config() -> DatabaseConfig:
+    port_value = os.getenv("DB_PORT", str(DEFAULT_PORT))
 
     try:
-        db.connect()
-        if args.teardown:
-            reset_tables(db.cursor)
-        else:
-            execute_schema(db.cursor)
+        port = int(port_value)
+    except ValueError as exc:
+        raise ValueError("DB_PORT must be an integer") from exc
+
+    database = os.getenv("DB_NAME", DEFAULT_DATABASE)
+    if not SAFE_IDENTIFIER.fullmatch(database):
+        raise ValueError(
+            "DB_NAME must start with a letter or underscore and contain only "
+            "letters, numbers, and underscores"
+        )
+
+    return DatabaseConfig(
+        host=os.getenv("DB_HOST", DEFAULT_HOST),
+        port=port,
+        user=os.getenv("DB_USER", DEFAULT_USER),
+        password=os.getenv("DB_PASSWORD", DEFAULT_PASSWORD),
+        database=database,
+        schema_path=Path(os.getenv("SCHEMA_PATH", str(DEFAULT_SCHEMA_PATH))),
+    )
+
+
+def split_sql_statements(sql: str) -> list[str]:
+    statements: list[str] = []
+    current: list[str] = []
+    quote: str | None = None
+    escaped = False
+
+    for char in sql:
+        current.append(char)
+
+        if quote:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == quote:
+                quote = None
+            continue
+
+        if char in {"'", '"', "`"}:
+            quote = char
+            continue
+
+        if char == ";":
+            statement = "".join(current).strip()
+            if statement:
+                statements.append(statement)
+            current = []
+
+    trailing_statement = "".join(current).strip()
+    if trailing_statement:
+        statements.append(trailing_statement)
+
+    return statements
+
+
+def connect(config: DatabaseConfig):
+    import MySQLdb
+
+    return MySQLdb.connect(
+        host=config.host,
+        port=config.port,
+        user=config.user,
+        passwd=config.password,
+        charset="utf8mb4",
+    )
+
+
+def apply_schema(config: DatabaseConfig) -> int:
+    if not config.schema_path.exists():
+        raise FileNotFoundError(f"Schema file not found: {config.schema_path}")
+
+    schema_sql = config.schema_path.read_text(encoding="utf-8")
+    statements = split_sql_statements(schema_sql)
+
+    if not statements:
+        raise ValueError(f"Schema file is empty: {config.schema_path}")
+
+    connection = connect(config)
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"CREATE DATABASE IF NOT EXISTS `{config.database}` "
+                "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            )
+            cursor.execute(f"USE `{config.database}`")
+
+            for statement in statements:
+                cursor.execute(statement)
+
+        connection.commit()
     except Exception:
-        if db.conn:
-            db.conn.rollback()
+        connection.rollback()
         raise
     finally:
-        db.close()
+        connection.close()
+
+    return len(statements)
+
+
+def teardown_database(config: DatabaseConfig) -> None:
+    connection = connect(config)
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"DROP DATABASE IF EXISTS `{config.database}`")
+
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def main() -> int:
+    args = parse_args()
+
+    try:
+        config = load_config()
+
+        if args.teardown:
+            teardown_database(config)
+            print(f"Dropped database {config.database} on {config.host}:{config.port}.")
+            return 0
+
+        statement_count = apply_schema(config)
+    except Exception as exc:
+        print(f"Database operation failed: {exc}", file=sys.stderr)
+        return 1
+
+    print(
+        f"Applied {statement_count} schema statements to "
+        f"{config.database} on {config.host}:{config.port}."
+    )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
