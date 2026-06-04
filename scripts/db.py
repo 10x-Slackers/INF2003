@@ -44,6 +44,12 @@ class Database:
         cursor.execute(f"USE `{self.config.database}`")
 
     def apply_schema(self) -> int:
+        """
+        Applies the SQL schema from the configured schema file to the database.
+
+        Returns:
+            int: The number of SQL statements executed.
+        """
         if not self.config.schema_path.exists():
             raise FileNotFoundError(f"Schema file not found: {self.config.schema_path}")
 
@@ -76,6 +82,9 @@ class Database:
         return len(statements)
 
     def teardown(self) -> None:
+        """
+        Drops the configured database, deleting all tables and data.
+        """
         connection = self.connect()
 
         try:
@@ -91,6 +100,17 @@ class Database:
             connection.close()
 
     def insert_rows(self, cursor, table: str, rows: list[dict[str, Any]]) -> int:
+        """
+        Inserts multiple rows into the specified table.
+
+        Args:
+            cursor: The database cursor.
+            table (str): The name of the table to insert into.
+            rows (list[dict[str, Any]]): A list of dictionaries representing the rows to insert.
+
+        Returns:
+            int: The ID of the last inserted row.
+        """
         if not rows:
             return 0
 
@@ -112,6 +132,9 @@ class Database:
         unique_column: str,
         update_columns: list[str] | None = None,
     ) -> int:
+        """
+        Inserts a row into the specified table or updates it if a row with the same unique column value already exists.
+        """
         self._validate_row_identifiers(table, row)
         self._validate_identifier(unique_column)
 
@@ -158,6 +181,13 @@ class Database:
         return result[0]
 
     def _validate_row_identifiers(self, table: str, row: dict[str, Any]) -> None:
+        """
+        validates that the table name and column names in the row are safe SQL identifiers.
+
+        Args:
+            table (str): The name of the table.
+            row (dict[str, Any]): The row data to validate.
+        """
         self._validate_identifier(table)
 
         if not row:
@@ -167,6 +197,9 @@ class Database:
             self._validate_identifier(column)
 
     def _load_config(self) -> DatabaseConfig:
+        """
+        Loads the database configuration from environment variables, using defaults if not set.
+        """
         port_value = os.getenv("DB_PORT", str(DEFAULT_PORT))
 
         try:
@@ -187,6 +220,9 @@ class Database:
         )
 
     def _validate_identifier(self, identifier: str) -> None:
+        """
+        Validates that the given identifier is a safe SQL identifier.
+        """
         if not SAFE_IDENTIFIER.fullmatch(identifier):
             raise ValueError(
                 "SQL identifiers must start with a letter or underscore and contain only "
@@ -194,6 +230,14 @@ class Database:
             )
 
     def _split_sql_statements(self, sql: str) -> list[str]:
+        """
+        Splits a string containing multiple SQL statements into a list of individual statements.
+
+        Args:
+            sql (str): The string containing the SQL statements.
+        Returns:
+            list[str]: A list of individual SQL statements.
+        """
         statements: list[str] = []
         current: list[str] = []
         quote: str | None = None

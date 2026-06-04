@@ -16,6 +16,15 @@ REGION_INFO = "https://api-open.data.gov.sg/v1/public/api/datasets/d_2cc75019054
 
 
 def extract_region_json(url: str) -> dict:
+    """
+    fetches the region and town data from API. The API returns a JSON object.
+
+    Args:
+        url (str): The URL to fetch the data from.
+
+    Returns:
+        dict: The JSON data as a dictionary.
+    """
     response = requests.get(url, timeout=30)
     response.raise_for_status()
     json_data = response.json()
@@ -31,6 +40,11 @@ def extract_region_json(url: str) -> dict:
 
 
 def seed() -> int:
+    """
+    Seeds the database with region and town data from the API into database tables.
+    Returns:
+        int: Success status code (0 for success, 1 for failure).
+    """
     db = Database()
     connection = db.connect()
 
