@@ -135,15 +135,15 @@ CREATE TABLE IF NOT EXISTS saved_properties (
 CREATE TABLE IF NOT EXISTS price_alerts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
-    flat_type_id INT,
+    -- flat_type_id INT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     mongodb_ref VARCHAR(255) NOT NULL,
-    UNIQUE KEY uq_price_alerts_user_type_ref (user_id, flat_type_id, mongodb_ref),
+    UNIQUE KEY uq_price_alerts_user_type_ref (user_id, mongodb_ref),
     KEY idx_price_alerts_user_id (user_id),
-    KEY idx_price_alerts_flat_type_id (flat_type_id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (flat_type_id) REFERENCES flat_types(id)
+    -- KEY idx_price_alerts_flat_type_id (flat_type_id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    -- FOREIGN KEY (flat_type_id) REFERENCES flat_types(id)
 );
 
 CREATE TABLE IF NOT EXISTS alert_notifications (
@@ -152,7 +152,6 @@ CREATE TABLE IF NOT EXISTS alert_notifications (
     transaction_id INT,
     is_read BOOLEAN DEFAULT FALSE,
     notified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    payload JSON NOT NULL,
     UNIQUE KEY uq_alert_notifications_alert_transaction (alert_id, transaction_id),
     KEY idx_alert_notifications_alert_id (alert_id),
     KEY idx_alert_notifications_transaction_id (transaction_id),
