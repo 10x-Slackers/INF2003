@@ -19,8 +19,7 @@ load_dotenv()  # Load environment variables from .env file
 
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
 METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
-MAX_REQUESTS_PER_MINUTE = 5
-REQUEST_INTERVAL_SECONDS = 60 / MAX_REQUESTS_PER_MINUTE
+REQUEST_INTERVAL_SECONDS = 12
 DEFAULT_TIMEOUT_SECONDS = 30
 DEFAULT_MAX_POLLS = 10
 DEFAULT_POLL_INTERVAL_SECONDS = 5
@@ -53,7 +52,6 @@ class DataGovDatasetClient:
     max_polls: int = DEFAULT_MAX_POLLS
     poll_interval_seconds: int = DEFAULT_POLL_INTERVAL_SECONDS
     request_interval_seconds: float = REQUEST_INTERVAL_SECONDS
-    sleep: Callable[[float], None] = time.sleep
 
     @staticmethod
     def download_payload(config: DatasetConfig) -> dict[str, Any]:
@@ -94,7 +92,7 @@ class DataGovDatasetClient:
             retry_delay = (
                 float(retry_after) if retry_after else self.request_interval_seconds
             )
-            self.sleep(retry_delay)
+            time.sleep(retry_delay)
 
         raise DatasetFetchError(f"Unable to fetch {url}")
 
@@ -119,7 +117,7 @@ class DataGovDatasetClient:
                 return download_url
 
             if poll_number < self.max_polls - 1:
-                self.sleep(self.poll_interval_seconds)
+                time.sleep(self.poll_interval_seconds)
 
         raise DatasetPollTimeoutError(
             f"Download for dataset {config.dataset_id} "
