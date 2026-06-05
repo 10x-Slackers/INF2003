@@ -5,6 +5,7 @@ description = "INF2003 - Database Systems Project"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "dotenv>=0.9.9",
     "mysqlclient>=2.2.8",
     "pandas>=3.0.3",
     "requests>=2.34.2",
