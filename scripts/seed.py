@@ -14,15 +14,13 @@ TIMEOUT_SECONDS = 30
 MAX_POLLS = 10
 POLL_INTERVAL_SECONDS = 5
 MAX_RETRIES = 3
-API_KEY_HEADER = "x-api-key"
 
 
 class DataGovDatasetClient:
     def __init__(self, api_key: str | None = None) -> None:
         self.session = requests.Session()
-        self.api_key = api_key
-        if self.api_key:
-            self.session.headers.update({API_KEY_HEADER: self.api_key})
+        if api_key:
+            self.session.headers.update({"x-api-key": api_key})
 
     def download_payload(self, config: DatasetConfig) -> dict[str, Any]:
         payload: dict[str, Any] = {}
