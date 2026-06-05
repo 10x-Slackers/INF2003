@@ -1,60 +1,30 @@
-from __future__ import annotations
-
+import argparse
 import time
-from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Sequence
 
 import pandas as pd
 import requests
-from dotenv import load_dotenv
 
-try:
-    from scripts.dataset_config import DATASETS
-    from scripts.dataset_config.base import DatasetConfig
-except ModuleNotFoundError:
-    from dataset_config import DATASETS
-    from dataset_config.base import DatasetConfig
-
-load_dotenv()  # Load environment variables from .env file
+from scripts.dataset_config import DATASETS
+from scripts.dataset_config.base import DatasetConfig
 
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
 METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
-REQUEST_INTERVAL_SECONDS = 12
-DEFAULT_TIMEOUT_SECONDS = 30
-DEFAULT_MAX_POLLS = 10
-DEFAULT_POLL_INTERVAL_SECONDS = 5
+TIMEOUT_SECONDS = 30
+MAX_POLLS = 10
+POLL_INTERVAL_SECONDS = 5
 MAX_RETRIES = 3
+API_KEY_HEADER = "x-api-key"
 
 
-class DatasetFetchError(RuntimeError):
-    """Raised when a dataset cannot be fetched from data.gov.sg."""
-
-
-class DatasetPollTimeoutError(DatasetFetchError):
-    """Raised when a dataset download URL is not ready within the poll limit."""
-
-
-def _normalise_geojson(payload: dict[str, Any]) -> pd.DataFrame:
-    features = payload.get("features")
-    if isinstance(features, list):
-        return pd.json_normalize(features)
-
-    return pd.json_normalize(payload)
-
-
-@dataclass
 class DataGovDatasetClient:
-    session: requests.Session = field(default_factory=requests.Session)
-    base_url: str = BASE_URL
-    metadata_base_url: str = METADATA_BASE_URL
-    timeout: int = DEFAULT_TIMEOUT_SECONDS
-    max_retries: int = MAX_RETRIES
-    max_polls: int = DEFAULT_MAX_POLLS
-    poll_interval_seconds: int = DEFAULT_POLL_INTERVAL_SECONDS
-    request_interval_seconds: float = REQUEST_INTERVAL_SECONDS
+    def __init__(self, api_key: str | None = None) -> None:
+        self.session = requests.Session()
+        self.api_key = api_key
+        if self.api_key:
+            self.session.headers.update({API_KEY_HEADER: self.api_key})
 
-    @staticmethod
-    def download_payload(config: DatasetConfig) -> dict[str, Any]:
+    def download_payload(self, config: DatasetConfig) -> dict[str, Any]:
         payload: dict[str, Any] = {}
 
         if config.column_names:
@@ -71,58 +41,54 @@ class DataGovDatasetClient:
         *,
         json_payload: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        for attempt in range(self.max_retries + 1):
+        for attempt in range(MAX_RETRIES + 1):
             response = self.session.get(
                 url,
                 json=json_payload,
-                timeout=self.timeout,
+                timeout=TIMEOUT_SECONDS,
             )
 
+            # rate limit exceeded
             if response.status_code != 429:
                 response.raise_for_status()
                 body = response.json()
                 if body.get("errorMsg"):
-                    raise DatasetFetchError(body["errorMsg"])
+                    return {}
                 return body
 
-            if attempt == self.max_retries:
+            if attempt == MAX_RETRIES:
                 response.raise_for_status()
 
             retry_after = response.headers.get("Retry-After")
-            retry_delay = (
-                float(retry_after) if retry_after else self.request_interval_seconds
-            )
+            retry_delay = float(retry_after) if retry_after else POLL_INTERVAL_SECONDS
             time.sleep(retry_delay)
 
-        raise DatasetFetchError(f"Unable to fetch {url}")
+        return {}
 
     def fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
-        url = f"{self.metadata_base_url}/{config.dataset_id}/metadata"
+        url = f"{METADATA_BASE_URL}/{config.dataset_id}/metadata"
         body = self.request_json(url)
         return body.get("data", {})
 
     def initiate_download(self, config: DatasetConfig) -> None:
-        url = f"{self.base_url}/{config.dataset_id}/initiate-download"
+        url = f"{BASE_URL}/{config.dataset_id}/initiate-download"
         payload = self.download_payload(config)
         self.request_json(url, json_payload=payload or None)
 
     def poll_download_url(self, config: DatasetConfig) -> str:
-        url = f"{self.base_url}/{config.dataset_id}/poll-download"
+        url = f"{BASE_URL}/{config.dataset_id}/poll-download"
         payload = self.download_payload(config)
 
-        for poll_number in range(self.max_polls):
+        for poll_number in range(MAX_POLLS):
             body = self.request_json(url, json_payload=payload or None)
             download_url = body.get("data", {}).get("url")
             if download_url:
                 return download_url
 
-            if poll_number < self.max_polls - 1:
-                time.sleep(self.poll_interval_seconds)
+            if poll_number < MAX_POLLS - 1:
+                time.sleep(POLL_INTERVAL_SECONDS)
 
-        raise DatasetPollTimeoutError(
-            f"Download for dataset {config.dataset_id} "
-            f"was not ready after {self.max_polls} polls."
-        )
+        raise TimeoutError(f"Download URL not available after {MAX_POLLS} polls")
 
     def read_dataset_url(self, url: str, *, dataset_format: str) -> pd.DataFrame:
         normalised_format = dataset_format.upper()
@@ -130,14 +96,14 @@ class DataGovDatasetClient:
         if normalised_format == "CSV":
             return pd.read_csv(url)
 
-        response = self.session.get(url, timeout=self.timeout)
+        response = self.session.get(url, timeout=TIMEOUT_SECONDS)
         response.raise_for_status()
         payload = response.json()
 
         if normalised_format in {"GEOJSON", "JSON"}:
-            return _normalise_geojson(payload)
+            return self._normalise_geojson(payload)
 
-        raise DatasetFetchError(f"Unsupported dataset format: {dataset_format}")
+        raise ValueError(f"Unsupported dataset format: {dataset_format}")
 
     def fetch_dataset(self, config: DatasetConfig) -> pd.DataFrame:
         metadata = self.fetch_dataset_metadata(config)
@@ -158,9 +124,25 @@ class DataGovDatasetClient:
     ) -> dict[str, pd.DataFrame]:
         return {config.key: self.fetch_dataset(config) for config in datasets}
 
+    def _normalise_geojson(self, payload: dict[str, Any]) -> pd.DataFrame:
+        features = payload.get("features")
+        if isinstance(features, list):
+            return pd.json_normalize(features)
 
-def main() -> None:
-    datasets = DataGovDatasetClient().fetch_all_datasets()
+        return pd.json_normalize(payload)
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Fetch configured data.gov.sg datasets into pandas DataFrames."
+    )
+    parser.add_argument("--api-key", help="data.gov.sg API key.")
+    return parser.parse_args(argv)
+
+
+def main(argv: Sequence[str] | None = None) -> None:
+    args = parse_args(argv)
+    datasets = DataGovDatasetClient(api_key=args.api_key).fetch_all_datasets()
     for key, dataframe in datasets.items():
         columns = ", ".join(dataframe.columns)
         print(f"{key}: {len(dataframe)} rows, {len(dataframe.columns)} columns")

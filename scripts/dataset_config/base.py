@@ -1,11 +1,9 @@
-from __future__ import annotations
-
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
+@dataclass
 class DatasetConfig:
     key: str
     dataset_id: str
-    column_names: list[str] = field(default_factory=list)
-    filters: list[dict[str, str]] = field(default_factory=list)
+    column_names: list[str]
+    filters: list[dict[str, str]]
