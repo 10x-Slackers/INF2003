@@ -13,7 +13,6 @@ from scripts.dataset_config.base import DatasetConfig
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
 METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
 TIMEOUT_SECONDS = 30
-MAX_POLLS = 10
 POLL_INTERVAL_SECONDS = 5
 MAX_RETRIES = 3
 
@@ -24,7 +23,21 @@ class DataGovDatasetClient:
         if api_key:
             self.session.headers.update({"x-api-key": api_key})
 
-    def download_payload(self, config: DatasetConfig) -> dict[str, Any]:
+    def fetch_dataset(self, config: DatasetConfig) -> pd.DataFrame:
+        metadata = self._fetch_dataset_metadata(config)
+        dataset_format = metadata.get("format", "").upper()
+
+        if dataset_format == "CSV":
+            self._initiate_download(config)
+
+        download_url = self._poll_download_url(config)
+        return self._read_dataset_url(
+            download_url,
+            dataset_format=dataset_format,
+        )
+
+    @staticmethod
+    def _download_payload(config: DatasetConfig) -> dict[str, Any]:
         payload: dict[str, Any] = {}
 
         if config.column_names:
@@ -35,7 +48,7 @@ class DataGovDatasetClient:
 
         return payload
 
-    def request_json(
+    def _request_json(
         self,
         url: str,
         *,
@@ -67,32 +80,34 @@ class DataGovDatasetClient:
 
         return {}
 
-    def fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
+    def _fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
         url = f"{METADATA_BASE_URL}/{config.dataset_id}/metadata"
-        body = self.request_json(url)
+        body = self._request_json(url)
         return body.get("data", {})
 
-    def initiate_download(self, config: DatasetConfig) -> None:
+    def _initiate_download(self, config: DatasetConfig) -> None:
+        print(f"Initiated download for dataset '{config.key}'")
         url = f"{BASE_URL}/{config.dataset_id}/initiate-download"
-        payload = self.download_payload(config)
-        self.request_json(url, json_payload=payload or None)
+        payload = self._download_payload(config)
+        self._request_json(url, json_payload=payload or None)
 
-    def poll_download_url(self, config: DatasetConfig) -> str:
+    def _poll_download_url(self, config: DatasetConfig) -> str:
         url = f"{BASE_URL}/{config.dataset_id}/poll-download"
-        payload = self.download_payload(config)
+        payload = self._download_payload(config)
 
-        for poll_number in range(MAX_POLLS):
-            body = self.request_json(url, json_payload=payload or None)
+        for poll_number in range(MAX_RETRIES):
+            print(f"Polling for download URL for dataset '{config.key}'")
+            body = self._request_json(url, json_payload=payload or None)
             download_url = body.get("data", {}).get("url")
             if download_url:
                 return download_url
 
-            if poll_number < MAX_POLLS - 1:
+            if poll_number < MAX_RETRIES - 1:
                 time.sleep(POLL_INTERVAL_SECONDS)
 
-        raise TimeoutError(f"Download URL not available after {MAX_POLLS} polls")
+        raise TimeoutError(f"Download URL not available after {MAX_RETRIES} polls")
 
-    def read_dataset_url(self, url: str, *, dataset_format: str) -> pd.DataFrame:
+    def _read_dataset_url(self, url: str, *, dataset_format: str) -> pd.DataFrame:
         normalised_format = dataset_format.upper()
 
         if normalised_format == "CSV":
@@ -107,25 +122,6 @@ class DataGovDatasetClient:
 
         raise ValueError(f"Unsupported dataset format: {dataset_format}")
 
-    def fetch_dataset(self, config: DatasetConfig) -> pd.DataFrame:
-        metadata = self.fetch_dataset_metadata(config)
-        dataset_format = metadata.get("format", "").upper()
-
-        if dataset_format == "CSV":
-            self.initiate_download(config)
-
-        download_url = self.poll_download_url(config)
-        return self.read_dataset_url(
-            download_url,
-            dataset_format=dataset_format,
-        )
-
-    def fetch_all_datasets(
-        self,
-        datasets: tuple[DatasetConfig, ...] = DATASETS,
-    ) -> dict[str, pd.DataFrame]:
-        return {config.key: self.fetch_dataset(config) for config in datasets}
-
     def _normalise_geojson(self, payload: dict[str, Any]) -> pd.DataFrame:
         features = payload.get("features")
         if isinstance(features, list):
@@ -133,7 +129,8 @@ class DataGovDatasetClient:
 
         return pd.json_normalize(payload)
 
-    def _parse_retry_after(self, value: str | None, default: float) -> float:
+    @staticmethod
+    def _parse_retry_after(value: str | None, default: float) -> float:
         if not value:
             return default
 
@@ -167,11 +164,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> None:
     args = parse_args(argv)
-    datasets = DataGovDatasetClient(api_key=args.api_key).fetch_all_datasets()
-    for key, dataframe in datasets.items():
-        columns = ", ".join(dataframe.columns)
-        print(f"{key}: {len(dataframe)} rows, {len(dataframe.columns)} columns")
-        print(f"  columns: {columns}")
+    client = DataGovDatasetClient(api_key=args.api_key)
+    dataframes: dict[str, pd.DataFrame] = {}
+
+    for config in DATASETS:
+        dataframe = client.fetch_dataset(config)
+        dataframes[config.key] = dataframe
+    for key, dataframe in dataframes.items():
+        print(f"\nDataset: {key}")
+        print(dataframe.columns)
 
 
 if __name__ == "__main__":
