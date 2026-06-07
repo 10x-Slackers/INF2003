@@ -1,4 +1,6 @@
 import argparse
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import time
 from typing import Any, Sequence
 
@@ -51,6 +53,7 @@ class DataGovDatasetClient:
                 response.raise_for_status()
                 body = response.json()
                 if body.get("errorMsg"):
+                    print(f"API error for {url}: {body['errorMsg']}")
                     return {}
                 return body
 
@@ -58,7 +61,8 @@ class DataGovDatasetClient:
                 response.raise_for_status()
 
             retry_after = response.headers.get("Retry-After")
-            retry_delay = float(retry_after) if retry_after else POLL_INTERVAL_SECONDS
+
+            retry_delay = self._parse_retry_after(retry_after, POLL_INTERVAL_SECONDS)
             time.sleep(retry_delay)
 
         return {}
@@ -128,6 +132,29 @@ class DataGovDatasetClient:
             return pd.json_normalize(features)
 
         return pd.json_normalize(payload)
+
+    def _parse_retry_after(self, value: str | None, default: float) -> float:
+        if not value:
+            return default
+
+        # Case 1: Retry-After is seconds
+        try:
+            return max(0.0, float(value))
+        except ValueError:
+            pass
+
+        # Case 2: Retry-After is HTTP-date
+        try:
+            retry_time = parsedate_to_datetime(value)
+
+            if retry_time.tzinfo is None:
+                retry_time = retry_time.replace(tzinfo=timezone.utc)
+
+            now = datetime.now(timezone.utc)
+            return max(0.0, (retry_time - now).total_seconds())
+
+        except (TypeError, ValueError, OverflowError):
+            return default
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
