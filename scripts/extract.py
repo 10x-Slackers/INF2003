@@ -41,7 +41,6 @@ class DataGovDatasetClient:
         if api_key:
             self.session.headers.update({"x-api-key": api_key})
 
-    @log_slow_call
     def fetch_dataset(self, config: DatasetConfig) -> pd.DataFrame:
         metadata = self._fetch_dataset_metadata(config)
         dataset_format = metadata.get("format", "").upper()
@@ -147,7 +146,6 @@ class DataGovDatasetClient:
 
         raise ValueError(f"Unsupported dataset format: {dataset_format}")
 
-    @log_slow_call
     def _normalise_geojson(self, payload: dict[str, Any]) -> pd.DataFrame:
         features = payload.get("features")
         if isinstance(features, list):
@@ -156,7 +154,6 @@ class DataGovDatasetClient:
         return pd.json_normalize(payload)
 
     @staticmethod
-    @log_slow_call
     def _parse_retry_after(value: str | None, default: float) -> float:
         if not value:
             return default
