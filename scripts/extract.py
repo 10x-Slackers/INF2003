@@ -54,9 +54,12 @@ class DataGovDatasetClient:
     def _request_json(
         self,
         url: str,
+        dataset: str,
+        state: str,
         *,
         json_payload: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        print(f"Requesting JSON for {dataset} with state {state}")
         for attempt in range(MAX_RETRIES + 1):
             response = self.session.get(
                 url,
@@ -85,13 +88,16 @@ class DataGovDatasetClient:
 
     def _fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
         url = f"{METADATA_BASE_URL}/{config.dataset_id}/metadata"
-        body = self._request_json(url)
+        body = self._request_json(url, dataset=config.key, state="metadata")
         return body.get("data", {})
 
     def _initiate_download(self, config: DatasetConfig) -> None:
+        print(f"Initiated download for dataset '{config.key}'")
         url = f"{BASE_URL}/{config.dataset_id}/initiate-download"
         payload = self._download_payload(config)
-        self._request_json(url, json_payload=payload or None)
+        self._request_json(
+            url, dataset=config.key, state="initiate", json_payload=payload or None
+        )
 
     def _poll_download_url(self, config: DatasetConfig) -> str:
         url = f"{BASE_URL}/{config.dataset_id}/poll-download"
@@ -99,7 +105,9 @@ class DataGovDatasetClient:
 
         for poll_number in range(MAX_RETRIES):
             print(f"Polling for download URL for dataset '{config.key}'")
-            body = self._request_json(url, json_payload=payload or None)
+            body = self._request_json(
+                url, dataset=config.key, state="poll", json_payload=payload or None
+            )
             download_url = body.get("data", {}).get("url")
             if download_url:
                 return download_url
@@ -110,6 +118,7 @@ class DataGovDatasetClient:
         raise TimeoutError(f"Download URL not available after {MAX_RETRIES} polls")
 
     def _read_dataset_url(self, url: str, *, dataset_format: str) -> pd.DataFrame:
+        print(f"Reading dataset from URL for format '{dataset_format}'")
         normalised_format = dataset_format.upper()
 
         if normalised_format == "CSV":
@@ -174,6 +183,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     for config in DATASETS:
         dataframe = client.fetch_dataset(config)
         dataframes[config.key] = dataframe
+        print()
 
 
 if __name__ == "__main__":
