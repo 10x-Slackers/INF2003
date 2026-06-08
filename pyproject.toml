@@ -8,4 +8,5 @@ dependencies = [
     "mysqlclient>=2.2.8",
     "pandas>=3.0.3",
     "requests>=2.34.2",
+    "shapely>=2.1.2",
 ]

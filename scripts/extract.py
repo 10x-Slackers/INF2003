@@ -9,6 +9,7 @@ import requests
 
 from scripts.dataset_config import DATASETS
 from scripts.dataset_config.base import DatasetConfig
+from scripts.transform import RawDataset, transform_datasets
 
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
 METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
@@ -26,7 +27,7 @@ class DataGovDatasetClient:
         if api_key:
             self.session.headers.update({"x-api-key": api_key})
 
-    def fetch_dataset(self, config: DatasetConfig) -> pd.DataFrame:
+    def fetch_dataset(self, config: DatasetConfig) -> RawDataset:
         metadata = self._fetch_dataset_metadata(config)
         dataset_format = metadata.get("format", "").upper()
 
@@ -36,7 +37,7 @@ class DataGovDatasetClient:
         download_url = self._poll_download_url(config)
         return self._read_dataset_url(
             download_url,
-            dataset=config.key,
+            config=config,
             dataset_format=dataset_format,
         )
 
@@ -118,9 +119,9 @@ class DataGovDatasetClient:
         raise TimeoutError(f"Download URL not available after {MAX_RETRIES} polls")
 
     def _read_dataset_url(
-        self, url: str, dataset: str, *, dataset_format: str
-    ) -> pd.DataFrame:
-        print(f"Reading {dataset}")
+        self, url: str, config: DatasetConfig, *, dataset_format: str
+    ) -> RawDataset:
+        print(f"Reading {config.key}")
         normalised_format = dataset_format.upper()
 
         if normalised_format == "CSV":
@@ -131,16 +132,9 @@ class DataGovDatasetClient:
         payload = response.json()
 
         if normalised_format in {"GEOJSON", "JSON"}:
-            return self._normalise_geojson(payload)
+            return payload
 
         raise ValueError(f"Unsupported dataset format: {dataset_format}")
-
-    def _normalise_geojson(self, payload: dict[str, Any]) -> pd.DataFrame:
-        features = payload.get("features")
-        if isinstance(features, list):
-            return pd.json_normalize(features)
-
-        return pd.json_normalize(payload)
 
     @staticmethod
     def _parse_retry_after(value: str | None, default: float) -> float:
@@ -180,12 +174,16 @@ def main(argv: Sequence[str] | None = None) -> None:
     client = DataGovDatasetClient(
         api_key=args.api_key,
     )
-    dataframes: dict[str, pd.DataFrame] = {}
+    raw_datasets: dict[str, RawDataset] = {}
 
     for config in DATASETS:
-        dataframe = client.fetch_dataset(config)
-        dataframes[config.key] = dataframe
-        print()
+        raw_datasets[config.key] = client.fetch_dataset(config)
+
+    dataframes = transform_datasets(raw_datasets)
+
+    for dataset_key, dataframe in dataframes.items():
+        print(dataset_key)
+        print(dataframe.head())
 
 
 if __name__ == "__main__":

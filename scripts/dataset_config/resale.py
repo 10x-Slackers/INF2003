@@ -1,6 +1,5 @@
 from .base import DatasetConfig
 
-
 DATASET = DatasetConfig(
     key="resale_flat_prices",
     dataset_id="d_8b84c4ee58e3cfc0ece0d773c8ca6abc",
