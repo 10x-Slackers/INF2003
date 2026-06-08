@@ -16,20 +16,6 @@ METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
 TIMEOUT_SECONDS = 30
 POLL_INTERVAL_SECONDS = 5
 MAX_RETRIES = 3
-SLOW_LOG_MS = 1000
-
-
-def log_slow_call(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed_ms = (time.perf_counter() - start) * 1000
-        if elapsed_ms >= SLOW_LOG_MS:
-            print(f"Call to {func.__name__} took {elapsed_ms:.2f} ms")
-        return result
-
-    return wrapper
 
 
 class DataGovDatasetClient:
@@ -55,7 +41,6 @@ class DataGovDatasetClient:
         )
 
     @staticmethod
-    @log_slow_call
     def _download_payload(config: DatasetConfig) -> dict[str, Any]:
         payload: dict[str, Any] = {}
 
@@ -67,7 +52,6 @@ class DataGovDatasetClient:
 
         return payload
 
-    @log_slow_call
     def _request_json(
         self,
         url: str,
@@ -105,14 +89,11 @@ class DataGovDatasetClient:
         body = self._request_json(url)
         return body.get("data", {})
 
-    @log_slow_call
     def _initiate_download(self, config: DatasetConfig) -> None:
-        print(f"Initiated download for dataset '{config.key}'")
         url = f"{BASE_URL}/{config.dataset_id}/initiate-download"
         payload = self._download_payload(config)
         self._request_json(url, json_payload=payload or None)
 
-    @log_slow_call
     def _poll_download_url(self, config: DatasetConfig) -> str:
         url = f"{BASE_URL}/{config.dataset_id}/poll-download"
         payload = self._download_payload(config)
@@ -129,9 +110,7 @@ class DataGovDatasetClient:
 
         raise TimeoutError(f"Download URL not available after {MAX_RETRIES} polls")
 
-    @log_slow_call
     def _read_dataset_url(self, url: str, *, dataset_format: str) -> pd.DataFrame:
-        print(f"Reading dataset from URL for format '{dataset_format}'")
         normalised_format = dataset_format.upper()
 
         if normalised_format == "CSV":
@@ -196,10 +175,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     for config in DATASETS:
         dataframe = client.fetch_dataset(config)
         dataframes[config.key] = dataframe
-        print()
-    for key, dataframe in dataframes.items():
-        print(f"\nDataset: {key}")
-        print(dataframe.columns.tolist())
 
 
 if __name__ == "__main__":
