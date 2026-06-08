@@ -36,6 +36,7 @@ class DataGovDatasetClient:
         download_url = self._poll_download_url(config)
         return self._read_dataset_url(
             download_url,
+            dataset=config.key,
             dataset_format=dataset_format,
         )
 
@@ -92,7 +93,6 @@ class DataGovDatasetClient:
         return body.get("data", {})
 
     def _initiate_download(self, config: DatasetConfig) -> None:
-        print(f"Initiated download for dataset '{config.key}'")
         url = f"{BASE_URL}/{config.dataset_id}/initiate-download"
         payload = self._download_payload(config)
         self._request_json(
@@ -117,8 +117,10 @@ class DataGovDatasetClient:
 
         raise TimeoutError(f"Download URL not available after {MAX_RETRIES} polls")
 
-    def _read_dataset_url(self, url: str, *, dataset_format: str) -> pd.DataFrame:
-        print(f"Reading dataset from URL for format '{dataset_format}'")
+    def _read_dataset_url(
+        self, url: str, dataset: str, *, dataset_format: str
+    ) -> pd.DataFrame:
+        print(f"Reading {dataset}")
         normalised_format = dataset_format.upper()
 
         if normalised_format == "CSV":
