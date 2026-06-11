@@ -67,11 +67,6 @@ class DatasetTransformer:
             return transformer(raw_data)
 
         if isinstance(raw_data, pd.DataFrame):
-            missing = set(REGION_TOWNS_COLUMNS) - set(raw_data.columns)
-            if missing:
-                raise ValueError(
-                    f"Dataset '{dataset_key}' is missing required columns: {missing}"
-                )
             return raw_data
 
         return self.transform_default_geojson(raw_data)

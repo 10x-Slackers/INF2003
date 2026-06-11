@@ -186,8 +186,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     for dataset_key, dataframe in normalized_datasets.items():
         print(dataset_key)
         print(dataframe.head())
-    amenities = normalized_datasets.get("amenities", pd.DataFrame())
-    print(amenities.dropna(subset=["longitude", "latitude"]).head())
+    # prints column names for each dataset
+    for dataframe in normalized_datasets.values():
+        print(tuple(dataframe.columns.drop("id", errors="ignore")))
 
 
 if __name__ == "__main__":

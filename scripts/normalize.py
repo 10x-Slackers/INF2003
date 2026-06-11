@@ -5,9 +5,7 @@ from scripts.table_models import (
     AMENITY_TYPES,
     FLAT_MODELS,
     FLAT_TYPES,
-    PROPERTIES,
     STOREY_RANGES,
-    TOWNS,
     TableModel,
 )
 
@@ -77,18 +75,15 @@ class DatasetNormalizer:
         return self._create_id_name_table(model, values)
 
     def transform_towns(self) -> pd.DataFrame:
-        rows = []
-        region_towns = self.datasets["region_towns"]
-        for _, row in region_towns.drop_duplicates("town_name").iterrows():
-            rows.append(
-                {
-                    "id": self.normalize_key(row.town_name),
-                    "name": row.town_name,
-                    "region": row.region_name,
-                }
-            )
-
-        return self.create_table(TOWNS, rows)
+        df = self.datasets["region_towns"].drop_duplicates("town_name")
+        towns = pd.DataFrame(
+            {
+                "id": self.normalize_key(df.town_name),
+                "name": df.town_name,
+                "region": df.region_name,
+            }
+        )
+        return towns
 
     def transform_flat_types(self) -> pd.DataFrame:
         return self._create_id_name_table_from_dataset(
@@ -102,12 +97,12 @@ class DatasetNormalizer:
 
     def transform_storey_ranges(self) -> pd.DataFrame:
         rows = []
-        storey_ranges = self.datasets["resale_flat_prices"]
-        for _, row in storey_ranges.drop_duplicates("storey_range").iterrows():
-            min_storey, max_storey = self.parse_storey_range(row["storey_range"])
+        storey_ranges = self.datasets["resale_flat_prices"]["storey_range"].unique()
+        for ranges in storey_ranges:
+            min_storey, max_storey = self.parse_storey_range(ranges)
             rows.append(
                 {
-                    "id": self.normalize_key(row.storey_range),
+                    "id": self.normalize_key(ranges),
                     "min_storey": min_storey,
                     "max_storey": max_storey,
                 }
@@ -115,19 +110,21 @@ class DatasetNormalizer:
         return self.create_table(STOREY_RANGES, rows)
 
     def transform_properties(self) -> pd.DataFrame:
-        rows = []
-        properties = self.datasets["resale_flat_prices"]
-        for row in properties.drop_duplicates(list(PROPERTY_KEY_COLUMNS)).itertuples():
-            rows.append(
-                {
-                    "id": self._property_id(row),
-                    "town_id": self.normalize_key(row.town),
-                    "block": row.block,
-                    "street_name": row.street_name,
-                    "lease_commence_year": row.lease_commence_date,
-                }
-            )
-        return self.create_table(PROPERTIES, rows)
+        df = self.datasets["resale_flat_prices"].drop_duplicates(
+            list(PROPERTY_KEY_COLUMNS)
+        )
+        properties = pd.DataFrame(
+            {
+                "id": df[list(PROPERTY_KEY_COLUMNS)].apply(
+                    lambda row: self.normalize_key(tuple(row)), axis=1
+                ),
+                "town_id": self.normalize_key(df.town),
+                "block": df.block,
+                "street_name": df.street_name,
+                "lease_commence_year": df.lease_commence_date,
+            }
+        )
+        return properties
 
     def transform_amenity_types(self) -> pd.DataFrame:
         return self._create_id_name_table(AMENITY_TYPES, AMENITY_TYPE_NAMES)
