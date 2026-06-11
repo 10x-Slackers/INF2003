@@ -17,6 +17,7 @@ DEFAULT_GEOJSON_COLUMNS = [
     "street_name",
 ]
 REGION_TOWNS_COLUMNS = ["region_name", "town_name", "polygon"]
+DESCRIPTION_FIELD_PATTERN = r"<th>\s*(.*?)\s*</th>\s*<td>(.*?)</td>"
 
 
 class DatasetTransformer:
@@ -93,32 +94,26 @@ class DatasetTransformer:
         Returns:
             The transformed DataFrame.
         """
-        rows = []
-        for feature in payload.get("features", []):
-            properties = feature.get("properties", {})
-            description = properties.get("Description", "")
-            fields = self.extract_description_fields(description)
-
-            amenity_name = fields.get("NAME") or None
-            postal_code = fields.get("ADDRESSPOSTALCODE") or None
-            street_name = fields.get("ADDRESSSTREETNAME") or None
-            geometry = feature.get("geometry", {})
-            coords = geometry.get("coordinates", None)
-            geo_shape = shape(feature.get("geometry", {}))
-
-            rows.append(
-                {
-                    "amenity_name": amenity_name,
-                    "polygon": geo_shape.wkt,
-                    "coordinates": (
-                        (coords[0], coords[1]) if isinstance(coords, list) else None
-                    ),
-                    "postal_code": postal_code,
-                    "street_name": street_name,
-                }
-            )
+        rows = [
+            self._default_geojson_row(feature)
+            for feature in payload.get("features", [])
+        ]
 
         return pd.DataFrame(rows, columns=DEFAULT_GEOJSON_COLUMNS)
+
+    def _default_geojson_row(self, feature: Payload) -> dict[str, object]:
+        properties = feature.get("properties", {})
+        fields = self.extract_description_fields(properties.get("Description", ""))
+        geometry = feature.get("geometry", {})
+        geo_shape = shape(geometry)
+
+        return {
+            "amenity_name": fields.get("NAME") or None,
+            "polygon": geo_shape.wkt,
+            "coordinates": self._extract_coordinates(geometry),
+            "postal_code": fields.get("ADDRESSPOSTALCODE") or None,
+            "street_name": fields.get("ADDRESSSTREETNAME") or None,
+        }
 
     @staticmethod
     def transform_region_towns(raw_data: RawDataset) -> pd.DataFrame:
@@ -135,18 +130,10 @@ class DatasetTransformer:
         if isinstance(raw_data, pd.DataFrame):
             return raw_data
 
-        rows = []
-        for feature in raw_data.get("features", []):
-            properties = feature.get("properties", {})
-            geometry = shape(feature.get("geometry", {}))
-
-            rows.append(
-                {
-                    "region_name": properties.get("REGION_N", ""),
-                    "town_name": properties.get("PLN_AREA_N", ""),
-                    "polygon": geometry.wkt,
-                }
-            )
+        rows = [
+            DatasetTransformer._region_town_row(feature)
+            for feature in raw_data.get("features", [])
+        ]
 
         return (
             pd.DataFrame(rows, columns=REGION_TOWNS_COLUMNS)
@@ -156,12 +143,30 @@ class DatasetTransformer:
         )
 
     @staticmethod
+    def _region_town_row(feature: Payload) -> dict[str, str]:
+        properties = feature.get("properties", {})
+        geometry = shape(feature.get("geometry", {}))
+
+        return {
+            "region_name": properties.get("REGION_N", ""),
+            "town_name": properties.get("PLN_AREA_N", ""),
+            "polygon": geometry.wkt,
+        }
+
+    @staticmethod
+    def _extract_coordinates(geometry: Payload) -> tuple[object, object] | None:
+        coords = geometry.get("coordinates")
+        if not isinstance(coords, list):
+            return None
+
+        return coords[0], coords[1]
+
+    @staticmethod
     def extract_description_fields(description: str) -> dict[str, str]:
-        pattern = r"<th>\s*(.*?)\s*</th>\s*<td>(.*?)</td>"
         fields = {}
 
         for key, value in re.findall(
-            pattern, description, flags=re.IGNORECASE | re.DOTALL
+            DESCRIPTION_FIELD_PATTERN, description, flags=re.IGNORECASE | re.DOTALL
         ):
             normalized_key = html.unescape(key).strip().upper()
             cleaned_value = html.unescape(value).strip()

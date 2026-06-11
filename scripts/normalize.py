@@ -1,17 +1,20 @@
 import pandas as pd
 
-
 from scripts.table_models import (
-    TOWNS,
-    FLAT_TYPES,
-    FLAT_MODELS,
-    STOREY_RANGES,
-    PROPERTIES,
-    AMENITY_TYPES,
     AMENITIES,
+    AMENITY_TYPES,
+    FLAT_MODELS,
+    FLAT_TYPES,
+    PROPERTIES,
     RESALE_TRANSACTIONS,
+    STOREY_RANGES,
+    TOWNS,
     TableModel,
 )
+
+AMENITY_TYPE_NAMES = ("gym", "park", "school")
+PROPERTY_KEY_COLUMNS = ("town", "block", "street_name", "lease_commence_date")
+PARK_DEDUPE_COLUMNS = ("amenity_name", "street_name", "postal_code")
 
 
 class DatasetNormalizer:
@@ -40,6 +43,34 @@ class DatasetNormalizer:
     def create_table(model: TableModel, rows: list[dict[str, object]]) -> pd.DataFrame:
         return pd.DataFrame(rows, columns=model.columns)
 
+    def _create_id_name_table(
+        self, model: TableModel, values: pd.Series | list[str] | tuple[str, ...]
+    ) -> pd.DataFrame:
+        rows = [
+            {
+                "id": self.normalize_key(value),
+                "name": value,
+            }
+            for value in values
+        ]
+        return self.create_table(model, rows)
+
+    def _create_id_name_table_from_dataset(
+        self, model: TableModel, dataset_key: str, column: str
+    ) -> pd.DataFrame:
+        """
+        Creates a table with 'id' and 'name' columns from a specified column in a dataset.
+        Used mostly for tables with two column (id, name)
+        Args:
+            model: The TableModel defining the structure of the table to create.
+            dataset_key: The key of the dataset to extract values from.
+            column: The column name in the dataset to drop duplicates and extract values from.
+        returns:
+            A DataFrame with 'id' and 'name' columns based on the specified dataset and column.
+        """
+        values = self.datasets[dataset_key].drop_duplicates(column)[column]
+        return self._create_id_name_table(model, values)
+
     def transform_towns(self) -> pd.DataFrame:
         rows = []
         region_towns = self.datasets["region_towns"]
@@ -55,28 +86,14 @@ class DatasetNormalizer:
         return self.create_table(TOWNS, rows)
 
     def transform_flat_types(self) -> pd.DataFrame:
-        rows = []
-        flat_types = self.datasets["resale_flat_prices"]
-        for _, row in flat_types.drop_duplicates("flat_type").iterrows():
-            rows.append(
-                {
-                    "id": self.normalize_key(row.flat_type),
-                    "name": row.flat_type,
-                }
-            )
-        return self.create_table(FLAT_TYPES, rows)
+        return self._create_id_name_table_from_dataset(
+            FLAT_TYPES, "resale_flat_prices", "flat_type"
+        )
 
     def transform_flat_models(self) -> pd.DataFrame:
-        rows = []
-        flat_models = self.datasets["resale_flat_prices"]
-        for _, row in flat_models.drop_duplicates("flat_model").iterrows():
-            rows.append(
-                {
-                    "id": self.normalize_key(row.flat_model),
-                    "name": row.flat_model,
-                }
-            )
-        return self.create_table(FLAT_MODELS, rows)
+        return self._create_id_name_table_from_dataset(
+            FLAT_MODELS, "resale_flat_prices", "flat_model"
+        )
 
     def transform_storey_ranges(self) -> pd.DataFrame:
         rows = []
@@ -95,19 +112,10 @@ class DatasetNormalizer:
     def transform_properties(self) -> pd.DataFrame:
         rows = []
         properties = self.datasets["resale_flat_prices"]
-        for _, row in properties.drop_duplicates(
-            ["town", "block", "street_name", "lease_commence_date"]
-        ).iterrows():
+        for _, row in properties.drop_duplicates(list(PROPERTY_KEY_COLUMNS)).iterrows():
             rows.append(
                 {
-                    "id": self.normalize_key(
-                        (
-                            row.town,
-                            row.block,
-                            row.street_name,
-                            row.lease_commence_date,
-                        )
-                    ),
+                    "id": self._property_id(row),
                     "town_id": self.normalize_key(row.town),
                     "block": row.block,
                     "street_name": row.street_name,
@@ -117,64 +125,78 @@ class DatasetNormalizer:
         return self.create_table(PROPERTIES, rows)
 
     def transform_amenity_types(self) -> pd.DataFrame:
-        rows = []
-        amenity_types = ["gym", "park", "school"]
-        for amenity_type in amenity_types:
-            rows.append(
-                {
-                    "id": self.normalize_key(amenity_type),
-                    "name": amenity_type,
-                }
-            )
-        return self.create_table(AMENITY_TYPES, rows)
+        return self._create_id_name_table(AMENITY_TYPES, AMENITY_TYPE_NAMES)
 
     def transform_amenities(self) -> pd.DataFrame:
-        rows = []
-        schools = self.datasets["schools"]
-        gym = self.datasets["gyms"]
-        parks = self.datasets["parks"]
-        for _, row in schools.iterrows():
-            rows.append(
-                {
-                    "town_id": self.normalize_key(row.dgp_code),
-                    "amenity_type_id": self.normalize_key("school"),
-                    "name": row.school_name,
-                    "street_name": row.address,
-                    "postal_code": row.postal_code,
-                    "longitude": None,
-                    "latitude": None,
-                }
-            )
-        # some gyms are using 5 digit postal code, which is invalid in Singapore.
-        valid_gym = gym[gym["postal_code"].astype(str).str.len() == 6]
-        for _, row in valid_gym.iterrows():
-            rows.append(
-                {
-                    "town_id": self.normalize_key(row.town_name),
-                    "amenity_type_id": self.normalize_key("gym"),
-                    "name": row.amenity_name,
-                    "street_name": row.street_name,
-                    "postal_code": row.postal_code,
-                    "longitude": row.coordinates[0] if row.coordinates else None,
-                    "latitude": row.coordinates[1] if row.coordinates else None,
-                }
-            )
-        for _, row in parks.drop_duplicates(
-            ["amenity_name", "street_name", "postal_code"]
-        ).iterrows():
-            rows.append(
-                {
-                    "town_id": self.normalize_key(row.town_name),
-                    "amenity_type_id": self.normalize_key("park"),
-                    "name": row.amenity_name,
-                    "street_name": row.street_name,
-                    "postal_code": None,
-                    "longitude": row.coordinates[0] if row.coordinates else None,
-                    "latitude": row.coordinates[1] if row.coordinates else None,
-                }
-            )
-
+        rows = [
+            *self._school_amenity_rows(),
+            *self._gym_amenity_rows(),
+            *self._park_amenity_rows(),
+        ]
         return self.create_table(AMENITIES, rows)
+
+    def _school_amenity_rows(self) -> list[dict[str, object]]:
+        return [
+            self._amenity_row(
+                town=row.dgp_code,
+                amenity_type="school",
+                name=row.school_name,
+                street_name=row.address,
+                postal_code=row.postal_code,
+            )
+            for _, row in self.datasets["schools"].iterrows()
+        ]
+
+    def _gym_amenity_rows(self) -> list[dict[str, object]]:
+        gyms = self.datasets["gyms"]
+        # some gyms are using 5 digit postal code, which is invalid in Singapore.
+        valid_gyms = gyms[gyms["postal_code"].astype(str).str.len() == 6]
+        return [
+            self._amenity_row(
+                town=row.town_name,
+                amenity_type="gym",
+                name=row.amenity_name,
+                street_name=row.street_name,
+                postal_code=row.postal_code,
+                coordinates=row.coordinates,
+            )
+            for _, row in valid_gyms.iterrows()
+        ]
+
+    def _park_amenity_rows(self) -> list[dict[str, object]]:
+        # check dataset for parks, looks like all postal codes are 0 in the dataset,, so we just set it to None
+        parks = self.datasets["parks"].drop_duplicates(list(PARK_DEDUPE_COLUMNS))
+        return [
+            self._amenity_row(
+                town=row.town_name,
+                amenity_type="park",
+                name=row.amenity_name,
+                street_name=row.street_name,
+                postal_code=None,
+                coordinates=row.coordinates,
+            )
+            for _, row in parks.iterrows()
+        ]
+
+    def _amenity_row(
+        self,
+        *,
+        town: object,
+        amenity_type: str,
+        name: object,
+        street_name: object,
+        postal_code: object,
+        coordinates: tuple[object, object] | None = None,
+    ) -> dict[str, object]:
+        return {
+            "town_id": self.normalize_key(town),
+            "amenity_type_id": self.normalize_key(amenity_type),
+            "name": name,
+            "street_name": street_name,
+            "postal_code": postal_code,
+            "longitude": self._coordinate_at(coordinates, 0),
+            "latitude": self._coordinate_at(coordinates, 1),
+        }
 
     def transform_resale_transactions(self) -> pd.DataFrame:
         rows = []
@@ -182,14 +204,7 @@ class DatasetNormalizer:
         for _, row in resale_flat_prices.iterrows():
             rows.append(
                 {
-                    "property_id": self.normalize_key(
-                        (
-                            row.town,
-                            row.block,
-                            row.street_name,
-                            row.lease_commence_date,
-                        )
-                    ),
+                    "property_id": self._property_id(row),
                     "flat_type_id": self.normalize_key(row.flat_type),
                     "flat_model_id": self.normalize_key(row.flat_model),
                     "storey_range_id": self.normalize_key(row.storey_range),
@@ -199,6 +214,15 @@ class DatasetNormalizer:
                 }
             )
         return self.create_table(RESALE_TRANSACTIONS, rows)
+
+    def _property_id(self, row: pd.Series) -> str:
+        return self.normalize_key(tuple(row[column] for column in PROPERTY_KEY_COLUMNS))
+
+    @staticmethod
+    def _coordinate_at(coordinates: tuple[object, object] | None, index: int) -> object:
+        if not coordinates:
+            return None
+        return coordinates[index]
 
     @staticmethod
     def normalize_key(value: object) -> str:
