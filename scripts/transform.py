@@ -9,7 +9,13 @@ from shapely.geometry import shape
 Payload: TypeAlias = dict[str, Any]
 RawDataset: TypeAlias = pd.DataFrame | Payload
 DatasetTransform: TypeAlias = Callable[[RawDataset], pd.DataFrame]
-DEFAULT_GEOJSON_COLUMNS = ["name", "polygon"]
+DEFAULT_GEOJSON_COLUMNS = [
+    "amenity_name",
+    "polygon",
+    "coordinates",
+    "postal_code",
+    "street_name",
+]
 REGION_TOWNS_COLUMNS = ["region_name", "town_name", "polygon"]
 
 
@@ -90,15 +96,25 @@ class DatasetTransformer:
         rows = []
         for feature in payload.get("features", []):
             properties = feature.get("properties", {})
-            name = self.extract_name(
-                properties.get("Description", "")
-            ) or properties.get("Name", "")
-            geometry = shape(feature.get("geometry", {}))
+            description = properties.get("Description", "")
+            fields = self.extract_description_fields(description)
+
+            amenity_name = fields.get("NAME") or None
+            postal_code = fields.get("ADDRESSPOSTALCODE") or None
+            street_name = fields.get("ADDRESSSTREETNAME") or None
+            geometry = feature.get("geometry", {})
+            coords = geometry.get("coordinates", None)
+            geo_shape = shape(feature.get("geometry", {}))
 
             rows.append(
                 {
-                    "name": name,
-                    "polygon": geometry.wkt,
+                    "amenity_name": amenity_name,
+                    "polygon": geo_shape.wkt,
+                    "coordinates": (
+                        (coords[0], coords[1]) if isinstance(coords, list) else None
+                    ),
+                    "postal_code": postal_code,
+                    "street_name": street_name,
                 }
             )
 
@@ -140,23 +156,18 @@ class DatasetTransformer:
         )
 
     @staticmethod
-    def extract_name(description: str) -> str:
-        """
-        Extracts the name from a description html string.
+    def extract_description_fields(description: str) -> dict[str, str]:
+        pattern = r"<th>\s*(.*?)\s*</th>\s*<td>(.*?)</td>"
+        fields = {}
 
-        Args:
-            description: The description string.
+        for key, value in re.findall(
+            pattern, description, flags=re.IGNORECASE | re.DOTALL
+        ):
+            normalized_key = html.unescape(key).strip().upper()
+            cleaned_value = html.unescape(value).strip()
+            fields[normalized_key] = cleaned_value
 
-        Returns:
-            The extracted name.
-        """
-        pattern = r"<th>\s*Name\s*</th>\s*<td>(.*?)</td>"
-        match = re.search(pattern, description, flags=re.IGNORECASE | re.DOTALL)
-
-        if not match:
-            return ""
-
-        return html.unescape(match.group(1)).strip()
+        return fields
 
 
 class TownMatcher:

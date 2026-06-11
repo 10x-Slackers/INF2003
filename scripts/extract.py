@@ -9,6 +9,7 @@ import requests
 
 from scripts.dataset_config import DATASETS
 from scripts.dataset_config.base import DatasetConfig
+from scripts.normalize import DatasetNormalizer
 from scripts.transform import DatasetTransformer, RawDataset
 
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
@@ -179,12 +180,14 @@ def main(argv: Sequence[str] | None = None) -> None:
     for config in DATASETS:
         raw_datasets[config.key] = client.fetch_dataset(config)
 
-    transformer = DatasetTransformer()
-    dataframes = transformer.transform_datasets(raw_datasets)
+    dataframes = DatasetTransformer().transform_datasets(raw_datasets)
 
-    for dataset_key, dataframe in dataframes.items():
+    normalized_datasets = DatasetNormalizer().normalize(dataframes)
+    for dataset_key, dataframe in normalized_datasets.items():
         print(dataset_key)
         print(dataframe.head())
+    amenities = normalized_datasets.get("amenities", pd.DataFrame())
+    print(amenities.dropna(subset=["longitude", "latitude"]).head())
 
 
 if __name__ == "__main__":
