@@ -190,13 +190,12 @@ class TownMatcher:
         self.towns = []
         self.town_polygons = []
         for _, row in town_df.iterrows():
-            self.towns.append(row.town_name)
             try:
                 self.town_polygons.append(from_wkt(row.polygon))
+                self.towns.append(row.town_name)
             except Exception as e:
                 print(
-                    "Warning: Failed to parse polygon for town '%s': %s"
-                    % (row.town_name, e)
+                    f"Warning: Failed to parse polygon for town '{row.town_name}': {e}"
                 )
                 continue
         self.tree = STRtree(self.town_polygons)

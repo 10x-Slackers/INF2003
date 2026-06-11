@@ -15,7 +15,6 @@ PROPERTY_KEY_COLUMNS = (
     "block",
     "street_name",
     "lease_commence_date",
-    "resale_price",
 )
 PARK_DEDUPE_COLUMNS = ("amenity_name", "street_name", "postal_code")
 
@@ -204,7 +203,7 @@ class DatasetNormalizer:
         df = self.datasets["resale_flat_prices"]
         transactions = pd.DataFrame(
             {
-                "property_id": df[list[PROPERTY_KEY_COLUMNS]].apply(
+                "property_id": df[list(PROPERTY_KEY_COLUMNS)].apply(
                     lambda row: self.normalize_key(tuple(row)), axis=1
                 ),
                 "flat_type_id": self.normalize_key(df.flat_type),
@@ -216,11 +215,6 @@ class DatasetNormalizer:
             }
         )
         return transactions
-
-    def _property_id(self, row: tuple) -> str:
-        return self.normalize_key(
-            tuple(getattr(row, column) for column in PROPERTY_KEY_COLUMNS)
-        )
 
     @staticmethod
     def _coordinate_at(coordinates: tuple[object, object] | None, index: int) -> object:

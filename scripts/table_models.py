@@ -44,6 +44,7 @@ AMENITIES = TableModel(
         "latitude",
     ),
 )
+
 FLAT_TYPES = TableModel(
     name="flat_types",
     columns=("id", "name"),
