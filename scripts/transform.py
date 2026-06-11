@@ -3,7 +3,7 @@ import re
 from typing import Any, Callable, TypeAlias
 
 import pandas as pd
-from shapely import from_wkt
+from shapely import from_wkt, STRtree
 from shapely.geometry import shape
 
 Payload: TypeAlias = dict[str, Any]
@@ -177,14 +177,16 @@ class DatasetTransformer:
 
 class TownMatcher:
     def __init__(self, town_df: pd.DataFrame) -> None:
-        self.towns = [
-            (town_row["town_name"], from_wkt(town_row["polygon"]))
-            for _, town_row in town_df.iterrows()
-        ]
+        self.towns = []
+        self.town_polygons = []
+        for _, row in town_df.iterrows():
+            self.towns.append(row.town_name)
+            self.town_polygons.append(from_wkt(row.polygon))
+        self.tree = STRtree(self.town_polygons)
 
     def find_town(self, wkt: str) -> str | None:
         geometry = from_wkt(wkt)
-        for town_name, town_polygon in self.towns:
-            if town_polygon.covers(geometry):
-                return town_name
+        indices = self.tree.query(geometry, predicate="covers")
+        if indices.size > 0:
+            return self.towns[indices[0]]
         return None

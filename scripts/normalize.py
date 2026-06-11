@@ -112,7 +112,7 @@ class DatasetNormalizer:
     def transform_properties(self) -> pd.DataFrame:
         rows = []
         properties = self.datasets["resale_flat_prices"]
-        for _, row in properties.drop_duplicates(list(PROPERTY_KEY_COLUMNS)).iterrows():
+        for row in properties.drop_duplicates(list(PROPERTY_KEY_COLUMNS)).itertuples():
             rows.append(
                 {
                     "id": self._property_id(row),
@@ -172,7 +172,9 @@ class DatasetNormalizer:
                 amenity_type="park",
                 name=row.amenity_name,
                 street_name=row.street_name,
-                postal_code=None,
+                postal_code=row.postal_code
+                if row.postal_code not in (None, 0, "0")
+                else None,
                 coordinates=row.coordinates,
             )
             for _, row in parks.iterrows()
@@ -201,7 +203,7 @@ class DatasetNormalizer:
     def transform_resale_transactions(self) -> pd.DataFrame:
         rows = []
         resale_flat_prices = self.datasets["resale_flat_prices"]
-        for _, row in resale_flat_prices.iterrows():
+        for row in resale_flat_prices.itertuples():
             rows.append(
                 {
                     "property_id": self._property_id(row),
@@ -215,8 +217,10 @@ class DatasetNormalizer:
             )
         return self.create_table(RESALE_TRANSACTIONS, rows)
 
-    def _property_id(self, row: pd.Series) -> str:
-        return self.normalize_key(tuple(row[column] for column in PROPERTY_KEY_COLUMNS))
+    def _property_id(self, row: tuple) -> str:
+        return self.normalize_key(
+            tuple(getattr(row, column) for column in PROPERTY_KEY_COLUMNS)
+        )
 
     @staticmethod
     def _coordinate_at(coordinates: tuple[object, object] | None, index: int) -> object:
@@ -230,5 +234,14 @@ class DatasetNormalizer:
 
     @staticmethod
     def parse_storey_range(value: str) -> tuple[int, int]:
+        if not isinstance(value, str) or " TO " not in value:
+            raise ValueError(
+                f"Invalid storey range format: '{value}'. Expected format 'MIN TO MAX' (e.g., '01 TO 03')."
+            )
         left, right = value.split(" TO ")
-        return int(left), int(right)
+        try:
+            return int(left), int(right)
+        except ValueError:
+            raise ValueError(
+                f"Cannot parse storey range values as integers: '{value}'."
+            )
