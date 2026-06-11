@@ -6,14 +6,19 @@ from scripts.table_models import (
     FLAT_MODELS,
     FLAT_TYPES,
     PROPERTIES,
-    RESALE_TRANSACTIONS,
     STOREY_RANGES,
     TOWNS,
     TableModel,
 )
 
 AMENITY_TYPE_NAMES = ("gym", "park", "school")
-PROPERTY_KEY_COLUMNS = ("town", "block", "street_name", "lease_commence_date")
+PROPERTY_KEY_COLUMNS = (
+    "town",
+    "block",
+    "street_name",
+    "lease_commence_date",
+    "resale_price",
+)
 PARK_DEDUPE_COLUMNS = ("amenity_name", "street_name", "postal_code")
 
 
@@ -164,17 +169,15 @@ class DatasetNormalizer:
         ]
 
     def _park_amenity_rows(self) -> list[dict[str, object]]:
-        # check dataset for parks, looks like all postal codes are 0 in the dataset,, so we just set it to None
-        parks = self.datasets["parks"].drop_duplicates(list(PARK_DEDUPE_COLUMNS))
+        parks = self.datasets["parks"]
+        parks = parks.drop_duplicates(list(PARK_DEDUPE_COLUMNS))
         return [
             self._amenity_row(
                 town=row.town_name,
                 amenity_type="park",
                 name=row.amenity_name,
                 street_name=row.street_name,
-                postal_code=row.postal_code
-                if row.postal_code not in (None, 0, "0")
-                else None,
+                postal_code=row.postal_code,
                 coordinates=row.coordinates,
             )
             for _, row in parks.iterrows()
@@ -201,21 +204,21 @@ class DatasetNormalizer:
         }
 
     def transform_resale_transactions(self) -> pd.DataFrame:
-        rows = []
-        resale_flat_prices = self.datasets["resale_flat_prices"]
-        for row in resale_flat_prices.itertuples():
-            rows.append(
-                {
-                    "property_id": self._property_id(row),
-                    "flat_type_id": self.normalize_key(row.flat_type),
-                    "flat_model_id": self.normalize_key(row.flat_model),
-                    "storey_range_id": self.normalize_key(row.storey_range),
-                    "floor_area_sqm": row.floor_area_sqm,
-                    "transaction_month": row.month,
-                    "resale_price": row.resale_price,
-                }
-            )
-        return self.create_table(RESALE_TRANSACTIONS, rows)
+        df = self.datasets["resale_flat_prices"]
+        transactions = pd.DataFrame(
+            {
+                "property_id": df[list[PROPERTY_KEY_COLUMNS]].apply(
+                    lambda row: self.normalize_key(tuple(row)), axis=1
+                ),
+                "flat_type_id": self.normalize_key(df.flat_type),
+                "flat_model_id": self.normalize_key(df.flat_model),
+                "storey_range_id": self.normalize_key(df.storey_range),
+                "floor_area_sqm": df.floor_area_sqm,
+                "transaction_month": df.month,
+                "resale_price": df.resale_price,
+            }
+        )
+        return transactions
 
     def _property_id(self, row: tuple) -> str:
         return self.normalize_key(

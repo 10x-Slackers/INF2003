@@ -67,6 +67,11 @@ class DatasetTransformer:
             return transformer(raw_data)
 
         if isinstance(raw_data, pd.DataFrame):
+            missing = set(REGION_TOWNS_COLUMNS) - set(raw_data.columns)
+            if missing:
+                raise ValueError(
+                    f"Dataset '{dataset_key}' is missing required columns: {missing}"
+                )
             return raw_data
 
         return self.transform_default_geojson(raw_data)
@@ -106,12 +111,13 @@ class DatasetTransformer:
         fields = self.extract_description_fields(properties.get("Description", ""))
         geometry = feature.get("geometry", {})
         geo_shape = shape(geometry)
+        postal = fields.get("ADDRESSPOSTALCODE")
 
         return {
             "amenity_name": fields.get("NAME") or None,
             "polygon": geo_shape.wkt,
             "coordinates": self._extract_coordinates(geometry),
-            "postal_code": fields.get("ADDRESSPOSTALCODE") or None,
+            "postal_code": postal if self.is_valid_postal_code(postal) else None,
             "street_name": fields.get("ADDRESSSTREETNAME") or None,
         }
 
@@ -143,13 +149,13 @@ class DatasetTransformer:
         )
 
     @staticmethod
-    def _region_town_row(feature: Payload) -> dict[str, str]:
+    def _region_town_row(feature: Payload) -> dict[str, str | None]:
         properties = feature.get("properties", {})
         geometry = shape(feature.get("geometry", {}))
 
         return {
-            "region_name": properties.get("REGION_N", ""),
-            "town_name": properties.get("PLN_AREA_N", ""),
+            "region_name": properties.get("REGION_N") or None,
+            "town_name": properties.get("PLN_AREA_N") or None,
             "polygon": geometry.wkt,
         }
 
@@ -159,7 +165,9 @@ class DatasetTransformer:
         if not isinstance(coords, list):
             return None
 
-        return coords[0], coords[1]
+        if len(coords) >= 2:
+            return coords[0], coords[1]
+        return None
 
     @staticmethod
     def extract_description_fields(description: str) -> dict[str, str]:
@@ -174,6 +182,13 @@ class DatasetTransformer:
 
         return fields
 
+    @staticmethod
+    def is_valid_postal_code(value: str | None) -> bool:
+        if pd.isna(value) or value == 0 or value == "0":
+            return False
+        code = str(value).strip()
+        return len(code) == 6 and code.isdigit()
+
 
 class TownMatcher:
     def __init__(self, town_df: pd.DataFrame) -> None:
@@ -181,12 +196,24 @@ class TownMatcher:
         self.town_polygons = []
         for _, row in town_df.iterrows():
             self.towns.append(row.town_name)
-            self.town_polygons.append(from_wkt(row.polygon))
+            try:
+                self.town_polygons.append(from_wkt(row.polygon))
+            except Exception as e:
+                print(
+                    "Warning: Failed to parse polygon for town '%s': %s"
+                    % (row.town_name, e)
+                )
+                continue
         self.tree = STRtree(self.town_polygons)
 
     def find_town(self, wkt: str) -> str | None:
         geometry = from_wkt(wkt)
-        indices = self.tree.query(geometry, predicate="covers")
+        indices = self.tree.query(geometry, predicate="covered_by")
         if indices.size > 0:
+            if indices.size > 1:
+                # Log warning for overlapping town polygons
+                print(
+                    f"Warning: Geometry covered by multiple towns: {[self.towns[i] for i in indices]}"
+                )
             return self.towns[indices[0]]
         return None
