@@ -47,7 +47,7 @@ class Database:
             return {}
 
         columns = self._insert_columns(df)
-        sql = self._insert_sql(table_name, columns, returning_id=True)
+        sql = self._insert_sql(table_name, columns)
         data = self._clean_dataframe(df.sort_values("id").reset_index(drop=True))
         id_map = {}
         for record in data.to_dict(orient="records"):
@@ -90,15 +90,13 @@ class Database:
 
     @classmethod
     def _insert_sql(
-        cls, table_name: str, columns: list[str], *, returning_id: bool = False
+        cls,
+        table_name: str,
+        columns: list[str],
     ) -> str:
         column_names = ", ".join(columns)
         placeholders = ", ".join(["%s"] * len(columns))
-        returning_clause = " RETURNING id" if returning_id else ""
-        return (
-            f"INSERT INTO {table_name} ({column_names}) "
-            f"VALUES ({placeholders}){returning_clause}"
-        )
+        return f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
 
     @staticmethod
     def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:

@@ -26,7 +26,7 @@ def init_tables(cursor):
                     'EAST REGION',
                     'WEST REGION',
                     'CENTRAL REGION'
-                ),
+                ) NOT NULL,
                 name VARCHAR(100) NOT NULL UNIQUE
             )
             """
@@ -187,7 +187,7 @@ def teardown_tables(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
     try:
         cursor.execute(
-            "DROP TABLE IF EXISTS alert_notifications, resale_transactions, saved_properties, amenities, properties, storey_ranges, flat_models, flat_types, amenity_types, towns, users CASCADE"
+            "DROP TABLE IF EXISTS alert_notifications, resale_transactions, saved_properties, amenities, properties, storey_ranges, flat_models, flat_types, amenity_types, towns, users"
         )
     finally:
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1")
