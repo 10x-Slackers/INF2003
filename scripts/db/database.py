@@ -106,9 +106,8 @@ class Database:
 
 def main():
     db = Database()
-    db.reset_tables()
     try:
-        db.create_tables()
+        db.reset_tables()
         amenity_types_df = pd.DataFrame(
             {
                 "id": ["GYM", "PARK", "SCHOOL"],
