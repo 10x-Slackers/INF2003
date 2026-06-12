@@ -80,6 +80,7 @@ def init_tables(cursor):
                 street_name VARCHAR(255) NOT NULL,
                 lease_commence_year INT NOT NULL,
                 UNIQUE (town_id, block, street_name, lease_commence_year),
+                INDEX idx_properties_town_id (town_id),
                 CONSTRAINT fk_properties_town
                     FOREIGN KEY (town_id) REFERENCES towns(id)
             )
@@ -94,6 +95,8 @@ def init_tables(cursor):
                 property_id UUID NOT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE (user_id, property_id),
+                INDEX idx_saved_properties_user_id (user_id),
+                INDEX idx_saved_properties_property_id (property_id),
                 CONSTRAINT fk_saved_properties_user
                     FOREIGN KEY (user_id) REFERENCES users(id)
                     ON DELETE CASCADE,
@@ -115,6 +118,8 @@ def init_tables(cursor):
                 postal_code VARCHAR(10),
                 longitude DECIMAL(10, 7),
                 latitude DECIMAL(10, 7),
+                INDEX idx_amenities_town_id (town_id),
+                INDEX idx_amenities_amenity_type (amenity_type_id),
                 CONSTRAINT fk_amenities_town
                     FOREIGN KEY (town_id) REFERENCES towns(id),
                 CONSTRAINT fk_amenities_amenity_type
@@ -135,6 +140,11 @@ def init_tables(cursor):
                 floor_area_sqm DECIMAL(8, 2) NOT NULL,
                 transaction_month DATE NOT NULL,
                 resale_price DECIMAL(12, 2) NOT NULL,
+                INDEX idx_resale_transactions_uploaded_by_user (uploaded_by_user_id),
+                INDEX idx_resale_transactions_property_id (property_id),
+                INDEX idx_resale_transactions_flat_type_id (flat_type_id),
+                INDEX idx_resale_transactions_flat_model_id (flat_model_id),
+                INDEX idx_resale_transactions_storey_range_id (storey_range_id),
                 CONSTRAINT fk_resale_transactions_uploaded_by_user
                     FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id)
                     ON DELETE SET NULL,
@@ -158,12 +168,17 @@ def init_tables(cursor):
                 transaction_id UUID NOT NULL,
                 read_at TIMESTAMP NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_alert_notifications_transaction_id (transaction_id),
                 CONSTRAINT fk_alert_notifications_transaction
                     FOREIGN KEY (transaction_id) REFERENCES resale_transactions(id)
                     ON DELETE CASCADE
             )
             """
         )
+    except Exception as e:
+        print(f"An error occurred during table creation: {e}")
+        cursor.execute("ROLLBACK")
+        raise
     finally:
         cursor.execute("COMMIT")
 
@@ -171,16 +186,8 @@ def init_tables(cursor):
 def teardown_tables(cursor):
     cursor.execute("SET FOREIGN_KEY_CHECKS = 0")
     try:
-        cursor.execute("DROP TABLE IF EXISTS alert_notifications")
-        cursor.execute("DROP TABLE IF EXISTS resale_transactions")
-        cursor.execute("DROP TABLE IF EXISTS saved_properties")
-        cursor.execute("DROP TABLE IF EXISTS amenities")
-        cursor.execute("DROP TABLE IF EXISTS properties")
-        cursor.execute("DROP TABLE IF EXISTS storey_ranges")
-        cursor.execute("DROP TABLE IF EXISTS flat_models")
-        cursor.execute("DROP TABLE IF EXISTS flat_types")
-        cursor.execute("DROP TABLE IF EXISTS amenity_types")
-        cursor.execute("DROP TABLE IF EXISTS towns")
-        cursor.execute("DROP TABLE IF EXISTS users")
+        cursor.execute(
+            "DROP TABLE IF EXISTS alert_notifications, resale_transactions, saved_properties, amenities, properties, storey_ranges, flat_models, flat_types, amenity_types, towns, users CASCADE"
+        )
     finally:
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1")

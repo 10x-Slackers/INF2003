@@ -11,6 +11,12 @@ class Database:
         )
         self.cursor = self.connection.cursor()
 
+    def __enter__(self) -> "Database":
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
     def insert_dataframe(
         self, table_name: str, df: pd.DataFrame
     ) -> dict[str, str] | None:
