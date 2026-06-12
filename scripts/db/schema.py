@@ -179,7 +179,7 @@ def init_tables(cursor):
         print(f"An error occurred during table creation: {e}")
         cursor.execute("ROLLBACK")
         raise
-    finally:
+    else:
         cursor.execute("COMMIT")
 
 
