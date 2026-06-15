@@ -187,6 +187,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     # prints column names for each dataset
     for dataset, dataframe in normalized_datasets.items():
         print(f"{dataset}: {tuple(dataframe.columns)}")
+        print(dataframe.head(2))
 
 
 if __name__ == "__main__":

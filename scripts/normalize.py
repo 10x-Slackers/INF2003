@@ -121,7 +121,6 @@ class DatasetNormalizer:
             list(PROPERTY_KEY_COLUMNS)
         )
         df = self._drop_null_keys(df, PROPERTY_KEY_COLUMNS)
-        df = self._drop_null_keys(df, ("town",))
         rows = [
             {
                 "id": self.normalize_composite_key(
@@ -246,7 +245,6 @@ class DatasetNormalizer:
         df = self._drop_null_keys(df, ("town",))
         df = self._drop_null_keys(df, ("flat_type",))
         df = self._drop_null_keys(df, ("flat_model",))
-
         rows = [
             {
                 "property_id": self.normalize_composite_key(
@@ -275,7 +273,7 @@ class DatasetNormalizer:
 
     @staticmethod
     def normalize_composite_key(values: tuple[object, ...]) -> str:
-        return "_".join(str(value).strip().upper() for value in values)
+        return "|".join(str(value).strip().upper() for value in values)
 
     @staticmethod
     def _drop_null_keys(df: pd.DataFrame, columns: tuple[str, ...]) -> pd.DataFrame:
@@ -284,7 +282,7 @@ class DatasetNormalizer:
         if null_keys_count > 0:
             examples = df.loc[null_keys_mask, "flat_type"].dropna().head(5).tolist()
             print(
-                f"Warning: Dropping {null_keys_count} resale transaction rows with null property keys"
+                f"Warning: Dropping {null_keys_count} rows with null keys"
                 f"{': ' + ', '.join(examples) if examples else ''}"
             )
             df = df.loc[~null_keys_mask].copy()
