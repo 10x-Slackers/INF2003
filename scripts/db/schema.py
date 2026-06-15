@@ -1,5 +1,4 @@
 def init_tables(cursor):
-    cursor.execute("START TRANSACTION")
     try:
         cursor.execute(
             """
@@ -177,10 +176,7 @@ def init_tables(cursor):
         )
     except Exception as e:
         print(f"An error occurred during table creation: {e}")
-        cursor.execute("ROLLBACK")
         raise
-    else:
-        cursor.execute("COMMIT")
 
 
 def teardown_tables(cursor):

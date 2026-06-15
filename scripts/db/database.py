@@ -1,3 +1,5 @@
+import os
+
 import MySQLdb
 import pandas as pd
 
@@ -5,9 +7,9 @@ from scripts.db.schema import init_tables, teardown_tables
 
 
 class Database:
-    def __init__(self) -> None:
+    def __init__(self, host: str, user: str, password: str, database: str) -> None:
         self.connection = MySQLdb.connect(
-            host="mariadb", user="root", password="P@ssw0rd", database="inf2003"
+            host=host, user=user, password=password, database=database
         )
         self.cursor = self.connection.cursor()
 
@@ -17,14 +19,12 @@ class Database:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
-    def insert_dataframe(
-        self, table_name: str, df: pd.DataFrame
-    ) -> dict[str, str] | None:
+    def insert_dataframe(self, table_name: str, df: pd.DataFrame) -> None:
         """
         Inserts a DataFrame into the specified table in the database.
         """
         if df.empty:
-            return {}
+            return None
 
         columns = self._insert_columns(df)
         sql = self._insert_sql(table_name, columns)
@@ -39,6 +39,9 @@ class Database:
     ) -> dict[str, str]:
         """
         Inserts a DataFrame and returns a map of source IDs to generated database IDs.
+
+        This inserts row by row so each generated ID can be captured. Use it for
+        small lookup tables, not large fact tables such as resale transactions.
         """
         if "id" not in df.columns:
             raise ValueError("DataFrame must include an 'id' column")
@@ -47,8 +50,8 @@ class Database:
             return {}
 
         columns = self._insert_columns(df)
-        sql = self._insert_sql(table_name, columns)
-        data = self._clean_dataframe(df.sort_values("id").reset_index(drop=True))
+        sql = self._insert_sql(table_name, columns, return_id=True)
+        data = self._clean_dataframe(self._sort_by_source_id(df).reset_index(drop=True))
         id_map = {}
         for record in data.to_dict(orient="records"):
             source_id = str(record.pop("id"))
@@ -90,17 +93,38 @@ class Database:
 
     @classmethod
     def _insert_sql(
-        cls,
-        table_name: str,
-        columns: list[str],
+        cls, table_name: str, columns: list[str], return_id: bool = False
     ) -> str:
-        column_names = ", ".join(columns)
+        column_names = ", ".join(cls._quote_identifier(column) for column in columns)
         placeholders = ", ".join(["%s"] * len(columns))
-        return f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
+        table_identifier = cls._quote_identifier(table_name)
+        return_id_stmt = (
+            f" RETURNING {cls._quote_identifier('id')}" if return_id else ""
+        )
+        return (
+            f"INSERT INTO {table_identifier} ({column_names}) "
+            f"VALUES ({placeholders}){return_id_stmt}"
+        )
+
+    @staticmethod
+    def _quote_identifier(identifier: str) -> str:
+        return f"`{identifier.replace('`', '``')}`"
 
     @staticmethod
     def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         return df.astype(object).where(pd.notna(df), None)
+
+    @staticmethod
+    def _sort_by_source_id(df: pd.DataFrame) -> pd.DataFrame:
+        numeric_ids = pd.to_numeric(df["id"], errors="coerce")
+        if numeric_ids.notna().all():
+            return (
+                df.assign(_source_id_sort=numeric_ids)
+                .sort_values("_source_id_sort")
+                .drop(columns="_source_id_sort")
+            )
+
+        return df.sort_values("id")
 
     @classmethod
     def _rows(cls, df: pd.DataFrame, columns: list[str]) -> list[tuple[object, ...]]:
@@ -108,53 +132,61 @@ class Database:
         return list(clean_df.itertuples(index=False, name=None))
 
 
+class Seed:
+    amenity_types_df = pd.DataFrame(
+        {
+            "id": ["GYM", "PARK", "SCHOOL"],
+            "name": [
+                "gym",
+                "park",
+                "school",
+            ],
+        }
+    )
+    towns_df = pd.DataFrame(
+        {
+            "id": ["AMK"],
+            "region": ["NORTH-EAST REGION"],
+            "name": ["AMK"],
+        }
+    )
+    amenities_df = pd.DataFrame(
+        {
+            "town_id": ["AMK", "AMK", "AMK"],
+            "amenity_type_id": ["GYM", "PARK", "SCHOOL"],
+            "name": [
+                "Gym",
+                "Park",
+                "School",
+            ],
+            "street_name": ["Street A", "Street B", "Street C"],
+            "postal_code": ["123456", "123456", "123456"],
+            "longitude": [103.8198, 103.8198, 103.8198],
+            "latitude": [1.3521, 1.3521, 1.3521],
+        }
+    )
+
+
 def main():
-    db = Database()
+    db = Database(
+        host=os.environ.get("DB_HOST", "mariadb"),
+        user=os.environ.get("DB_USER", "root"),
+        password=os.environ.get("DB_PASSWORD", "P@ssw0rd"),
+        database=os.environ.get("DB_NAME", "inf2003"),
+    )
     try:
         db.reset_tables()
-        amenity_types_df = pd.DataFrame(
-            {
-                "id": ["GYM", "PARK", "SCHOOL"],
-                "name": [
-                    "gym",
-                    "park",
-                    "school",
-                ],
-            }
-        )
-        towns_df = pd.DataFrame(
-            {
-                "id": ["AMK"],
-                "region": ["NORTH-EAST REGION"],
-                "name": ["AMK"],
-            }
-        )
-        amenities_df = pd.DataFrame(
-            {
-                "town_id": ["AMK", "AMK", "AMK"],
-                "amenity_type_id": ["GYM", "PARK", "SCHOOL"],
-                "name": [
-                    "Gym",
-                    "Park",
-                    "School",
-                ],
-                "street_name": ["Street A", "Street B", "Street C"],
-                "postal_code": ["123456", "123456", "123456"],
-                "longitude": [103.8198, 103.8198, 103.8198],
-                "latitude": [1.3521, 1.3521, 1.3521],
-            }
-        )
 
         amenity_type_id_map = db.insert_dataframe_with_id(
-            "amenity_types", amenity_types_df
+            "amenity_types", Seed.amenity_types_df
         )
-        town_id_map = db.insert_dataframe_with_id("towns", towns_df)
+        town_id_map = db.insert_dataframe_with_id("towns", Seed.towns_df)
 
-        amenities_df["town_id"] = amenities_df["town_id"].map(town_id_map)
-        amenities_df["amenity_type_id"] = amenities_df["amenity_type_id"].map(
+        Seed.amenities_df["town_id"] = Seed.amenities_df["town_id"].map(town_id_map)
+        Seed.amenities_df["amenity_type_id"] = Seed.amenities_df["amenity_type_id"].map(
             amenity_type_id_map
         )
-        db.insert_dataframe("amenities", amenities_df)
+        db.insert_dataframe("amenities", Seed.amenities_df)
 
     except Exception as e:
         print(f"An error occurred: {e}")
