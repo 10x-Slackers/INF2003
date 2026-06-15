@@ -46,7 +46,7 @@ class DatasetTransformer:
         town_df = dataframes.get("region_towns", pd.DataFrame())
         if town_df.empty:
             raise ValueError(
-                "Region towns dataset must be transformed before other datasets."
+                "Region towns dataset is required and must not be empty to perform town name matching."
             )
         self.town_matcher = TownMatcher(town_df)
         self.add_town_names(dataframes)
@@ -91,18 +91,25 @@ class DatasetTransformer:
         Returns:
             The transformed DataFrame.
         """
-        rows = [
-            self._default_geojson_row(feature)
-            for feature in payload.get("features", [])
-        ]
+        rows = []
+        for feature in payload.get("features", []):
+            geo = self._default_geojson_row(feature)
+            if geo is not None:
+                rows.append(geo)
 
         return pd.DataFrame(rows, columns=DEFAULT_GEOJSON_COLUMNS)
 
-    def _default_geojson_row(self, feature: Payload) -> dict[str, object]:
+    def _default_geojson_row(self, feature: Payload) -> dict[str, object] | None:
         properties = feature.get("properties", {})
         fields = self.extract_description_fields(properties.get("Description", ""))
         geometry = feature.get("geometry", {})
-        geo_shape = shape(geometry)
+        try:
+            geo_shape = shape(geometry)
+        except Exception:
+            print(
+                f"Warning: Failed to parse geometry for feature: {fields.get('NAME')}"
+            )
+            return None
         postal = fields.get("ADDRESSPOSTALCODE")
 
         return {
@@ -176,7 +183,7 @@ class DatasetTransformer:
 
     @staticmethod
     def is_valid_postal_code(value: str | None) -> bool:
-        if pd.isna(value) or value == 0 or value == "0":
+        if pd.isna(value):
             return False
         code = str(value).strip()
         return len(code) == 6 and code.isdigit()
@@ -199,14 +206,6 @@ class TownMatcher:
 
     def find_town(self, wkt: str) -> str | None:
         geometry = from_wkt(wkt)
-        indices = self.tree.query(geometry, predicate="covered_by")
-        if indices.size > 0:
-            if indices.size > 1:
-                # Log warning for overlapping town polygons
-                print(
-                    f"Warning: Geometry covered by multiple towns: {[self.towns[i] for i in indices]}"
-                )
-            return self.towns[indices[0]]
 
         indices = self.tree.query(geometry, predicate="intersects")
         if indices.size > 0:

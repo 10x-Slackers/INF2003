@@ -80,14 +80,14 @@ class DatasetNormalizer:
 
     def transform_towns(self) -> pd.DataFrame:
         df = self.datasets["region_towns"].drop_duplicates("town_name")
-        rows = [
-            {
+        rows = df.apply(
+            lambda row: {
                 "id": self.normalize_key(row.town_name),
                 "name": row.town_name,
                 "region": row.region_name,
-            }
-            for _, row in df.iterrows()
-        ]
+            },
+            axis=1,
+        ).to_list()
         return self.create_table(TOWNS, rows)
 
     def transform_flat_types(self) -> pd.DataFrame:
@@ -149,7 +149,10 @@ class DatasetNormalizer:
 
     def _school_amenity_rows(self) -> list[dict[str, object]]:
         schools = self.datasets["schools"]
-        valid_schools = schools[schools["dgp_code"].notna().astype(str).str.len() == 6]
+        valid_schools = schools[
+            schools["dgp_code"].notna()
+            & (schools["dgp_code"].astype(str).str.len() == 6)
+        ]
         valid_schools = self._drop_unmatched_amenities("schools", valid_schools)
         return [
             self._amenity_row(
@@ -164,7 +167,10 @@ class DatasetNormalizer:
 
     def _gym_amenity_rows(self) -> list[dict[str, object]]:
         gyms = self.datasets["gyms"]
-        valid_gyms = gyms[gyms["postal_code"].astype(str).str.len() == 6]
+        valid_gyms = gyms[
+            gyms["postal_code"].notna()
+            & (gyms["postal_code"].astype(str).str.len() == 6)
+        ]
         valid_gyms = self._drop_unmatched_amenities("gyms", valid_gyms)
         return [
             self._amenity_row(
