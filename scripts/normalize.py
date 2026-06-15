@@ -5,8 +5,11 @@ from scripts.table_models import (
     AMENITY_TYPES,
     FLAT_MODELS,
     FLAT_TYPES,
+    PROPERTIES,
+    RESALE_TRANSACTIONS,
     STOREY_RANGES,
     TableModel,
+    TOWNS,
 )
 
 AMENITY_TYPE_NAMES = ("gym", "park", "school")
@@ -20,7 +23,10 @@ PARK_DEDUPE_COLUMNS = ("amenity_name", "street_name", "postal_code")
 
 
 class DatasetNormalizer:
-    def normalize(self, datasets: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    def __init__(self, datasets: dict[str, pd.DataFrame]) -> None:
+        self.datasets: dict[str, pd.DataFrame] = datasets
+
+    def normalize(self) -> dict[str, pd.DataFrame]:
         """
         Normalizes the datasets by performing necessary transformations and cleaning.
         Args:
@@ -29,7 +35,6 @@ class DatasetNormalizer:
         Returns:
             A dictionary of normalized dataset names to their corresponding cleaned DataFrames.
         """
-        self.datasets = datasets
         tables = {}
         tables["towns"] = self.transform_towns()
         tables["flat_types"] = self.transform_flat_types()
@@ -75,14 +80,15 @@ class DatasetNormalizer:
 
     def transform_towns(self) -> pd.DataFrame:
         df = self.datasets["region_towns"].drop_duplicates("town_name")
-        towns = pd.DataFrame(
+        rows = [
             {
-                "id": self.normalize_key(df.town_name),
-                "name": df.town_name,
-                "region": df.region_name,
+                "id": self.normalize_key(row.town_name),
+                "name": row.town_name,
+                "region": row.region_name,
             }
-        )
-        return towns
+            for _, row in df.iterrows()
+        ]
+        return self.create_table(TOWNS, rows)
 
     def transform_flat_types(self) -> pd.DataFrame:
         return self._create_id_name_table_from_dataset(
@@ -99,6 +105,8 @@ class DatasetNormalizer:
         storey_ranges = self.datasets["resale_flat_prices"]["storey_range"].unique()
         for ranges in storey_ranges:
             min_storey, max_storey = self.parse_storey_range(ranges)
+            if min_storey == 0 and max_storey == 0:
+                continue
             rows.append(
                 {
                     "id": self.normalize_key(ranges),
@@ -112,18 +120,21 @@ class DatasetNormalizer:
         df = self.datasets["resale_flat_prices"].drop_duplicates(
             list(PROPERTY_KEY_COLUMNS)
         )
-        properties = pd.DataFrame(
+        df = self._drop_null_keys(df, PROPERTY_KEY_COLUMNS)
+        df = self._drop_null_keys(df, ("town",))
+        rows = [
             {
-                "id": df[list(PROPERTY_KEY_COLUMNS)].apply(
-                    lambda row: self.normalize_key(tuple(row)), axis=1
+                "id": self.normalize_composite_key(
+                    tuple(row[column] for column in PROPERTY_KEY_COLUMNS)
                 ),
-                "town_id": self.normalize_key(df.town),
-                "block": df.block,
-                "street_name": df.street_name,
-                "lease_commence_year": df.lease_commence_date,
+                "town_id": self.normalize_key(row.town),
+                "block": row.block,
+                "street_name": row.street_name,
+                "lease_commence_year": row.lease_commence_date,
             }
-        )
-        return properties
+            for _, row in df.iterrows()
+        ]
+        return self.create_table(PROPERTIES, rows)
 
     def transform_amenity_types(self) -> pd.DataFrame:
         return self._create_id_name_table(AMENITY_TYPES, AMENITY_TYPE_NAMES)
@@ -137,6 +148,9 @@ class DatasetNormalizer:
         return self.create_table(AMENITIES, rows)
 
     def _school_amenity_rows(self) -> list[dict[str, object]]:
+        schools = self.datasets["schools"]
+        valid_schools = schools[schools["dgp_code"].notna().astype(str).str.len() == 6]
+        valid_schools = self._drop_unmatched_amenities("schools", valid_schools)
         return [
             self._amenity_row(
                 town=row.dgp_code,
@@ -145,13 +159,13 @@ class DatasetNormalizer:
                 street_name=row.address,
                 postal_code=row.postal_code,
             )
-            for _, row in self.datasets["schools"].iterrows()
+            for _, row in valid_schools.iterrows()
         ]
 
     def _gym_amenity_rows(self) -> list[dict[str, object]]:
         gyms = self.datasets["gyms"]
-        # some gyms are using 5 digit postal code, which is invalid in Singapore.
         valid_gyms = gyms[gyms["postal_code"].astype(str).str.len() == 6]
+        valid_gyms = self._drop_unmatched_amenities("gyms", valid_gyms)
         return [
             self._amenity_row(
                 town=row.town_name,
@@ -167,6 +181,7 @@ class DatasetNormalizer:
     def _park_amenity_rows(self) -> list[dict[str, object]]:
         parks = self.datasets["parks"]
         parks = parks.drop_duplicates(list(PARK_DEDUPE_COLUMNS))
+        parks = self._drop_unmatched_amenities("parks", parks)
         return [
             self._amenity_row(
                 town=row.town_name,
@@ -178,6 +193,26 @@ class DatasetNormalizer:
             )
             for _, row in parks.iterrows()
         ]
+
+    @staticmethod
+    def _drop_unmatched_amenities(
+        dataset_key: str, amenities: pd.DataFrame
+    ) -> pd.DataFrame:
+        if "town_name" not in amenities.columns:
+            return amenities
+
+        town_names = amenities["town_name"]
+        unmatched = town_names.isna() | town_names.astype(str).str.strip().eq("")
+        unmatched_count = int(unmatched.sum())
+        if unmatched_count == 0:
+            return amenities
+
+        examples = amenities.loc[unmatched, "amenity_name"].dropna().head(5).tolist()
+        print(
+            f"Warning: Dropping {unmatched_count} {dataset_key} rows without matched town"
+            f"{': ' + ', '.join(examples) if examples else ''}"
+        )
+        return amenities.loc[~unmatched].copy()
 
     def _amenity_row(
         self,
@@ -201,20 +236,26 @@ class DatasetNormalizer:
 
     def transform_resale_transactions(self) -> pd.DataFrame:
         df = self.datasets["resale_flat_prices"]
-        transactions = pd.DataFrame(
+        df = self._drop_null_keys(df, PROPERTY_KEY_COLUMNS)
+        df = self._drop_null_keys(df, ("town",))
+        df = self._drop_null_keys(df, ("flat_type",))
+        df = self._drop_null_keys(df, ("flat_model",))
+
+        rows = [
             {
-                "property_id": df[list(PROPERTY_KEY_COLUMNS)].apply(
-                    lambda row: self.normalize_key(tuple(row)), axis=1
+                "property_id": self.normalize_composite_key(
+                    tuple(row[column] for column in PROPERTY_KEY_COLUMNS)
                 ),
-                "flat_type_id": self.normalize_key(df.flat_type),
-                "flat_model_id": self.normalize_key(df.flat_model),
-                "storey_range_id": self.normalize_key(df.storey_range),
-                "floor_area_sqm": df.floor_area_sqm,
-                "transaction_month": df.month,
-                "resale_price": df.resale_price,
+                "flat_type_id": self.normalize_key(row.flat_type),
+                "flat_model_id": self.normalize_key(row.flat_model),
+                "storey_range_id": self.normalize_key(row.storey_range),
+                "floor_area_sqm": row.floor_area_sqm,
+                "transaction_month": row.month,
+                "resale_price": row.resale_price,
             }
-        )
-        return transactions
+            for _, row in df.iterrows()
+        ]
+        return self.create_table(RESALE_TRANSACTIONS, rows)
 
     @staticmethod
     def _coordinate_at(coordinates: tuple[object, object] | None, index: int) -> object:
@@ -227,15 +268,31 @@ class DatasetNormalizer:
         return str(value).strip().upper()
 
     @staticmethod
+    def normalize_composite_key(values: tuple[object, ...]) -> str:
+        return "_".join(str(value).strip().upper() for value in values)
+
+    @staticmethod
+    def _drop_null_keys(df: pd.DataFrame, columns: tuple[str, ...]) -> pd.DataFrame:
+        null_keys_mask = df[list(columns)].isnull().any(axis=1)
+        null_keys_count = int(null_keys_mask.sum())
+        if null_keys_count > 0:
+            examples = df.loc[null_keys_mask, "flat_type"].dropna().head(5).tolist()
+            print(
+                f"Warning: Dropping {null_keys_count} resale transaction rows with null property keys"
+                f"{': ' + ', '.join(examples) if examples else ''}"
+            )
+            df = df.loc[~null_keys_mask].copy()
+        return df
+
+    @staticmethod
     def parse_storey_range(value: str) -> tuple[int, int]:
         if not isinstance(value, str) or " TO " not in value:
-            raise ValueError(
+            print(
                 f"Invalid storey range format: '{value}'. Expected format 'MIN TO MAX' (e.g., '01 TO 03')."
             )
         left, right = value.split(" TO ")
         try:
             return int(left), int(right)
         except ValueError:
-            raise ValueError(
-                f"Cannot parse storey range values as integers: '{value}'."
-            )
+            print(f"Cannot parse storey range values as integers: '{value}'.")
+        return 0, 0

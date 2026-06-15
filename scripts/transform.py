@@ -5,6 +5,7 @@ from typing import Any, Callable, TypeAlias
 import pandas as pd
 from shapely import from_wkt, STRtree
 from shapely.geometry import shape
+from shapely.geometry.base import BaseGeometry
 
 Payload: TypeAlias = dict[str, Any]
 RawDataset: TypeAlias = pd.DataFrame | Payload
@@ -72,10 +73,6 @@ class DatasetTransformer:
         return self.transform_default_geojson(raw_data)
 
     def add_town_names(self, dataframes: dict[str, pd.DataFrame]) -> None:
-        town_df = dataframes.get("region_towns", pd.DataFrame())
-        if town_df.empty:
-            return
-
         for dataset_key, dataframe in dataframes.items():
             if dataset_key == "region_towns" or "polygon" not in dataframe.columns:
                 continue
@@ -210,4 +207,45 @@ class TownMatcher:
                     f"Warning: Geometry covered by multiple towns: {[self.towns[i] for i in indices]}"
                 )
             return self.towns[indices[0]]
+
+        indices = self.tree.query(geometry, predicate="intersects")
+        if indices.size > 0:
+            town = self._town_with_largest_overlap(geometry, indices)
+            if town:
+                return town
+
+        indices = self.tree.query(
+            geometry.representative_point(), predicate="covered_by"
+        )
+        if indices.size > 0:
+            if indices.size > 1:
+                town_names = [self.towns[i] for i in indices]
+                print(
+                    "Warning: Representative point covered by multiple towns: "
+                    f"{town_names}"
+                )
+            return self.towns[indices[0]]
+
+        print("Warning: Geometry not covered by any town")
         return None
+
+    def _town_with_largest_overlap(
+        self, geometry: BaseGeometry, indices: Any
+    ) -> str | None:
+        overlaps = []
+        for index in indices:
+            overlap_area = geometry.intersection(self.town_polygons[index]).area
+            if overlap_area > 0:
+                overlaps.append((overlap_area, index))
+
+        if not overlaps:
+            return None
+
+        overlaps.sort(key=lambda overlap: overlap[0], reverse=True)
+        if len(overlaps) > 1:
+            town_names = [self.towns[index] for _, index in overlaps]
+            print(
+                "Warning: Geometry intersects multiple towns; "
+                f"using largest overlap from {town_names}"
+            )
+        return self.towns[overlaps[0][1]]

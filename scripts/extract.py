@@ -182,13 +182,11 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     dataframes = DatasetTransformer().transform_datasets(raw_datasets)
 
-    normalized_datasets = DatasetNormalizer().normalize(dataframes)
-    for dataset_key, dataframe in normalized_datasets.items():
-        print(dataset_key)
-        print(dataframe.head())
+    normalized_datasets = DatasetNormalizer(dataframes).normalize()
+
     # prints column names for each dataset
-    for dataframe in normalized_datasets.values():
-        print(tuple(dataframe.columns.drop("id", errors="ignore")))
+    for dataset, dataframe in normalized_datasets.items():
+        print(f"{dataset}: {tuple(dataframe.columns)}")
 
 
 if __name__ == "__main__":
