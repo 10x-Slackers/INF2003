@@ -2,6 +2,7 @@ import os
 from typing import Any, Mapping
 from urllib.parse import quote_plus
 from pymongo import MongoClient
+from pymongo.database import Database
 
 
 from scripts.db.mongodb_schema import (
@@ -29,17 +30,17 @@ class MongoDB:
         self.database_name = database_name
         self.validation_action = validation_action
         self.server_selection_timeout_ms = server_selection_timeout_ms
-        self.client: Any = self.get_client()
-        self.database: Any = self.connect()
+        self.client: MongoClient = self.get_client()
+        self.database: Database = self.connect()
         self.setup()
 
-    def get_client(self) -> Any:
+    def get_client(self) -> MongoClient:
         return MongoClient(
             self.uri,
             serverSelectionTimeoutMS=self.server_selection_timeout_ms,
         )
 
-    def connect(self) -> Any:
+    def connect(self) -> Database:
         self.client.admin.command("ping")
         return self.client[self.database_name]
 
@@ -55,6 +56,7 @@ class MongoDB:
                 validationAction=self.validation_action,
             )
         except Exception:
+            print(f"Collection '{name}' already exists. Updating validator...")
             self.database.command(
                 "collMod",
                 name,
@@ -67,13 +69,19 @@ class MongoDB:
         for index_name, keys in MONGODB_COLLECTION_INDEXES.get(collection_name, []):
             collection.create_index(keys, name=index_name)
 
-    def setup(self) -> Any:
+    def setup(self) -> Database:
         """Create/update MongoDB validators and indexes, then return the database."""
         for collection_name, validator in MONGODB_COLLECTION_VALIDATORS.items():
             self.ensure_collection(collection_name, validator)
             self.ensure_indexes(collection_name)
 
         return self.database
+
+    def __enter__(self) -> "MongoDB":
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
 
     def close(self) -> None:
         if self.client is not None:
@@ -86,7 +94,7 @@ def setup_mongodb(
     *,
     validation_action: str = "error",
     server_selection_timeout_ms: int = 5000,
-) -> Any:
+) -> MongoDB:
     return MongoDB(
         uri=uri,
         database_name=database_name,
@@ -97,3 +105,4 @@ def setup_mongodb(
 
 if __name__ == "__main__":
     mongodb = setup_mongodb()
+    mongodb.close()

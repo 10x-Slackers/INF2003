@@ -1,4 +1,4 @@
-from typing import Any, Mapping
+from typing import Any
 
 ASCENDING = 1
 DESCENDING = -1
@@ -9,10 +9,11 @@ REVIEWS_COLLECTION = "reviews"
 TOWNS_COLLECTION = "towns"
 SEARCH_HISTORY_COLLECTION = "search_history"
 
-TIMESTAMP_TYPE = ["date", "string"]
+TIMESTAMP_TYPE = ["int"]
 NULLABLE_STRING_TYPE = ["null", "string"]
 NULLABLE_INT_TYPE = ["null", "int", "long"]
 NUMBER_TYPE = ["int", "long", "double", "decimal"]
+NULLABLE_NUMBER_TYPE = ["null", "int", "long", "double", "decimal"]
 
 
 def _string_array_schema() -> dict[str, Any]:
@@ -33,8 +34,8 @@ def _range_schema(*, numeric_type: str | list[str] = NUMBER_TYPE) -> dict[str, A
     }
 
 
-def _json_schema(schema: Mapping[str, Any]) -> dict[str, Any]:
-    return {"$jsonSchema": dict(schema)}
+def _json_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    return {"$jsonSchema": schema}
 
 
 COLLECTION_VALIDATORS: dict[str, dict[str, Any]] = {
@@ -176,11 +177,17 @@ COLLECTION_VALIDATORS: dict[str, dict[str, Any]] = {
                         "latest_transaction": {"bsonType": "string"},
                         "avg_resale_price_by_flat_type": {
                             "bsonType": "object",
+                            "additionalProperties": {
+                                "bsonType": ["int", "long", "double", "decimal"]
+                            },
                         },
                     },
                     "additionalProperties": False,
                 },
-                "coordinates": {"bsonType": "array"},
+                "coordinates": {
+                    "bsonType": "array",
+                    "items": {"bsonType": ["int", "long", "double", "decimal"]},
+                },
                 "updated_at": {"bsonType": TIMESTAMP_TYPE},
             },
             "additionalProperties": False,
@@ -204,8 +211,8 @@ COLLECTION_VALIDATORS: dict[str, dict[str, Any]] = {
                         "floor_area_max": {"bsonType": NUMBER_TYPE},
                         "storey_min": {"bsonType": NULLABLE_INT_TYPE},
                         "storey_max": {"bsonType": NULLABLE_INT_TYPE},
-                        "lease_remaining_min": {"bsonType": NUMBER_TYPE + ["null"]},
-                        "lease_remaining_max": {"bsonType": NUMBER_TYPE + ["null"]},
+                        "lease_remaining_min": {"bsonType": NULLABLE_NUMBER_TYPE},
+                        "lease_remaining_max": {"bsonType": NULLABLE_NUMBER_TYPE},
                         "transaction_year_from": {"bsonType": NULLABLE_INT_TYPE},
                         "transaction_year_to": {"bsonType": NULLABLE_INT_TYPE},
                     },
