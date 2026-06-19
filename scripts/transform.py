@@ -10,21 +10,8 @@ from typing import Any, Iterable
 import pandas as pd
 from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
+from dataset_config import DATASETS
 
-
-RESALE_KEY = "resale_flat_prices"
-SCHOOLS_KEY = "schools"
-PARKS_KEY = "parks"
-GYMS_KEY = "gyms"
-REGION_TOWNS_KEY = "region_towns"
-
-REQUIRED_DATASETS = (
-    RESALE_KEY,
-    SCHOOLS_KEY,
-    PARKS_KEY,
-    GYMS_KEY,
-    REGION_TOWNS_KEY,
-)
 
 AMENITY_TYPES = ("School", "Park", "Gym")
 DESCRIPTION_FIELD_PATTERN = re.compile(
@@ -63,12 +50,12 @@ class DatasetTransformer:
     def transform(self) -> TransformResult:
         self._validate_required_datasets()
 
-        towns = self._transform_towns(self.raw_datasets[REGION_TOWNS_KEY])
-        resale_frames = self._transform_resale(self.raw_datasets[RESALE_KEY])
+        towns = self._transform_towns(self.raw_datasets["region_towns"])
+        resale_frames = self._transform_resale(self.raw_datasets["resale_flat_prices"])
         amenities = self._transform_amenities(
-            schools=self.raw_datasets[SCHOOLS_KEY],
-            parks=self.raw_datasets[PARKS_KEY],
-            gyms=self.raw_datasets[GYMS_KEY],
+            schools=self.raw_datasets["schools"],
+            parks=self.raw_datasets["parks"],
+            gyms=self.raw_datasets["gyms"],
             valid_town_keys=set(towns["town_key"]),
         )
 
@@ -95,10 +82,10 @@ class DatasetTransformer:
 
     def _validate_required_datasets(self) -> None:
         missing = [
-            dataset_key
-            for dataset_key in REQUIRED_DATASETS
-            if dataset_key not in self.raw_datasets
-            or self.raw_datasets[dataset_key].empty
+            dataset.key
+            for dataset in DATASETS
+            if dataset.key not in self.raw_datasets
+            or self.raw_datasets[dataset.key].empty
         ]
         if missing:
             raise ValueError(f"Missing required raw datasets: {', '.join(missing)}")

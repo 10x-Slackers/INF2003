@@ -9,7 +9,6 @@ import requests
 
 from scripts.dataset_config import DATASETS
 from scripts.dataset_config.base import DatasetConfig
-from scripts.transform import transform_datasets
 
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
 METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
@@ -186,7 +185,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     for config in DATASETS:
         dataframe = client.fetch_dataset(config)
         dataframes[config.key] = dataframe
-    result = transform_datasets(dataframes)
 
 
 if __name__ == "__main__":
