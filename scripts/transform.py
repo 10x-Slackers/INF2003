@@ -11,6 +11,7 @@ import pandas as pd
 from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
 from dataset_config import DATASETS
+from shapely import STRtree
 
 
 AMENITY_TYPES = ("School", "Park", "Gym")
@@ -46,6 +47,7 @@ class DatasetTransformer:
         self.raw_datasets = raw_datasets
         self.computed_at = computed_at or datetime.now(UTC)
         self._town_geometries: list[TownGeometry] = []
+        self._town_tree: STRtree | None = None
 
     def transform(self) -> TransformResult:
         self._validate_required_datasets()
@@ -123,6 +125,7 @@ class DatasetTransformer:
             )
 
         self._town_geometries = town_geometries
+        self._town_tree = STRtree([town.geometry for town in town_geometries])
         return (
             pd.DataFrame(rows)
             .drop_duplicates(subset=["town_key"])
@@ -288,7 +291,7 @@ class DatasetTransformer:
                 if isinstance(geometry, Point)
                 else geometry.representative_point()
             )
-            town = self._find_town(point)
+            town = self._find_town(geometry)
 
             fields = _extract_description_fields(
                 _get_value(row, "properties.Description")
@@ -310,18 +313,29 @@ class DatasetTransformer:
             )
         return rows
 
-    def _find_town(self, point: Point) -> TownGeometry:
+    def _find_town(self, amenity_geometry: BaseGeometry) -> TownGeometry:
+        if self._town_tree is None:
+            raise ValueError("Town spatial index has not been initialised")
+
+        candidate_indices = [
+            int(index) for index in self._town_tree.query(amenity_geometry)
+        ]
         matches = [
-            town
-            for town in self._town_geometries
-            if town.geometry.covers(point) or town.geometry.intersects(point)
+            self._town_geometries[index]
+            for index in candidate_indices
+            if self._town_geometries[index].geometry.intersects(amenity_geometry)
         ]
         if not matches:
-            raise ValueError(f"Geometry does not fall within any town: {point.wkt}")
+            raise ValueError(
+                f"Geometry does not fall within any town: {amenity_geometry.wkt}"
+            )
         if len(matches) == 1:
             return matches[0]
 
-        return max(matches, key=lambda town: town.geometry.intersection(point).area)
+        return max(
+            matches,
+            key=lambda town: town.geometry.intersection(amenity_geometry).area,
+        )
 
     def _transform_mongo_towns(self, transactions: pd.DataFrame) -> pd.DataFrame:
         rows: list[dict[str, Any]] = []
