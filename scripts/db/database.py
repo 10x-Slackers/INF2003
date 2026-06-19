@@ -132,41 +132,6 @@ class Database:
         return list(clean_df.itertuples(index=False, name=None))
 
 
-class Seed:
-    amenity_types_df = pd.DataFrame(
-        {
-            "id": ["GYM", "PARK", "SCHOOL"],
-            "name": [
-                "gym",
-                "park",
-                "school",
-            ],
-        }
-    )
-    towns_df = pd.DataFrame(
-        {
-            "id": ["AMK"],
-            "region": ["NORTH-EAST REGION"],
-            "name": ["AMK"],
-        }
-    )
-    amenities_df = pd.DataFrame(
-        {
-            "town_id": ["AMK", "AMK", "AMK"],
-            "amenity_type_id": ["GYM", "PARK", "SCHOOL"],
-            "name": [
-                "Gym",
-                "Park",
-                "School",
-            ],
-            "street_name": ["Street A", "Street B", "Street C"],
-            "postal_code": ["123456", "123456", "123456"],
-            "longitude": [103.8198, 103.8198, 103.8198],
-            "latitude": [1.3521, 1.3521, 1.3521],
-        }
-    )
-
-
 def main():
     db = Database(
         host=os.environ.get("DB_HOST", "mariadb"),
@@ -176,18 +141,6 @@ def main():
     )
     try:
         db.reset_tables()
-
-        amenity_type_id_map = db.insert_dataframe_with_id(
-            "amenity_types", Seed.amenity_types_df
-        )
-        town_id_map = db.insert_dataframe_with_id("towns", Seed.towns_df)
-
-        Seed.amenities_df["town_id"] = Seed.amenities_df["town_id"].map(town_id_map)
-        Seed.amenities_df["amenity_type_id"] = Seed.amenities_df["amenity_type_id"].map(
-            amenity_type_id_map
-        )
-        db.insert_dataframe("amenities", Seed.amenities_df)
-
     except Exception as e:
         print(f"An error occurred: {e}")
         db.rollback()
