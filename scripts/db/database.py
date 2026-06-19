@@ -17,6 +17,8 @@ class Database:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if exc_type is not None:
+            self.rollback()
         self.close()
 
     def insert_dataframe(self, table_name: str, df: pd.DataFrame) -> None:
