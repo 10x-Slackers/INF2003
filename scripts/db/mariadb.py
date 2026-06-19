@@ -3,7 +3,7 @@ import os
 import MySQLdb
 import pandas as pd
 
-from scripts.db.schema import init_tables, teardown_tables
+from scripts.db.mariadb_schema import init_tables, teardown_tables
 
 
 class Database:
