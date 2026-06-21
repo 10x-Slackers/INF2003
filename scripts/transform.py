@@ -10,7 +10,7 @@ from typing import Any, Iterable
 import pandas as pd
 from shapely.geometry import Point, shape
 from shapely.geometry.base import BaseGeometry
-from dataset_config import DATASETS
+from scripts.dataset_config import DATASETS
 from shapely import STRtree
 
 
@@ -141,10 +141,11 @@ class DatasetTransformer:
         resale["flat_model_key"] = resale["flat_model"].map(_key)
         resale["block"] = resale["block"].map(_clean_text)
         resale["street_name"] = resale["street_name"].map(_clean_text)
-        resale["lease_commence_year"] = pd.to_numeric(
-            resale["lease_commence_date"],
-            errors="raise",
-        ).astype(int)
+        resale["lease_commence_year"] = (
+            pd.to_numeric(resale["lease_commence_date"], errors="coerce")
+            .fillna(0)
+            .astype(int)
+        )
         resale["floor_area_sqm"] = pd.to_numeric(
             resale["floor_area_sqm"],
             errors="raise",
@@ -489,22 +490,6 @@ def _resolve_town_key(town_key: str, valid_town_keys: set[str]) -> str | None:
             return valid_town_key
 
     return None
-
-
-def _property_key(
-    town_key: str,
-    block: str,
-    street_name: str,
-    lease_commence_year: int,
-) -> str:
-    return "|".join(
-        [
-            town_key,
-            _key(block),
-            _key(street_name),
-            str(int(lease_commence_year)),
-        ]
-    )
 
 
 def _storey_range_key(min_storey: int, max_storey: int) -> str:
