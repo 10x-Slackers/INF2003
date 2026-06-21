@@ -162,14 +162,14 @@ class DatasetTransformer:
             _storey_range_key(min_storey, max_storey)
             for min_storey, max_storey in storey_bounds
         ]
-        resale["property_key"] = resale.apply(
-            lambda row: _property_key(
-                row["town_key"],
-                row["block"],
-                row["street_name"],
-                row["lease_commence_year"],
-            ),
-            axis=1,
+        resale["property_key"] = (
+            resale["town_key"]
+            + "|"
+            + resale["block"].fillna("").map(_key)
+            + "|"
+            + resale["street_name"].fillna("").map(_key)
+            + "|"
+            + resale["lease_commence_year"].astype(int).astype(str)
         )
         resale["transaction_key"] = [
             f"resale:{index + 1}" for index in range(len(resale.index))
@@ -508,7 +508,7 @@ def _property_key(
 
 
 def _storey_range_key(min_storey: int, max_storey: int) -> str:
-    return f"{int(min_storey):02d}-{int(max_storey):02d}"
+    return f"{min_storey:02d}-{max_storey:02d}"
 
 
 def _parse_storey_range(value: Any) -> tuple[int, int]:
