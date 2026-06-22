@@ -186,7 +186,6 @@ COLLECTION_VALIDATORS: dict[str, dict[str, Any]] = {
                 },
                 "coordinates": {
                     "bsonType": "array",
-                    "items": {"bsonType": ["int", "long", "double", "decimal"]},
                 },
                 "updated_at": {"bsonType": TIMESTAMP_TYPE},
             },
