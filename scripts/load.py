@@ -73,11 +73,6 @@ class Load:
             )
         frames = self.transform_datasets.mariadb
 
-        properties = self._replace_key(
-            frames["properties"], "town_key", "town_id", self.keys["town_ids"]
-        )
-        self.mariadb.insert_dataframe("properties", properties)
-
         amenities = self._replace_key(
             frames["amenities"], "town_key", "town_id", self.keys["town_ids"]
         )
@@ -110,7 +105,7 @@ class Load:
             "storey_range_key",
             "storey_range_id",
             self.keys["storey_range_ids"],
-        )
+        ).drop(columns=["town_key"])
         self.mariadb.insert_dataframe("resale_transactions", transactions)
 
     def _load_parent_tables(self) -> None:
@@ -133,6 +128,10 @@ class Load:
             "storey_ranges",
             frames["storey_ranges"],
         )
+        properties = self._replace_key(
+            frames["properties"], "town_key", "town_id", town_ids
+        )
+        property_id = self.mariadb.insert_dataframe_with_id("properties", properties)
 
         self.keys = {
             "town_ids": town_ids,
@@ -140,6 +139,7 @@ class Load:
             "flat_type_ids": flat_type_ids,
             "flat_model_ids": flat_model_ids,
             "storey_range_ids": storey_range_ids,
+            "property_ids": property_id,
         }
 
     def _prepare_mongo_towns(
@@ -174,15 +174,15 @@ class Load:
         for document in dataframe.to_dict(orient="records"):
             document["_id"] = str(document.pop("stat_key"))
             dimensions = dict(document["dimensions"])
-            dimensions["town_id"] = self._get_mariadb_id(
+            dimensions["town_id"] = self._get_optional_mariadb_id(
                 dimensions.pop("town_key"), self.keys["town_ids"], "town_key"
             )
-            dimensions["flat_type_id"] = self._get_mariadb_id(
+            dimensions["flat_type_id"] = self._get_optional_mariadb_id(
                 dimensions.pop("flat_type_key"),
                 self.keys["flat_type_ids"],
                 "flat_type_key",
             )
-            dimensions["flat_model_id"] = self._get_mariadb_id(
+            dimensions["flat_model_id"] = self._get_optional_mariadb_id(
                 dimensions.pop("flat_model_key"),
                 self.keys["flat_model_ids"],
                 "flat_model_key",
@@ -198,6 +198,18 @@ class Load:
         if mariadb_id is None:
             raise ValueError(f"No MariaDB ID for {key_name}: {source_key}")
         return mariadb_id
+
+    @classmethod
+    def _get_optional_mariadb_id(
+        cls, source_key: Any, id_map: dict[str, str], key_name: str
+    ) -> str | None:
+        """
+        Returns the MariaDB ID for the given source key if it exists, otherwise returns None.
+        This is needed as dimension key also contains ALL* values which do not have a corresponding MariaDB ID.
+        """
+        if source_key is None or bool(pd.isna(source_key)):
+            return None
+        return cls._get_mariadb_id(source_key, id_map, key_name)
 
     @staticmethod
     def _mongo_timestamp(value: Any) -> int:
@@ -258,7 +270,9 @@ class Load:
 def main() -> None:
     loader: Load | None = None
     try:
-        loader = Load(api_key=os.environ.get("DATA_GOV_SG_API_KEY"))
+        loader = Load(
+            "v2:9014eec42fec26e6355db0bf611d5ae58edad9ede6e68108ca59d190fa5ae2bf:QyLukoit5tWykUL0YvEvm8lnkQbeg2F2"
+        )
         loader.load_to_mariadb()
         loader.load_to_mongodb()
     finally:
