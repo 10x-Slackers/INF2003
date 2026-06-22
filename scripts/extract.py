@@ -185,6 +185,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     for config in DATASETS:
         dataframe = client.fetch_dataset(config)
         dataframes[config.key] = dataframe
+        print()
 
 
 if __name__ == "__main__":
