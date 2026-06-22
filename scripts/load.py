@@ -20,6 +20,7 @@ class Load:
         self.client = DataGovDatasetClient(api_key=api_key)
         self.dataframes: dict[str, pd.DataFrame] = self.extract_datasets()
         self.transform_datasets: TransformResult = self.transform()
+        self.keys: dict[str, dict[str, str]] = {}
 
     def extract_datasets(self) -> dict[str, pd.DataFrame]:
         dataframes: dict[str, pd.DataFrame] = {}
@@ -109,7 +110,7 @@ class Load:
             "storey_range_key",
             "storey_range_id",
             self.keys["storey_range_ids"],
-        ).drop(columns=["town_key", "lease_commence_year"])
+        )
         self.mariadb.insert_dataframe("resale_transactions", transactions)
 
     def _load_parent_tables(self) -> None:
