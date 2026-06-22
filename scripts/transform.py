@@ -212,6 +212,8 @@ class DatasetTransformer:
                 "floor_area_sqm": resale["floor_area_sqm"],
                 "transaction_month": resale["transaction_month"],
                 "resale_price": resale["resale_price"],
+                # this is for building the mongoDb, will be dropped for mariadb
+                "town_key": resale["town_key"],
             }
         ).reset_index(drop=True)
 
