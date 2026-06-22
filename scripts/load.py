@@ -270,9 +270,7 @@ class Load:
 def main() -> None:
     loader: Load | None = None
     try:
-        loader = Load(
-            "v2:9014eec42fec26e6355db0bf611d5ae58edad9ede6e68108ca59d190fa5ae2bf:QyLukoit5tWykUL0YvEvm8lnkQbeg2F2"
-        )
+        loader = Load(os.environ.get("DATA_GOV_API_KEY"))
         loader.load_to_mariadb()
         loader.load_to_mongodb()
     finally:
