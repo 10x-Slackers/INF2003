@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from html import unescape
@@ -208,7 +206,6 @@ class DatasetTransformer:
             {
                 "id": resale["transaction_key"],
                 "property_key": resale["property_key"],
-                "town_key": resale["town_key"],
                 "flat_type_key": resale["flat_type_key"],
                 "flat_model_key": resale["flat_model_key"],
                 "storey_range_key": resale["storey_range_key"],
