@@ -15,6 +15,10 @@ from shapely import STRtree
 
 
 AMENITY_TYPES = ("School", "Park", "Gym")
+RESALE_TOWN_TO_TOWN_AREA = {
+    "CENTRAL AREA": "DOWNTOWN CORE",
+    "KALLANG/WHAMPOA": "KALLANG",
+}
 DESCRIPTION_FIELD_PATTERN = re.compile(
     r"<th>\s*(.*?)\s*</th>\s*<td>\s*(.*?)\s*</td>",
     re.IGNORECASE | re.DOTALL,
@@ -58,7 +62,7 @@ class DatasetTransformer:
             schools=self.raw_datasets["schools"],
             parks=self.raw_datasets["parks"],
             gyms=self.raw_datasets["gyms"],
-            valid_town_keys=set(towns["town_key"]),
+            valid_town_keys=set(towns["id"]),
         )
 
         mariadb = {
@@ -109,7 +113,7 @@ class DatasetTransformer:
             town_key = _key(town_name)
             rows.append(
                 {
-                    "town_key": town_key,
+                    "id": town_key,
                     "region": region,
                     "name": town_name,
                 }
@@ -128,15 +132,15 @@ class DatasetTransformer:
         self._town_tree = STRtree([town.geometry for town in town_geometries])
         return (
             pd.DataFrame(rows)
-            .drop_duplicates(subset=["town_key"])
-            .sort_values("town_key")
+            .drop_duplicates(subset=["id"])
+            .sort_values("id")
             .reset_index(drop=True)
         )
 
     def _transform_resale(self, raw_resale: pd.DataFrame) -> dict[str, pd.DataFrame]:
         resale = raw_resale.copy()
 
-        resale["town_key"] = resale["town"].map(_key)
+        resale["town_key"] = resale["town"].map(_key).replace(RESALE_TOWN_TO_TOWN_AREA)
         resale["flat_type_key"] = resale["flat_type"].map(_key)
         resale["flat_model_key"] = resale["flat_model"].map(_key)
         resale["block"] = resale["block"].map(_clean_text)
@@ -177,42 +181,48 @@ class DatasetTransformer:
         ]
 
         properties = _dedupe_sort(
-            resale[
-                [
-                    "property_key",
-                    "town_key",
-                    "block",
-                    "street_name",
-                    "lease_commence_year",
-                ]
-            ],
-            ["property_key"],
+            pd.DataFrame(
+                {
+                    "id": resale["property_key"],
+                    "town_key": resale["town_key"],
+                    "block": resale["block"],
+                    "street_name": resale["street_name"],
+                    "lease_commence_year": resale["lease_commence_year"],
+                }
+            ),
+            ["id"],
         )
         flat_types = _lookup_frame(resale["flat_type_key"], resale["flat_type"])
         flat_models = _lookup_frame(resale["flat_model_key"], resale["flat_model"])
         storey_ranges = _dedupe_sort(
-            resale[["storey_range_key", "min_storey", "max_storey"]],
+            pd.DataFrame(
+                {
+                    "id": resale["storey_range_key"],
+                    "min_storey": resale["min_storey"],
+                    "max_storey": resale["max_storey"],
+                }
+            ),
             ["min_storey", "max_storey"],
         )
-        transactions = resale[
-            [
-                "transaction_key",
-                "property_key",
-                "town_key",
-                "flat_type_key",
-                "flat_model_key",
-                "storey_range_key",
-                "floor_area_sqm",
-                "transaction_month",
-                "resale_price",
-                "lease_commence_year",
-            ]
-        ].reset_index(drop=True)
+        transactions = pd.DataFrame(
+            {
+                "id": resale["transaction_key"],
+                "property_key": resale["property_key"],
+                "town_key": resale["town_key"],
+                "flat_type_key": resale["flat_type_key"],
+                "flat_model_key": resale["flat_model_key"],
+                "storey_range_key": resale["storey_range_key"],
+                "floor_area_sqm": resale["floor_area_sqm"],
+                "transaction_month": resale["transaction_month"],
+                "resale_price": resale["resale_price"],
+                "lease_commence_year": resale["lease_commence_year"],
+            }
+        ).reset_index(drop=True)
 
         return {
             "properties": properties,
-            "flat_types": flat_types.rename(columns={"lookup_key": "flat_type_key"}),
-            "flat_models": flat_models.rename(columns={"lookup_key": "flat_model_key"}),
+            "flat_types": flat_types,
+            "flat_models": flat_models,
             "storey_ranges": storey_ranges,
             "resale_transactions": transactions,
         }
@@ -220,7 +230,7 @@ class DatasetTransformer:
     def _transform_amenity_types(self) -> pd.DataFrame:
         return pd.DataFrame(
             [
-                {"amenity_type_key": _key(amenity_type), "name": amenity_type}
+                {"id": _key(amenity_type), "name": amenity_type}
                 for amenity_type in AMENITY_TYPES
             ]
         )
@@ -240,7 +250,7 @@ class DatasetTransformer:
 
         return pd.DataFrame(rows)[
             [
-                "amenity_key",
+                "id",
                 "town_key",
                 "amenity_type_key",
                 "name",
@@ -510,11 +520,11 @@ def _parse_storey_range(value: Any) -> tuple[int, int]:
 def _lookup_frame(keys: pd.Series, names: pd.Series) -> pd.DataFrame:
     frame = pd.DataFrame(
         {
-            "lookup_key": keys,
+            "id": keys,
             "name": names.map(_clean_text),
         }
     )
-    return _dedupe_sort(frame, ["lookup_key"])
+    return _dedupe_sort(frame, ["id"])
 
 
 def _dedupe_sort(frame: pd.DataFrame, sort_columns: list[str]) -> pd.DataFrame:
@@ -591,7 +601,7 @@ def _amenity_row(
         ]
     )
     return {
-        "amenity_key": amenity_key,
+        "id": amenity_key,
         "town_key": town_key,
         "amenity_type_key": amenity_type_key,
         "name": name,
