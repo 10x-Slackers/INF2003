@@ -54,7 +54,7 @@ class Load:
             raise ValueError("No transformed data available for loading.")
         if not self.mongodb:
             raise ValueError("No MongoDB connection available for loading.")
-        if not hasattr(self, "keys"):
+        if not self.keys:
             raise ValueError(
                 "Load MariaDB before MongoDB so foreign keys are available."
             )
@@ -140,8 +140,6 @@ class Load:
             "flat_model_ids": flat_model_ids,
             "storey_range_ids": storey_range_ids,
         }
-
-        self.mariadb.commit()
 
     def _prepare_mongo_towns(
         self, dataframe: pd.DataFrame
