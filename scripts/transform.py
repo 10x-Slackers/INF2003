@@ -212,7 +212,6 @@ class DatasetTransformer:
                 "floor_area_sqm": resale["floor_area_sqm"],
                 "transaction_month": resale["transaction_month"],
                 "resale_price": resale["resale_price"],
-                "lease_commence_year": resale["lease_commence_year"],
             }
         ).reset_index(drop=True)
 
@@ -629,11 +628,8 @@ def _stat_dimensions(
     values: tuple[Any, ...],
 ) -> dict[str, Any]:
     dimensions = {
-        "town_id": None,
         "town_key": None,
-        "flat_type_id": None,
         "flat_type_key": None,
-        "flat_model_id": None,
         "flat_model_key": None,
     }
     for column, value in zip(group_columns, values, strict=True):
