@@ -4,40 +4,23 @@ from typing import Any, Hashable
 
 import pandas as pd
 
-from scripts.extract import DataGovDatasetClient
-from scripts.dataset_config import DATASETS
-from scripts.transform import TransformResult, transform_datasets
+from scripts.transform import TransformResult
 import scripts.db as databases
+from scripts.db.mongodb import MongoDB
+from scripts.db.mariadb import Database
 
 
 class Load:
     def __init__(
-        self,
-        api_key: str | None = None,
+        self, mongodb: MongoDB, mariadb: Database, dataframes: TransformResult
     ) -> None:
-        self.mariadb = self.get_mariadb_connection()
-        self.mongodb = self.get_mongodb_connection()
-        self.client = DataGovDatasetClient(api_key=api_key)
-        self.dataframes: dict[str, pd.DataFrame] = self.extract_datasets()
-        self.transform_datasets: TransformResult = self.transform()
+        self.mariadb = mariadb
+        self.mongodb = mongodb
+        self.dataframes: TransformResult = dataframes
         self.keys: dict[str, dict[str, str]] = {}
 
-    def extract_datasets(self) -> dict[str, pd.DataFrame]:
-        dataframes: dict[str, pd.DataFrame] = {}
-        for config in DATASETS:
-            dataframe = self.client.fetch_dataset(config)
-            dataframes[config.key] = dataframe
-            print(f"Dataset '{config.key}' extracted.")
-        return dataframes
-
-    def transform(self) -> TransformResult:
-        if not self.dataframes:
-            raise ValueError("No dataframes available for transformation.")
-        transformed_data = transform_datasets(self.dataframes)
-        return transformed_data
-
     def load_to_mariadb(self) -> None:
-        if not self.transform_datasets:
+        if not self.dataframes:
             raise ValueError("No transformed data available for loading.")
         if not self.mariadb:
             raise ValueError("No MariaDB connection available for loading.")
@@ -51,7 +34,7 @@ class Load:
             raise
 
     def load_to_mongodb(self) -> None:
-        if not self.transform_datasets:
+        if not self.dataframes:
             raise ValueError("No transformed data available for loading.")
         if not self.mongodb:
             raise ValueError("No MongoDB connection available for loading.")
@@ -60,7 +43,7 @@ class Load:
                 "Load MariaDB before MongoDB so foreign keys are available."
             )
 
-        frames = self.transform_datasets.mongodb
+        frames = self.dataframes.mongodb
         town_documents = self._prepare_mongo_towns(frames["towns"])
         statistic_documents = self._prepare_mongo_statistics(frames["statistics"])
         self.mongodb.database["towns"].insert_many(town_documents)
@@ -71,7 +54,7 @@ class Load:
             raise ValueError(
                 "Load parent tables before child tables to get foreign keys."
             )
-        frames = self.transform_datasets.mariadb
+        frames = self.dataframes.mariadb
 
         amenities = self._replace_key(
             frames["amenities"], "town_key", "town_id", self.keys["town_ids"]
@@ -109,7 +92,7 @@ class Load:
         self.mariadb.insert_dataframe("resale_transactions", transactions)
 
     def _load_parent_tables(self) -> None:
-        frames = self.transform_datasets.mariadb
+        frames = self.dataframes.mariadb
 
         town_ids = self.mariadb.insert_dataframe_with_id("towns", frames["towns"])
         amenity_type_ids = self.mariadb.insert_dataframe_with_id(
@@ -265,19 +248,3 @@ class Load:
     @staticmethod
     def get_mongodb_connection() -> databases.MongoDB:
         return databases.setup_mongodb()
-
-
-def main() -> None:
-    loader: Load | None = None
-    try:
-        loader = Load(os.environ.get("DATA_GOV_API_KEY"))
-        loader.load_to_mariadb()
-        loader.load_to_mongodb()
-    finally:
-        if loader is not None:
-            loader.mariadb.close()
-            loader.mongodb.close()
-
-
-if __name__ == "__main__":
-    main()
