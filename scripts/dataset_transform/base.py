@@ -1,3 +1,10 @@
+"""ETL pipeline for transforming raw datasets into staging frames.
+
+TransformResult frames use NATURAL string keys (e.g. town id = "DOWNTOWN CORE").
+The loader is responsible for mapping these natural keys to the surrogate
+UUID/SMALLINT keys defined in the MariaDB schema.
+"""
+
 from dataclasses import dataclass
 from datetime import UTC, datetime
 

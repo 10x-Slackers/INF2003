@@ -47,14 +47,14 @@ class ResaleTransformer:
         resale["property_key"] = (
             resale["town_key"]
             + "|"
-            + resale["block"].fillna("").map(key)
+            + resale["block"].map(key)
             + "|"
-            + resale["street_name"].fillna("").map(key)
+            + resale["street_name"].map(key)
             + "|"
             + resale["lease_commence_year"].astype(int).astype(str)
         )
         resale["transaction_key"] = [
-            f"resale:{index + 1}" for index in range(len(resale.index))
+            f"resale:{i}" for i in range(1, len(resale) + 1)
         ]
 
         properties = dedupe_sort(

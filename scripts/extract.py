@@ -83,8 +83,6 @@ class DataGovDatasetClient:
             retry_delay = self._parse_retry_after(retry_after, POLL_INTERVAL_SECONDS)
             time.sleep(retry_delay)
 
-        return {}
-
     def _fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
         url = f"{METADATA_BASE_URL}/{config.dataset_id}/metadata"
         body = self._request_json(url, dataset=config.key, state="metadata")

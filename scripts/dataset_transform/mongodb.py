@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 import pandas as pd
 
@@ -30,8 +31,7 @@ class MongoTransformer:
             )
             rows.append(
                 {
-                    "_id": None,
-                    "town_key": town_key,
+                    "_id": town_key,
                     "transaction_summary": {
                         "total_transaction": int(len(group.index)),
                         "earliest_transaction": str(month_series.min()),
@@ -109,8 +109,7 @@ class MongoTransformer:
         ]
 
         return {
-            "_id": None,
-            "stat_key": _stat_key("median_resale_price", granularity, dimensions),
+            "_id": _stat_key("median_resale_price", granularity, dimensions),
             "metric": "median_resale_price",
             "granularity": granularity,
             "time_range": {
@@ -138,17 +137,24 @@ def _grouped_items(
     return groups
 
 
+_DIMENSION_KEYS = {
+    "town_key": "town_id",
+    "flat_type_key": "flat_type_id",
+    "flat_model_key": "flat_model_id",
+}
+
+
 def _stat_dimensions(
     group_columns: tuple[str, ...],
     values: tuple[Any, ...],
 ) -> dict[str, Any]:
-    dimensions = {
-        "town_key": None,
-        "flat_type_key": None,
-        "flat_model_key": None,
+    dimensions: dict[str, Any] = {
+        "town_id": None,
+        "flat_type_id": None,
+        "flat_model_id": None,
     }
     for column, value in zip(group_columns, values, strict=True):
-        dimensions[column] = value
+        dimensions[_DIMENSION_KEYS[column]] = value
     return dimensions
 
 
@@ -156,8 +162,8 @@ def _stat_key(metric: str, granularity: str, dimensions: dict[str, Any]) -> str:
     parts = [
         metric,
         granularity,
-        dimensions.get("town_key") or "ALL_TOWNS",
-        dimensions.get("flat_type_key") or "ALL_FLAT_TYPES",
-        dimensions.get("flat_model_key") or "ALL_FLAT_MODELS",
+        dimensions.get("town_id") or "ALL_TOWNS",
+        dimensions.get("flat_type_id") or "ALL_FLAT_TYPES",
+        dimensions.get("flat_model_id") or "ALL_FLAT_MODELS",
     ]
     return "|".join(parts)

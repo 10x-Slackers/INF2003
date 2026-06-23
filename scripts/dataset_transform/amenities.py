@@ -1,11 +1,9 @@
 from html import unescape
 import re
-from typing import Any, Protocol, cast
+from typing import Any
 
 import pandas as pd
 from shapely.geometry import Point
-from shapely.geometry.base import BaseGeometry
-from scripts.dataset_transform.towns import TownGeometry
 
 from scripts.dataset_transform.common import (
     clean_text,
@@ -20,10 +18,6 @@ DESCRIPTION_FIELD_PATTERN = re.compile(
     r"<th>\s*(.*?)\s*</th>\s*<td>\s*(.*?)\s*</td>",
     re.IGNORECASE | re.DOTALL,
 )
-
-
-class TownResolver(Protocol):
-    def _find_town(self, geometry: BaseGeometry) -> TownGeometry: ...
 
 
 class AmenityTransformer:
@@ -71,7 +65,6 @@ class AmenityTransformer:
             raw_town_key = key(get_value(row, "dgp_code"))
             town_key = _resolve_town_key(raw_town_key, valid_town_keys)
             if town_key is None:
-                print("School row has unresolvable town key, skipping:", raw_town_key)
                 continue
             name = clean_text(get_value(row, "school_name"))
             street_name = clean_text(get_value(row, "address"))
@@ -103,7 +96,7 @@ class AmenityTransformer:
                 else geometry.representative_point()
             )
             # the function is from the town transformer
-            town = cast(TownResolver, self)._find_town(geometry)
+            town = self._find_town(geometry)
 
             fields = _extract_description_fields(
                 get_value(row, "properties.Description")
