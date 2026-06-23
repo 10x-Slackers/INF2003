@@ -95,7 +95,6 @@ class AmenityTransformer:
         amenity_type: str,
     ) -> list[dict[str, Any]]:
         rows = []
-        print(amenity_type)
         for _, row in raw_amenities.iterrows():
             geometry = geometry_from_row(row)
             point = (
