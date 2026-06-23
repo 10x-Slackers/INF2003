@@ -1,11 +1,9 @@
-import os
 from datetime import datetime
 from typing import Any, Hashable
 
 import pandas as pd
 
 from scripts.transform import TransformResult
-import scripts.db as databases
 from scripts.db.mongodb import MongoDB
 from scripts.db.mariadb import Database
 
@@ -228,23 +226,3 @@ class Load:
             )
 
         return result.drop(columns=source_column)
-
-    @staticmethod
-    def get_mariadb_connection() -> databases.Database:
-        mariadb = databases.Database(
-            host=os.environ.get("DB_HOST", "mariadb"),
-            user=os.environ.get("DB_USER", "root"),
-            password=os.environ.get("DB_PASSWORD", "P@ssw0rd"),
-            database=os.environ.get("DB_NAME", "inf2003"),
-        )
-        try:
-            mariadb.reset_tables()
-        except Exception as e:
-            print(f"An error occurred while resetting tables: {e}")
-            mariadb.rollback()
-            raise
-        return mariadb
-
-    @staticmethod
-    def get_mongodb_connection() -> databases.MongoDB:
-        return databases.setup_mongodb()
