@@ -104,8 +104,3 @@ def setup_mongodb(
         validation_action=validation_action,
         server_selection_timeout_ms=server_selection_timeout_ms,
     )
-
-
-if __name__ == "__main__":
-    mongodb = setup_mongodb()
-    mongodb.close()

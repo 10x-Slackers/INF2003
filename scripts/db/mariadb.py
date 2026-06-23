@@ -1,5 +1,3 @@
-import os
-
 import MySQLdb
 import pandas as pd
 
@@ -132,23 +130,3 @@ class Database:
     def _rows(cls, df: pd.DataFrame, columns: list[str]) -> list[tuple[object, ...]]:
         clean_df = cls._clean_dataframe(df.loc[:, columns])
         return list(clean_df.itertuples(index=False, name=None))
-
-
-def main():
-    db = Database(
-        host=os.environ.get("DB_HOST", "mariadb"),
-        user=os.environ.get("DB_USER", "root"),
-        password=os.environ.get("DB_PASSWORD", "P@ssw0rd"),
-        database=os.environ.get("DB_NAME", "inf2003"),
-    )
-    try:
-        db.reset_tables()
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        db.rollback()
-    finally:
-        db.close()
-
-
-if __name__ == "__main__":
-    main()
