@@ -1,13 +1,11 @@
-import argparse
+from typing import Any
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 import time
-from typing import Any, Sequence
 
 import pandas as pd
 import requests
 
-from scripts.dataset_config import DATASETS
 from scripts.dataset_config.base import DatasetConfig
 
 BASE_URL = "https://api-open.data.gov.sg/v1/public/api/datasets"
@@ -84,8 +82,6 @@ class DataGovDatasetClient:
 
             retry_delay = self._parse_retry_after(retry_after, POLL_INTERVAL_SECONDS)
             time.sleep(retry_delay)
-
-        return {}
 
     def _fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
         url = f"{METADATA_BASE_URL}/{config.dataset_id}/metadata"
@@ -165,28 +161,3 @@ class DataGovDatasetClient:
 
         except (TypeError, ValueError, OverflowError):
             return default
-
-
-def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Fetch configured data.gov.sg datasets into pandas DataFrames."
-    )
-    parser.add_argument("--api-key", help="data.gov.sg API key.")
-    return parser.parse_args(argv)
-
-
-def main(argv: Sequence[str] | None = None) -> None:
-    args = parse_args(argv)
-    client = DataGovDatasetClient(
-        api_key=args.api_key,
-    )
-    dataframes: dict[str, pd.DataFrame] = {}
-
-    for config in DATASETS:
-        dataframe = client.fetch_dataset(config)
-        dataframes[config.key] = dataframe
-        print()
-
-
-if __name__ == "__main__":
-    main()

@@ -9,4 +9,5 @@ dependencies = [
     "pandas>=3.0.3",
     "pymongo>=4.17.0",
     "requests>=2.34.2",
+    "shapely>=2.1.2",
 ]
