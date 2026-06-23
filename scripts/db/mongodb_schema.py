@@ -34,6 +34,29 @@ def _range_schema(*, numeric_type: str | list[str] = NUMBER_TYPE) -> dict[str, A
     }
 
 
+def _coordinate_position_schema() -> dict[str, Any]:
+    return {
+        "bsonType": "array",
+        "minItems": 2,
+        "items": {"bsonType": NUMBER_TYPE},
+    }
+
+
+def _linear_ring_schema() -> dict[str, Any]:
+    return {
+        "bsonType": "array",
+        "minItems": 4,
+        "items": _coordinate_position_schema(),
+    }
+
+
+def _polygon_coordinates_schema() -> dict[str, Any]:
+    return {
+        "bsonType": "array",
+        "items": _linear_ring_schema(),
+    }
+
+
 def _json_schema(schema: dict[str, Any]) -> dict[str, Any]:
     return {"$jsonSchema": schema}
 
@@ -184,9 +207,7 @@ COLLECTION_VALIDATORS: dict[str, dict[str, Any]] = {
                     },
                     "additionalProperties": False,
                 },
-                "coordinates": {
-                    "bsonType": "array",
-                },
+                "coordinates": _polygon_coordinates_schema(),
                 "updated_at": {"bsonType": TIMESTAMP_TYPE},
             },
             "additionalProperties": False,

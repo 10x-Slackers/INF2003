@@ -3,6 +3,7 @@ from typing import Any, Mapping
 from urllib.parse import quote_plus
 from pymongo import MongoClient
 from pymongo.database import Database
+from pymongo.errors import CollectionInvalid, OperationFailure
 
 
 from scripts.db.mongodb_schema import (
@@ -10,10 +11,8 @@ from scripts.db.mongodb_schema import (
     MONGODB_COLLECTION_VALIDATORS,
 )
 
-DEFAULT_MONGODB_URI = os.getenv(
-    "MONGODB_URI",
-    f"mongodb://{quote_plus('root')}:{quote_plus('P@ssw0rd')}@mongo:27017/",
-)
+DEFAULT_MONGODB_URI = f"mongodb://root:{quote_plus('P@ssw0rd')}@mongo:27017/"
+
 DEFAULT_DATABASE_NAME = os.getenv("MONGODB_DATABASE", "mongo")
 
 
@@ -55,14 +54,18 @@ class MongoDB:
                 validator=dict(validator),
                 validationAction=self.validation_action,
             )
-        except Exception:
-            print(f"Collection '{name}' already exists. Updating validator...")
-            self.database.command(
-                "collMod",
-                name,
-                validator=dict(validator),
-                validationAction=self.validation_action,
-            )
+        except CollectionInvalid:
+            try:
+                self.database.command(
+                    "collMod",
+                    name,
+                    validator=dict(validator),
+                    validationAction=self.validation_action,
+                )
+            except OperationFailure as e:
+                raise RuntimeError(
+                    f"Failed to create/modify collection '{name}': {e}"
+                ) from e
 
     def ensure_indexes(self, collection_name: str) -> None:
         collection = self.database[collection_name]
