@@ -1,10 +1,11 @@
 from html import unescape
 import re
-from typing import Any
+from typing import Any, Protocol, cast
 
 import pandas as pd
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
+from scripts.dataset_transform.towns import TownGeometry
 
 from scripts.dataset_transform.common import (
     clean_text,
@@ -12,7 +13,6 @@ from scripts.dataset_transform.common import (
     get_value,
     key,
 )
-from scripts.dataset_transform.towns import TownGeometry
 
 
 AMENITY_TYPES = ("School", "Park", "Gym")
@@ -20,6 +20,10 @@ DESCRIPTION_FIELD_PATTERN = re.compile(
     r"<th>\s*(.*?)\s*</th>\s*<td>\s*(.*?)\s*</td>",
     re.IGNORECASE | re.DOTALL,
 )
+
+
+class TownResolver(Protocol):
+    def _find_town(self, geometry: BaseGeometry) -> TownGeometry: ...
 
 
 class AmenityTransformer:
@@ -91,6 +95,7 @@ class AmenityTransformer:
         amenity_type: str,
     ) -> list[dict[str, Any]]:
         rows = []
+        print(amenity_type)
         for _, row in raw_amenities.iterrows():
             geometry = geometry_from_row(row)
             point = (
@@ -98,7 +103,8 @@ class AmenityTransformer:
                 if isinstance(geometry, Point)
                 else geometry.representative_point()
             )
-            town = self._find_town(geometry)
+            # the function is from the town transformer
+            town = cast(TownResolver, self)._find_town(geometry)
 
             fields = _extract_description_fields(
                 get_value(row, "properties.Description")
@@ -119,9 +125,6 @@ class AmenityTransformer:
                 )
             )
         return rows
-
-    def _find_town(self, amenity_geometry: BaseGeometry) -> TownGeometry:
-        raise NotImplementedError
 
 
 def _resolve_town_key(town_key: str, valid_town_keys: set[str]) -> str | None:
