@@ -1,4 +1,4 @@
-from scripts.dataset_transform import (
+from scripts.dataset_transform.base import (
     DatasetTransformer,
     TransformResult,
     transform_datasets,
