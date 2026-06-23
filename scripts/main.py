@@ -1,11 +1,13 @@
-from scripts.db.mariadb import Database
-from scripts.db.mongodb import setup_mongodb, MongoDB
-from urllib.parse import quote_plus
 import os
-from scripts.extract import DataGovDatasetClient
+from urllib.parse import quote_plus
+
 import pandas as pd
+
 from scripts.dataset_config import DATASETS
 from scripts.dataset_transform import transform_datasets
+from scripts.db.mariadb import Database
+from scripts.db.mongodb import MongoDB, setup_mongodb
+from scripts.extract import DataGovDatasetClient
 from scripts.load import Load
 
 
