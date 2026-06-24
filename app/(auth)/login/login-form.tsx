@@ -80,7 +80,7 @@ export function LoginForm({
                     return;
                 }
                 router.push(callbackUrl);
-            } catch (error) {
+            } catch {
                 setState({
                     error: "An unexpected error occurred. Please try again.",
                     fields: {

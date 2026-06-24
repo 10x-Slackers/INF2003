@@ -1,5 +1,5 @@
 import { getServerSession, NextAuthOptions } from "next-auth";
-import { pool, query } from "@/lib/db/mariadb";
+import { query } from "@/lib/db/mariadb";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { UserRole } from "./next-auth";
@@ -59,11 +59,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           };
         } catch (error) {
-          console.error(
-            "Error during user authorization for email:",
-            email,
-            error,
-          );
+          console.error("Error during user authorization", error);
           return null;
         }
       },

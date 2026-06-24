@@ -10,6 +10,7 @@ type SignUpFields = {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 };
 
 export async function signUpEmail(
@@ -19,9 +20,16 @@ export async function signUpEmail(
   const name = String(data.get("name") || "");
   const email = String(data.get("email") || "");
   const password = String(data.get("password") || "");
+  const confirmPassword = String(data.get("confirmPassword") || "");
 
-  if (!email || !password || !name) {
+  if (!email || !password || !name || !confirmPassword) {
     return actionError("All fields are required", {
+      email,
+      name,
+    });
+  }
+  if (password !== confirmPassword) {
+    return actionError("Passwords do not match", {
       email,
       name,
     });
@@ -48,17 +56,7 @@ export async function signUpEmail(
       "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
       [name, email.toLowerCase(), passwordHash],
     );
-  } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      "code" in error &&
-      error.code === "ER_DUP_ENTRY"
-    ) {
-      return actionError("Email already exists", {
-        email,
-        name,
-      });
-    }
+  } catch {
     return actionError("Sign up failed", {
       email,
       name,

@@ -75,6 +75,18 @@ export function SignUpForm({
                                     defaultValue={state.fields.password}
                                 />
                             </div>
+                            <div className="grid gap-3">
+                                <div className="flex items-center">
+                                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                </div>
+                                <Input
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    type="password"
+                                    required
+                                    minLength={8}
+                                />
+                            </div>
                             <div className="flex flex-col gap-3">
                                 <Button type="submit" className="w-full" disabled={pending}>
                                     Sign up
