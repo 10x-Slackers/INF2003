@@ -1,4 +1,3 @@
-from datetime import UTC, datetime
 import ast
 import re
 from typing import Any
@@ -9,6 +8,7 @@ from shapely.geometry.base import BaseGeometry
 
 
 def get_value(row: pd.Series, column: str) -> Any:
+    """Safely extract a value from a row Series, returning None for missing/NaN."""
     value = row.get(column)
     if value is None:
         return None
@@ -21,28 +21,28 @@ def get_value(row: pd.Series, column: str) -> Any:
 
 
 def clean_text(value: Any) -> str:
+    """Normalise whitespace and strip; returns empty string for None."""
     if value is None:
         return ""
     return re.sub(r"\s+", " ", str(value).strip())
 
 
 def key(value: Any) -> str:
+    """Uppercase-and-clean version of clean_text, used for natural keys."""
     return clean_text(value).upper()
 
 
-def dedupe_sort(frame: pd.DataFrame, sort_columns: list[str]) -> pd.DataFrame:
-    return frame.drop_duplicates().sort_values(sort_columns).reset_index(drop=True)
-
-
 def geometry_from_row(row: pd.Series) -> BaseGeometry:
+    """Build a Shapely geometry from a GeoJSON-style row with geometry.type and geometry.coordinates."""
     geometry_type = get_value(row, "geometry.type")
-    coordinates = as_list(get_value(row, "geometry.coordinates"))
+    coordinates = _as_list(get_value(row, "geometry.coordinates"))
     if not geometry_type or coordinates is None:
         raise ValueError("GeoJSON row is missing geometry.type or geometry.coordinates")
     return shape({"type": geometry_type, "coordinates": coordinates})
 
 
-def as_list(value: Any) -> list[Any]:
+def _as_list(value: Any) -> list[Any]:
+    """Convert a value to a list, supporting tuple/string representations."""
     if isinstance(value, list):
         return value
     if isinstance(value, tuple):
@@ -54,9 +54,3 @@ def as_list(value: Any) -> list[Any]:
         if isinstance(parsed, list):
             return parsed
     raise ValueError(f"Expected list-like coordinates, got: {value!r}")
-
-
-def iso_timestamp(value: datetime) -> str:
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=UTC)
-    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
