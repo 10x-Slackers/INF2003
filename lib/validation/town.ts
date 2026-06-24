@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const regionSchema = z.enum([
-  "NORTH REGION",
-  "NORTH-EAST REGION",
-  "EAST REGION",
-  "WEST REGION",
-  "CENTRAL REGION",
+  "NORTH",
+  "NORTH-EAST",
+  "EAST",
+  "WEST",
+  "CENTRAL",
 ]);
 
 export const createTownSchema = z.object({

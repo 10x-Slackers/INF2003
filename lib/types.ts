@@ -31,3 +31,45 @@ export interface PaginatedResult<T> {
   page: number;
   pageSize: number;
 }
+
+export type Region =
+  | "NORTH"
+  | "NORTH-EAST"
+  | "EAST"
+  | "WEST"
+  | "CENTRAL";
+
+export interface Town {
+  id: string;
+  region: Region;
+  name: string;
+}
+
+export interface CreateTownPayload {
+  region: Region;
+  name: string;
+}
+
+export interface UpdateTownPayload {
+  region?: Region;
+  name?: string;
+}
+
+export interface Property {
+  id: string;
+  town_id: string;
+  block: string;
+  street_name: string;
+  lease_commence_year: number;
+}
+
+export interface Amenity {
+  id: string;
+  town_id: string;
+  amenity_type_id: number;
+  name: string;
+  street_name: string | null;
+  postal_code: string | null;
+  longitude: number | null;
+  latitude: number | null;
+}
