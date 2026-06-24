@@ -28,6 +28,8 @@ const defaultState: ActionState<SignUpFields> = {
     fields: {
         name: "",
         email: "",
+        password: "",
+        confirmPassword: "",
     },
     fieldErrors: {},
     formError: undefined,

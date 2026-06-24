@@ -4,7 +4,7 @@ export const ROUTES = {
   SIGNUP: "/signup",
 } as const;
 
-export function loginRedirect(callbackUrl: string = ROUTES.HOME) {
+export function loginRedirect(callbackUrl: string): string {
   if (!callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
     return ROUTES.LOGIN;
   }

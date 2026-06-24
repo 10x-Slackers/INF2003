@@ -44,16 +44,7 @@ export async function signUpEmail(
       email: fields.email,
     });
   }
-  const { name, email, password, confirmPassword } = parsed.data;
-
-  if (!email || !password || !name || !confirmPassword) {
-    return actionError("All fields are required", {
-      email,
-      name,
-      password,
-      confirmPassword,
-    });
-  }
+  const { name, email, password } = parsed.data;
 
   try {
     const passwordHash = await bcrypt.hash(password, 12);

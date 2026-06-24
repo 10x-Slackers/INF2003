@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { signIn } from "next-auth/react";
-import { ROUTES } from "@/lib/routes";
+import { loginRedirect, ROUTES, } from "@/lib/routes";
 import { useRouter, useSearchParams } from "next/navigation";
 import { z } from "zod";
 import { fieldError, actionSuccess, actionError, type ActionState } from "@/lib/action-helpers";
@@ -45,7 +45,8 @@ export function LoginForm({
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const callbackUrl = searchParams.get("callbackUrl") || ROUTES.HOME;
+    const callbackUrl = loginRedirect(searchParams.get("callbackUrl") || ROUTES.HOME);
+
 
     const [state, setState] = useState(defaultFormState);
     const [pending, setPending] = useState(false);
