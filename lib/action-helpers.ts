@@ -1,7 +1,8 @@
 export type ActionState<T = Record<string, unknown>> = {
-  error?: string;
-  success?: string;
-  fields: Partial<T>;
+  fields?: Partial<T>;
+  fieldErrors?: Partial<Record<keyof T, string[]>>;
+  formError?: string;
+  success: boolean;
 };
 
 export function actionError<T>(
@@ -9,7 +10,30 @@ export function actionError<T>(
   fields?: Partial<T>,
 ): ActionState<T> {
   return {
-    error,
-    fields: fields || {},
+    fields,
+    fieldErrors: {},
+    formError: error,
+    success: false,
+  };
+}
+
+export function actionSuccess<T>(fields?: Partial<T>): ActionState<T> {
+  return {
+    fields,
+    fieldErrors: {},
+    formError: undefined,
+    success: true,
+  };
+}
+
+export function fieldError<T>(
+  fieldErrors: Partial<Record<keyof T, string[]>>,
+  fields?: Partial<T>,
+): ActionState<T> {
+  return {
+    fields,
+    fieldErrors,
+    formError: undefined,
+    success: false,
   };
 }

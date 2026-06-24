@@ -14,20 +14,31 @@ import Link from "next/link";
 import { signUpEmail } from "./action";
 import { useActionState } from "react";
 import { ROUTES } from "@/lib/routes";
+import { ActionState } from "@/lib/action-helpers";
 
+
+type SignUpFields = {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+};
+
+const defaultState: ActionState<SignUpFields> = {
+    fields: {
+        name: "",
+        email: "",
+    },
+    fieldErrors: {},
+    formError: undefined,
+    success: false,
+};
 
 export function SignUpForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
-    const [state, formAction, pending] = useActionState(signUpEmail, {
-        error: "",
-        fields: {
-            email: "",
-            password: "",
-            name: "",
-        },
-    });
+    const [state, formAction, pending] = useActionState(signUpEmail, defaultState);
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <Card>
@@ -39,6 +50,11 @@ export function SignUpForm({
                 </CardHeader>
                 <CardContent>
                     <form action={formAction}>
+                        {state.formError && (
+                            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                                {state.formError}
+                            </div>
+                        )}
                         <div className="flex flex-col gap-6">
                             <div className="grid gap-3">
                                 <Label htmlFor="name">Name</Label>
@@ -46,10 +62,14 @@ export function SignUpForm({
                                     id="name"
                                     name="name"
                                     type="text"
-                                    placeholder="John Doe"
-                                    required
-                                    defaultValue={state.fields.name}
+                                    defaultValue={state.fields?.name}
+                                    disabled={pending}
                                 />
+                                {state.fieldErrors?.name?.map((error) => (
+                                    <p key={error} className="text-sm text-destructive">
+                                        {error}
+                                    </p>
+                                ))}
                             </div>
                             <div className="grid gap-3">
                                 <Label htmlFor="email">Email</Label>
@@ -57,10 +77,15 @@ export function SignUpForm({
                                     id="email"
                                     name="email"
                                     type="email"
-                                    placeholder="m@example.com"
                                     required
-                                    defaultValue={state.fields.email}
+                                    defaultValue={state.fields?.email}
+                                    disabled={pending}
                                 />
+                                {state.fieldErrors?.email?.map((error) => (
+                                    <p key={error} className="text-sm text-destructive">
+                                        {error}
+                                    </p>
+                                ))}
                             </div>
                             <div className="grid gap-3">
                                 <div className="flex items-center">
@@ -70,10 +95,14 @@ export function SignUpForm({
                                     id="password"
                                     name="password"
                                     type="password"
-                                    required
-                                    minLength={8}
-                                    defaultValue={state.fields.password}
+                                    defaultValue={state.fields?.password}
+                                    disabled={pending}
                                 />
+                                {state.fieldErrors?.password?.map((error) => (
+                                    <p key={error} className="text-sm text-destructive">
+                                        {error}
+                                    </p>
+                                ))}
                             </div>
                             <div className="grid gap-3">
                                 <div className="flex items-center">
@@ -83,19 +112,21 @@ export function SignUpForm({
                                     id="confirmPassword"
                                     name="confirmPassword"
                                     type="password"
-                                    required
-                                    minLength={8}
+                                    defaultValue={state.fields?.confirmPassword}
+                                    disabled={pending}
                                 />
+                                {state.fieldErrors?.confirmPassword?.map((error) => (
+                                    <p key={error} className="text-sm text-destructive">
+                                        {error}
+                                    </p>
+                                ))}
                             </div>
                             <div className="flex flex-col gap-3">
                                 <Button type="submit" className="w-full" disabled={pending}>
-                                    Sign up
+                                    {pending ? "Signing up..." : "Sign up"}
                                 </Button>
                             </div>
                         </div>
-                        {state.error && (
-                            <div className="text-red-500 text-sm">{state.error}</div>
-                        )}
 
                         <div className="mt-4 text-center text-sm">
                             Already have an account?{" "}

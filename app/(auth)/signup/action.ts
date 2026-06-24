@@ -1,52 +1,57 @@
 "use server";
 
-import { actionError, type ActionState } from "@/lib/action-helpers";
+import {
+  fieldError,
+  actionError,
+  type ActionState,
+} from "@/lib/action-helpers";
 import { redirect } from "next/navigation";
 import { ROUTES } from "@/lib/routes";
 import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db/mariadb";
+import z from "zod";
 
-type SignUpFields = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+const signUpSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    email: z.email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type SignUpFields = z.infer<typeof signUpSchema>;
 
 export async function signUpEmail(
   _prevState: ActionState<SignUpFields>,
   data: FormData,
 ): Promise<ActionState<SignUpFields>> {
-  const name = String(data.get("name") || "");
-  const email = String(data.get("email") || "");
-  const password = String(data.get("password") || "");
-  const confirmPassword = String(data.get("confirmPassword") || "");
+  const fields: SignUpFields = {
+    name: String(data.get("name")),
+    email: String(data.get("email")),
+    password: String(data.get("password")),
+    confirmPassword: String(data.get("confirmPassword")),
+  };
+
+  const parsed = signUpSchema.safeParse(fields);
+  if (!parsed.success) {
+    const errors = z.flattenError(parsed.error);
+    return fieldError<SignUpFields>(errors.fieldErrors, {
+      name: fields.name,
+      email: fields.email,
+    });
+  }
+  const { name, email, password, confirmPassword } = parsed.data;
 
   if (!email || !password || !name || !confirmPassword) {
     return actionError("All fields are required", {
       email,
       name,
-    });
-  }
-  if (password !== confirmPassword) {
-    return actionError("Passwords do not match", {
-      email,
-      name,
-    });
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return actionError("Invalid email address", {
-      email,
-      name,
-    });
-  }
-
-  if (password.length < 8) {
-    return actionError("Password must be at least 8 characters", {
-      email,
-      name,
+      password,
+      confirmPassword,
     });
   }
 
