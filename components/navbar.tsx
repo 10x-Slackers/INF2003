@@ -2,18 +2,19 @@
 import Link from "next/link";
 import { LogoutButton } from "./logout-button";
 import { useSession } from "next-auth/react";
+import { ROUTES } from "@/lib/routes";
 
 
 const links = [
-    { href: "/", label: "Home" },
-    { href: "/login", label: "Login" },
+    { href: ROUTES.HOME, label: "Home" },
+    { href: ROUTES.LOGIN, label: "Login" },
 ];
 export function Navbar() {
     const { data: session, status } = useSession();
 
     return (
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-            <Link href="/" className="text-lg font-semibold">
+            <Link href={ROUTES.HOME} className="text-lg font-semibold">
                 HDB Trackr
             </Link>
 

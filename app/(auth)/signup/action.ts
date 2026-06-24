@@ -27,11 +27,26 @@ export async function signUpEmail(
     });
   }
 
-  const result = await bcrypt.hash(password, 12);
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return actionError("Invalid email address", {
+      email,
+      name,
+    });
+  }
+
+  if (password.length < 8) {
+    return actionError("Password must be at least 8 characters", {
+      email,
+      name,
+    });
+  }
+
   try {
+    const passwordHash = await bcrypt.hash(password, 12);
     await pool.execute(
       "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-      [name, email.toLowerCase(), result],
+      [name, email.toLowerCase(), passwordHash],
     );
   } catch (error: unknown) {
     if (

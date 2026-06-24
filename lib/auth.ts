@@ -1,8 +1,9 @@
 import { getServerSession, NextAuthOptions } from "next-auth";
-import { pool } from "@/lib/db/mariadb";
+import { pool, query } from "@/lib/db/mariadb";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { UserRole } from "./next-auth";
+import { ROUTES } from "./routes";
 
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
@@ -28,17 +29,16 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase();
         const password = credentials.password;
         try {
-          const [rows] = await pool.query(
-            "SELECT id, name, email, password_hash, role FROM users WHERE email = ? limit 1",
-            [email],
-          );
-          const users = rows as {
+          const users = await query<{
             id: string;
             name: string;
             email: string;
             password_hash: string;
             role: UserRole;
-          }[];
+          }>(
+            "SELECT id, name, email, password_hash, role FROM users WHERE email = ? LIMIT 1",
+            [email],
+          );
 
           const user = users[0];
 
@@ -59,7 +59,11 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           };
         } catch (error) {
-          console.error("Error during user authorization for email:", email);
+          console.error(
+            "Error during user authorization for email:",
+            email,
+            error,
+          );
           return null;
         }
       },
@@ -82,6 +86,6 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: ROUTES.LOGIN,
   },
 };

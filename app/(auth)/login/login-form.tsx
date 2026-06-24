@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { signIn } from "next-auth/react";
 import { ROUTES } from "@/lib/routes";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -46,7 +46,7 @@ export function LoginForm({
 
     const [state, setState] = useState<ActionState<LoginFields>>(initialState);
     const [pending, startTransition] = useTransition();
-    async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    const handleSubmit = useCallback(async (e: React.SubmitEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const email = String(formData.get("email") || "");
@@ -63,25 +63,34 @@ export function LoginForm({
                 });
                 return;
             }
+            try {
+                const result = await signIn("credentials", {
+                    redirect: false,
+                    email,
+                    password,
+                });
 
-            const result = await signIn("credentials", {
-                redirect: false,
-                email,
-                password,
-            });
-
-            if (result?.error) {
+                if (result?.error) {
+                    setState({
+                        error: "Invalid email or password",
+                        fields: {
+                            email,
+                        },
+                    });
+                    return;
+                }
+                router.push(callbackUrl);
+            } catch (error) {
                 setState({
-                    error: "Invalid email or password",
+                    error: "An unexpected error occurred. Please try again.",
                     fields: {
                         email,
                     },
                 });
                 return;
             }
-            router.push(callbackUrl);
         })
-    }
+    }, [router, callbackUrl]);
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>

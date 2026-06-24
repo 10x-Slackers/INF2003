@@ -5,5 +5,8 @@ export const ROUTES = {
 } as const;
 
 export function loginRedirect(callbackUrl: string = ROUTES.HOME) {
+  if (!callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) {
+    return ROUTES.LOGIN;
+  }
   return `${ROUTES.LOGIN}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 }

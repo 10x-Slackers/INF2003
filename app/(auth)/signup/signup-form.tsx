@@ -81,7 +81,9 @@ export function SignUpForm({
                                 </Button>
                             </div>
                         </div>
-                        <div className="text-red-500 text-sm">{state.error}</div>
+                        {state.error && (
+                            <div className="text-red-500 text-sm">{state.error}</div>
+                        )}
 
                         <div className="mt-4 text-center text-sm">
                             Already have an account?{" "}

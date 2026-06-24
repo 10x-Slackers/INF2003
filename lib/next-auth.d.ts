@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 
-type UserRole = "ADMIN" | "USER" | "AGENT";
+export type UserRole = "ADMIN" | "USER" | "AGENT";
 
 declare module "next-auth" {
   interface User {
