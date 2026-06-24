@@ -1,3 +1,3 @@
-from .transform import transform_all, TransformResult
+from .transform import Transformer, TransformResult
 
-__all__ = ["transform_all", "TransformResult"]
+__all__ = ["Transformer", "TransformResult"]

@@ -14,7 +14,7 @@ DROP TABLE IF EXISTS amenity_types;
 DROP TABLE IF EXISTS towns;
 DROP TABLE IF EXISTS users;
 SET FOREIGN_KEY_CHECKS = 1;
--- Create tables
+-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID NOT NULL DEFAULT (uuid_v7()) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+-- Create towns table
 CREATE TABLE IF NOT EXISTS towns (
     id UUID NOT NULL DEFAULT (uuid_v7()) PRIMARY KEY,
     region ENUM(
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS towns (
     ) NOT NULL,
     name VARCHAR(100) NOT NULL UNIQUE
 );
+-- Create lookup tables
 CREATE TABLE IF NOT EXISTS amenity_types (
     id SMALLINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE
@@ -54,6 +56,7 @@ CREATE TABLE IF NOT EXISTS storey_ranges (
     CONSTRAINT chk_storey_ranges CHECK (min_storey <= max_storey),
     UNIQUE (min_storey, max_storey)
 );
+-- Create properties and saved_properties tables
 CREATE TABLE IF NOT EXISTS properties (
     id UUID NOT NULL DEFAULT (uuid_v7()) PRIMARY KEY,
     town_id UUID NOT NULL,
@@ -75,6 +78,7 @@ CREATE TABLE IF NOT EXISTS saved_properties (
     CONSTRAINT fk_saved_properties_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_saved_properties_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 );
+-- Create amenities
 CREATE TABLE IF NOT EXISTS amenities (
     id UUID NOT NULL DEFAULT (uuid_v7()) PRIMARY KEY,
     town_id UUID NOT NULL,
@@ -89,6 +93,7 @@ CREATE TABLE IF NOT EXISTS amenities (
     CONSTRAINT fk_amenities_town FOREIGN KEY (town_id) REFERENCES towns(id),
     CONSTRAINT fk_amenities_amenity_type FOREIGN KEY (amenity_type_id) REFERENCES amenity_types(id)
 );
+-- Create resale_transactions table
 CREATE TABLE IF NOT EXISTS resale_transactions (
     id UUID NOT NULL DEFAULT (uuid_v7()) PRIMARY KEY,
     uploaded_by_user_id UUID,
@@ -111,6 +116,7 @@ CREATE TABLE IF NOT EXISTS resale_transactions (
         CONSTRAINT fk_resale_transactions_flat_model FOREIGN KEY (flat_model_id) REFERENCES flat_models(id),
         CONSTRAINT fk_resale_transactions_storey_range FOREIGN KEY (storey_range_id) REFERENCES storey_ranges(id)
 );
+-- Create alert_notifications table
 CREATE TABLE IF NOT EXISTS alert_notifications (
     id UUID NOT NULL DEFAULT (uuid_v7()) PRIMARY KEY,
     alert_uuid VARCHAR(36) NOT NULL,

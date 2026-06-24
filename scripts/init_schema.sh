@@ -2,11 +2,6 @@
 
 set -euo pipefail
 
-if [[ "${1:-}" == "--help" ]]; then
-    sed -n '/^# init_schema/,/^$/p' "$0" | sed 's/^# \?//'
-    exit 0
-fi
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 MARIADB_HOST="${MARIADB_HOST:-mariadb}"
@@ -17,7 +12,7 @@ mysql -h "${MARIADB_HOST}" -u root -pP@ssw0rd < "${SCRIPT_DIR}/schema/mariadb.sq
 echo "MariaDB schema applied."
 
 echo "Executing mongodb.js against MongoDB (host=${MONGO_HOST})..."
-mongosh "mongodb://root:P@ssw0rd@${MONGO_HOST}:27017/inf2003" --file "${SCRIPT_DIR}/schema/mongodb.js"
+pnx -s mongosh "mongodb://root:P@ssw0rd@${MONGO_HOST}:27017/inf2003?authSource=admin" --file "${SCRIPT_DIR}/schema/mongodb.js"
 echo "MongoDB schema applied."
 
 echo "Schema initialised."

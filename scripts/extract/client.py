@@ -1,6 +1,8 @@
 import os
 import time
-from typing import Any, cast
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from typing import Any
 
 import pandas as pd
 import requests
@@ -12,6 +14,23 @@ METADATA_BASE_URL = "https://api-production.data.gov.sg/v2/public/api/datasets"
 TIMEOUT = 30
 POLL_INTERVAL = 5
 MAX_RETRIES = 3
+
+
+def _parse_retry_after(value: str | None, default: float) -> float:
+    """Parse a Retry-After header (seconds or HTTP-date) into a delay."""
+    if not value:
+        return default
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        pass
+    try:
+        retry_time = parsedate_to_datetime(value)
+        if retry_time.tzinfo is None:
+            retry_time = retry_time.replace(tzinfo=timezone.utc)
+        return max(0.0, (retry_time - datetime.now(timezone.utc)).total_seconds())
+    except (TypeError, ValueError, OverflowError):
+        return default
 
 
 class DataGovDatasetClient:
@@ -28,24 +47,11 @@ class DataGovDatasetClient:
         """Download a dataset and return it as a dataframe."""
         metadata = self._fetch_dataset_metadata(config)
         dataset_format = metadata.get("format", "").upper()
-
         if dataset_format == "CSV":
             self._initiate_download(config)
 
         download_url = self._poll_download_url(config)
-        df = self._read_dataset_url(download_url, dataset_format=dataset_format)
-
-        # Apply column selection if specified
-        if config.column_names:
-            df = df[config.column_names]
-
-        # Apply row filters if specified
-        if config.filters:
-            for f in config.filters:
-                col, val = list(f.items())[0]
-                df = df.loc[df[col] == val]
-
-        return cast(pd.DataFrame, df)
+        return self._read_dataset_url(download_url, dataset_format=dataset_format)
 
     def _fetch_dataset_metadata(self, config: DatasetConfig) -> dict[str, Any]:
         """Get dataset metadata from the API."""
@@ -115,10 +121,17 @@ class DataGovDatasetClient:
         *,
         json_payload: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """GET url and return the parsed JSON body."""
-        response = self.session.get(url, json=json_payload, timeout=TIMEOUT)
-        response.raise_for_status()
-        body = response.json()
-        if body.get("errorMsg"):
-            return {}
-        return body
+        """GET url and return the parsed JSON body, retrying on 429."""
+        for attempt in range(MAX_RETRIES + 1):
+            response = self.session.get(url, json=json_payload, timeout=TIMEOUT)
+            if response.status_code != 429:
+                response.raise_for_status()
+                return response.json()
+
+            if attempt == MAX_RETRIES:
+                response.raise_for_status()
+
+            retry_after = response.headers.get("Retry-After")
+            time.sleep(_parse_retry_after(retry_after, POLL_INTERVAL))
+
+        raise

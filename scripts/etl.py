@@ -1,24 +1,28 @@
-#!/usr/bin/env python3
-"""ETL orchestrator.
-
-Runs the three ETL steps in order against the data.gov.sg datasets:
-    1. extract: download raw datasets as DataFrames
-    2. transform: clean, normalise, and shape them for MariaDB + MongoDB
-    3. load: insert the shaped frames into both databases
-"""
-
 import argparse
 import os
-import sys
 from datetime import UTC, datetime
 
 from extract import DATASETS, DataGovDatasetClient
-from transform import transform_all
-from load import connect_mariadb, connect_mongodb, load_mariadb, load_mongodb
+from transform import Transformer
+from load import (
+    MariaDBLoader,
+    MongoDBLoader,
+    connect_mariadb,
+    connect_mongodb,
+)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the ETL pipeline.")
+    parser.add_argument(
+        "--api-key",
+        help="data.gov.sg API key",
+    )
+    return parser.parse_args()
 
 
 def run_extract(client: DataGovDatasetClient) -> dict:
-    """Download every configured dataset and return {key: DataFrame}."""
+    """Download every configured dataset."""
     raw_datasets = {}
     for config in DATASETS:
         print(f"[extract] {config.key} ...", flush=True)
@@ -32,14 +36,14 @@ def run_extract(client: DataGovDatasetClient) -> dict:
 
 def run_transform(raw_datasets: dict):
     """Run the transform step and print a short summary of each frame."""
-    result = transform_all(raw_datasets, computed_at=datetime.now(UTC))
+    result = Transformer(raw_datasets, computed_at=datetime.now(UTC)).transform()
 
-    print("[transform] MariaDB frames:", flush=True)
-    for name, frame in result.mariadb.items():
+    print("[transform] SQL frames:", flush=True)
+    for name, frame in result.sql.items():
         print(f"  {name:<22} {len(frame)} rows", flush=True)
 
-    print("[transform] MongoDB frames:", flush=True)
-    for name, frame in result.mongodb.items():
+    print("[transform] document frames:", flush=True)
+    for name, frame in result.documents.items():
         print(f"  {name:<22} {len(frame)} rows", flush=True)
 
     return result
@@ -50,41 +54,37 @@ def run_load(result) -> None:
     mariadb_host = os.environ.get("MARIADB_HOST", "mariadb")
     mongo_host = os.environ.get("MONGO_HOST", "mongo")
 
-    print("[load] MariaDB ...", flush=True)
+    print("[load] MariaDB...", flush=True)
     db = connect_mariadb(host=mariadb_host)
     try:
-        id_maps = load_mariadb(result, db)
+        loader = MariaDBLoader(db)
+        id_maps = loader.load(result)
         print("[load] MariaDB done", flush=True)
     except Exception:
         db.rollback()
-        db.close()
         raise
-
-    print("[load] MongoDB ...", flush=True)
-    mongo = connect_mongodb(host=mongo_host)
-    try:
-        load_mongodb(result, mongo, id_maps)
-        print("[load] MongoDB done", flush=True)
     finally:
         db.close()
+
+    print("[load] MongoDB...", flush=True)
+    mongo = connect_mongodb(host=mongo_host)
+    try:
+        MongoDBLoader(mongo, id_maps).load(result)
+        print("[load] MongoDB done", flush=True)
+    finally:
         mongo.close()
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Run the INF2003 ETL pipeline (extract -> transform -> load).",
-    )
-    parser.parse_args(argv)
-
-    client = DataGovDatasetClient()
+def main():
+    args = parse_args()
+    client = DataGovDatasetClient(api_key=args.api_key)
 
     raw_datasets = run_extract(client)
     result = run_transform(raw_datasets)
     run_load(result)
 
-    print("[etl] complete", flush=True)
-    return 0
+    print("ETL complete!")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

@@ -1,3 +1,4 @@
+// Create alerts collection with schema validation and indexes
 db.alerts.drop();
 db.createCollection("alerts", {
   validator: {
@@ -82,6 +83,7 @@ db.alerts.createIndex(
   { name: "alerts_flat_model_idx" },
 );
 
+// Create statistics collection
 db.statistics.drop();
 db.createCollection("statistics", {
   validator: {
@@ -153,6 +155,7 @@ db.statistics.createIndex(
   { name: "statistics_computed_at_idx" },
 );
 
+// Create reviews collection
 db.reviews.drop();
 db.createCollection("reviews", {
   validator: {
@@ -192,6 +195,7 @@ db.reviews.createIndex(
   { name: "reviews_property_idx" },
 );
 
+// Create towns collection
 db.towns.drop();
 db.createCollection("towns", {
   validator: {
@@ -245,6 +249,7 @@ db.towns.createIndex(
 );
 db.towns.createIndex({ updated_at: -1 }, { name: "towns_updated_at_idx" });
 
+// Create search_history collection
 db.search_history.drop();
 db.createCollection("search_history", {
   validator: {
