@@ -31,6 +31,16 @@ export async function POST(request: Request) {
     );
   } catch (error: unknown) {
     console.error("Error registering user:", error);
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "ER_DUP_ENTRY"
+    ) {
+      return NextResponse.json(
+        { message: "Email already exists" },
+        { status: 409 },
+      );
+    }
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

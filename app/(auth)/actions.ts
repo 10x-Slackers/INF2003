@@ -17,8 +17,8 @@ export async function loginEmail(
   _prevState: ActionState<LoginFields>,
   data: FormData,
 ): Promise<ActionState<LoginFields>> {
-  const email = data.get("email") as string;
-  const password = data.get("password") as string;
+  const email = String(data.get("email") || "");
+  const password = String(data.get("password") || "");
 
   if (!email || !password) {
     return actionError("Email and password are required", {

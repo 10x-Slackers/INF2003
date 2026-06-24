@@ -24,7 +24,6 @@ export function LoginForm({
         error: "",
         fields: {
             email: "",
-            password: "",
         },
     });
 
@@ -52,21 +51,12 @@ export function LoginForm({
                                 />
                             </div>
                             <div className="grid gap-3">
-                                {/* <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    <a
-                                        href="#"
-                                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                                    >
-                                        Forgot your password?
-                                    </a>
-                                </div> */}
+                                <Label htmlFor="password">Password</Label>
                                 <Input
                                     id="password"
                                     name="password"
                                     type="password"
                                     required
-                                    defaultValue={state.fields.password}
                                 />
                             </div>
                             <div className="flex flex-col gap-3">
