@@ -21,39 +21,41 @@ export const authOptions: NextAuthOptions = {
         }
         const email = String(credentials.email);
         const password = String(credentials.password);
+        try {
+          const [rows] = await pool.query(
+            "SELECT id, name, email, password_hash, role FROM users WHERE email = ? limit 1",
+            [email],
+          );
+          const users = rows as {
+            id: string;
+            name: string;
+            email: string;
+            password_hash: string;
+            role: "ADMIN" | "USER" | "AGENT";
+          }[];
 
-        const [rows] = await pool.query(
-          "SELECT id,name, email, password_hash, role FROM users WHERE email = ? limit 1",
-          [email],
-        );
+          const user = users[0];
 
-        const users = rows as {
-          id: string;
-          name: string;
-          email: string;
-          password_hash: string;
-          role: "ADMIN" | "USER" | "AGENT";
-        }[];
-
-        const user = users[0];
-
-        if (!user) {
+          if (!user) {
+            return null;
+          }
+          const isValidPassword = await bcrypt.compare(
+            password,
+            user.password_hash,
+          );
+          if (!isValidPassword) {
+            return null;
+          }
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Error during user authorization:", error);
           return null;
         }
-        const isValidPassword = await bcrypt.compare(
-          password,
-          user.password_hash,
-        );
-        if (!isValidPassword) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        };
       },
     }),
   ],

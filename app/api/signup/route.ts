@@ -7,19 +7,38 @@ export async function POST(request: Request) {
     const { name, email, password } = await request.json();
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { message: "Missing required fields" },
         { status: 400 },
       );
     }
 
     if (password.length < 8) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { message: "Password must be at least 8 characters" },
+        { status: 400 },
+      );
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { message: "Invalid email format" },
         { status: 400 },
       );
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
+
+    const [existing] = await pool.query(
+      "SELECT id FROM users WHERE email = ?",
+      [email.toLowerCase()],
+    );
+
+    if (Array.isArray(existing) && existing.length > 0) {
+      return NextResponse.json(
+        { message: "Email already exists" },
+        { status: 409 },
+      );
+    }
     await pool.query(
       "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
       [name, email.toLowerCase(), passwordHash],
@@ -30,7 +49,6 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error: unknown) {
-    console.error("Error registering user:", error);
     if (
       error instanceof Error &&
       "code" in error &&
@@ -42,7 +60,7 @@ export async function POST(request: Request) {
       );
     }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { message: "Internal server error" },
       { status: 500 },
     );
   }
