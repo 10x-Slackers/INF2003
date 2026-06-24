@@ -66,6 +66,7 @@ export function SignUpForm({
                                     type="text"
                                     defaultValue={state.fields?.name}
                                     disabled={pending}
+                                    required
                                 />
                                 {state.fieldErrors?.name?.map((error) => (
                                     <p key={error} className="text-sm text-destructive">
@@ -99,6 +100,7 @@ export function SignUpForm({
                                     type="password"
                                     defaultValue={state.fields?.password}
                                     disabled={pending}
+                                    required
                                 />
                                 {state.fieldErrors?.password?.map((error) => (
                                     <p key={error} className="text-sm text-destructive">
@@ -116,6 +118,7 @@ export function SignUpForm({
                                     type="password"
                                     defaultValue={state.fields?.confirmPassword}
                                     disabled={pending}
+                                    required
                                 />
                                 {state.fieldErrors?.confirmPassword?.map((error) => (
                                     <p key={error} className="text-sm text-destructive">

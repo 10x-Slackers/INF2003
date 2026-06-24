@@ -45,7 +45,7 @@ export function LoginForm({
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const callbackUrl = loginRedirect(searchParams.get("callbackUrl") || ROUTES.HOME);
+    const callbackUrl = loginRedirect(searchParams.get("callbackUrl") || "");
 
 
     const [state, setState] = useState(defaultFormState);
@@ -56,8 +56,8 @@ export function LoginForm({
         if (pending) return;
         const formData = new FormData(e.currentTarget);
         const values = {
-            email: String(formData.get("email")),
-            password: String(formData.get("password")),
+            email: String(formData.get("email") || ""),
+            password: String(formData.get("password") || ""),
         }
         const parsed = loginSchema.safeParse(values);
         if (!parsed.success) {
@@ -124,6 +124,7 @@ export function LoginForm({
                                     type="email"
                                     defaultValue={state.fields?.email}
                                     disabled={pending}
+                                    required
                                 />
                                 {state.fieldErrors?.email?.map((error) => (
                                     <p key={error} className="text-sm text-destructive">
@@ -139,6 +140,7 @@ export function LoginForm({
                                     type="password"
                                     defaultValue={state.fields?.password}
                                     disabled={pending}
+                                    required
                                 />
                                 {state.fieldErrors?.password?.map((error) => (
                                     <p key={error} className="text-sm text-destructive">

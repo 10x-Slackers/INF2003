@@ -30,10 +30,10 @@ export async function signUpEmail(
   data: FormData,
 ): Promise<ActionState<SignUpFields>> {
   const fields: SignUpFields = {
-    name: String(data.get("name")),
-    email: String(data.get("email")),
-    password: String(data.get("password")),
-    confirmPassword: String(data.get("confirmPassword")),
+    name: String(data.get("name") || ""),
+    email: String(data.get("email") || ""),
+    password: String(data.get("password") || ""),
+    confirmPassword: String(data.get("confirmPassword") || ""),
   };
 
   const parsed = signUpSchema.safeParse(fields);
