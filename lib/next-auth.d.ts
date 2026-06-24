@@ -1,22 +1,24 @@
 import NextAuth from "next-auth";
 
+type UserRole = "ADMIN" | "USER" | "AGENT";
+
 declare module "next-auth" {
   interface User {
     id: string;
-    role: "ADMIN" | "USER" | "AGENT";
+    role: UserRole;
   }
   interface Session {
     user: {
       id: string;
       name?: string | null;
       email?: string | null;
-      role: "ADMIN" | "USER" | "AGENT";
+      role: UserRole;
     };
   }
 }
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
-    role: "ADMIN" | "USER" | "AGENT";
+    role: UserRole;
   }
 }

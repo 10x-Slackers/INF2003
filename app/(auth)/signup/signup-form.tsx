@@ -70,6 +70,7 @@ export function SignUpForm({
                                     name="password"
                                     type="password"
                                     required
+                                    minLength={8}
                                     defaultValue={state.fields.password}
                                 />
                             </div>

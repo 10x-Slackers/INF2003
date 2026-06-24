@@ -19,8 +19,8 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        const email = String(credentials.email);
-        const password = String(credentials.password);
+        const email = credentials.email.toLowerCase();
+        const password = credentials.password;
         try {
           const [rows] = await pool.query(
             "SELECT id, name, email, password_hash, role FROM users WHERE email = ? limit 1",
@@ -62,9 +62,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const authUser = user;
-        token.id = authUser.id;
-        token.role = authUser.role;
+        token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },

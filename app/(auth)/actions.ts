@@ -1,6 +1,9 @@
+"use client";
+
 import { signIn } from "next-auth/react";
 import { actionError, type ActionState } from "@/lib/action-helpers";
 import { redirect } from "next/navigation";
+import { ROUTES } from "@/lib/routes";
 
 type LoginFields = {
   email: string;
@@ -19,12 +22,10 @@ export async function loginEmail(
 ): Promise<ActionState<LoginFields>> {
   const email = String(data.get("email") || "");
   const password = String(data.get("password") || "");
-  console.log(email, password);
 
   if (!email || !password) {
     return actionError("Email and password are required", {
       email,
-      password,
     });
   }
 
@@ -40,7 +41,7 @@ export async function loginEmail(
     });
   }
 
-  redirect("/");
+  redirect(ROUTES.HOME);
 }
 
 export async function signUpEmail(
@@ -79,5 +80,5 @@ export async function signUpEmail(
     });
   }
 
-  redirect("/login");
+  redirect(ROUTES.LOGIN);
 }

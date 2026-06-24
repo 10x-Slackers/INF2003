@@ -21,9 +21,9 @@ export function LoginForm({
     ...props
 }: React.ComponentProps<"div">) {
     const [state, formAction, pending] = useActionState(loginEmail, {
-        error: "",
         fields: {
             email: "",
+            password: "",
         },
     });
 
@@ -56,6 +56,7 @@ export function LoginForm({
                                     id="password"
                                     name="password"
                                     type="password"
+                                    defaultValue={state.fields.password}
                                     required
                                 />
                             </div>

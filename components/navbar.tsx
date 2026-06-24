@@ -4,11 +4,11 @@ import { LogoutButton } from "./logout-button";
 import { useSession } from "next-auth/react";
 
 
+const links = [
+    { href: "/", label: "Home" },
+    { href: "/login", label: "Login" },
+];
 export function Navbar() {
-    const links = [
-        { href: "/", label: "Home" },
-        { href: "/login", label: "Login" },
-    ]
     const { data: session, status } = useSession();
 
     return (
