@@ -2,19 +2,21 @@ import mysql, {
   type Pool,
   type PoolOptions,
   type RowDataPacket,
+  type ResultSetHeader,
+  type ExecuteValues,
 } from "mysql2/promise";
+import { requireEnv } from "@/lib/utils";
 
 const poolConfig: PoolOptions = {
-  host: process.env.MARIADB_HOST,
+  host: requireEnv("MARIADB_HOST"),
   port: Number(process.env.MARIADB_PORT) || 3306,
-  user: process.env.MARIADB_USER,
-  password: process.env.MARIADB_PASSWORD,
-  database: process.env.MARIADB_DATABASE,
+  user: requireEnv("MARIADB_USER"),
+  password: requireEnv("MARIADB_PASSWORD"),
+  database: requireEnv("MARIADB_DATABASE"),
   charset: "utf8mb4",
   connectionLimit: 10,
   connectTimeout: 5000,
   enableKeepAlive: true,
-  decimalNumbers: false,
 };
 
 /** Singleton MariaDB connection pool */
@@ -68,10 +70,11 @@ export async function query<T extends Record<string, unknown> = RowDataPacket>(
  */
 export async function execute(
   sql: string,
-  params: unknown[] = [],
+  params: ExecuteValues = [],
 ): Promise<QueryResult> {
-  const [result] = await pool.query(sql, params);
-  return result as unknown as QueryResult;
+  const [result] = await pool.execute(sql, params);
+  const { affectedRows, insertId } = result as ResultSetHeader;
+  return { affectedRows, insertId };
 }
 
 /**
@@ -89,7 +92,7 @@ export async function withTransaction<T>(
       sql: string,
       params?: unknown[],
     ) => Promise<R[]>;
-    execute: (sql: string, params?: unknown[]) => Promise<QueryResult>;
+    execute: (sql: string, params?: ExecuteValues) => Promise<QueryResult>;
   }) => Promise<T>,
 ): Promise<T> {
   const conn = await pool.getConnection();
@@ -107,10 +110,11 @@ export async function withTransaction<T>(
 
     const connExecute = async (
       sql: string,
-      params: unknown[] = [],
+      params: ExecuteValues = [],
     ): Promise<QueryResult> => {
-      const [result] = await conn.query(sql, params);
-      return result as unknown as QueryResult;
+      const [result] = await conn.execute(sql, params);
+      const { affectedRows, insertId } = result as ResultSetHeader;
+      return { affectedRows, insertId };
     };
 
     // Run the caller's work and commit only if it returns without throwing.
