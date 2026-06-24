@@ -9,18 +9,42 @@ HDB Resale Analytics and Tracker Web Application
 
 ## Project Scope
 
-- [link_to_source](link_to_source)
-  - scope_description
+- Database Schema definitions
+  - [`scripts/schema/mariadb.sql`](scripts/schema/mariadb.sql)
+  - [`scripts/schema/mongodb.js`](scripts/schema/mongodb.js)
+- ETL pipeline
+  - Extracts, transforms, and loads datasets from [data.gov.sg](https://data.gov.sg) into MariaDB (relational data) and MongoDB (document data)
+  - Pipeline stages live under [`scripts/`](scripts/) (`extract/`, `transform/`, `load/`), orchestrated by [`scripts/etl.py`](scripts/etl.py)
+  - Sources:
+    - Resale Flat Prices
+    - Schools
+    - Gyms
+    - Parks
+    - Region/Towns mapping
 
 ## Usage
 
-### runtime_executable
+### Initialise the database schema
+
+Applies the relational schema to MariaDB and the document schema/validation to MongoDB. Run once before the first ETL run.
 
 ```sh
-./runtime_executable <args> [optional]
+./scripts/init_schema.sh
 ```
 
-- runtime_executable_description
+Connection defaults match dev-container services, override via the `MARIADB_*` / `MONGO_*` environment variables.
+
+### Run the ETL pipeline
+
+Extracts datasets from data.gov.sg, transforms them, and loads the results into MariaDB then MongoDB.
+
+```sh
+DATAGOV_API_KEY=<your_key> uv run scripts/etl.py
+```
+
+- `DATAGOV_API_KEY` (optional)
+  - [data.gov.sg API key](https://guide.data.gov.sg/developer-guide/api-overview/how-to-request-an-api-key) for the extract stage
+- Optional overrides: `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_DATABASE`, `MONGO_USER`, `MONGO_PASSWORD`
 
 ## Getting Started
 
@@ -61,11 +85,11 @@ HDB Resale Analytics and Tracker Web Application
    - Password: `P@ssw0rd`
    - Database: `inf2003`
 2. MongoDB:
-  - Connection String: `mongodb://root:P@ssw0rd@mongo:27017/`
-  - Host: `mongo`
-  - Port: `27017`
-  - User: `root`
-  - Password: `P@ssw0rd`
+   - Connection String: `mongodb://root:P@ssw0rd@mongo:27017/`
+   - Host: `mongo`
+   - Port: `27017`
+   - User: `root`
+   - Password: `P@ssw0rd`
 
 ## Developer Tooling
 
