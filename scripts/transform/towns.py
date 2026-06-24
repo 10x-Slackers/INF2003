@@ -21,11 +21,8 @@ class TownGeometry:
 class TownTransformer:
     """Build towns dataframe and spatial index."""
 
-    def __init__(
-        self, raw_datasets: dict[str, pd.DataFrame], computed_at: datetime
-    ) -> None:
+    def __init__(self, raw_datasets: dict[str, pd.DataFrame]) -> None:
         self.raw_datasets = raw_datasets
-        self.computed_at = computed_at
         self.town_geometries: dict[str, TownGeometry] = {}
         self.town_tree: STRtree | None = None
 
@@ -72,7 +69,7 @@ class TownTransformer:
         """Find the TownGeometry that contains or best overlaps the given geometry."""
         if self.town_tree is None:
             raise RuntimeError("town_tree not built; call build() first")
-        candidate_indices = [int(index) for index in self.town_tree.query(geom)]
+        candidate_indices = list(self.town_tree.query(geom))
         values = list(self.town_geometries.values())
         matches = [
             values[index]

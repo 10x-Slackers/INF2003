@@ -1,4 +1,3 @@
-import os
 import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
@@ -38,10 +37,8 @@ class DataGovDatasetClient:
 
     def __init__(self, api_key: str | None = None) -> None:
         self.session = requests.Session()
-        # Fall back to the environment variable if no API key is provided
-        key = api_key or os.environ.get("DATAGOV_API_KEY")
-        if key:
-            self.session.headers.update({"x-api-key": key})
+        if api_key:
+            self.session.headers.update({"x-api-key": api_key})
 
     def fetch_dataset(self, config: DatasetConfig) -> pd.DataFrame:
         """Download a dataset and return it as a dataframe."""

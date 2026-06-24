@@ -25,12 +25,13 @@ class DocumentTransformer:
             for town_key, tg in self.town_transformer.town_geometries.items()
         }
         timestamp = self._iso_timestamp(self.computed_at)
+        month_str = pd.to_datetime(
+            resale_transactions_df["transaction_month"]
+        ).dt.strftime("%Y-%m")
 
         for town_key, group in resale_transactions_df.groupby("town_key", sort=True):
             town_key = str(town_key)
-            month_series = pd.to_datetime(group["transaction_month"]).dt.strftime(
-                "%Y-%m"
-            )
+            group_months = month_str.loc[group.index]
             avg_prices = (
                 group.groupby("flat_type_key", sort=True)["resale_price"]
                 .mean()
@@ -43,8 +44,8 @@ class DocumentTransformer:
                     "town_key": town_key,
                     "transaction_summary": {
                         "total_transaction": int(len(group.index)),
-                        "earliest_transaction": str(month_series.min()),
-                        "latest_transaction": str(month_series.max()),
+                        "earliest_transaction": str(group_months.min()),
+                        "latest_transaction": str(group_months.max()),
                         "avg_resale_price_by_flat_type": {
                             str(flat_type_key): float(value)
                             for flat_type_key, value in avg_prices.items()

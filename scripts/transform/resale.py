@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from typing import Any
 
 import pandas as pd
@@ -16,11 +15,8 @@ STOREY_RANGE_PATTERN = re.compile(r"^\s*(\d+)\s+TO\s+(\d+)\s*$", re.IGNORECASE)
 class ResaleTransformer:
     """Build resale transaction dataframes."""
 
-    def __init__(
-        self, raw_datasets: dict[str, pd.DataFrame], computed_at: datetime
-    ) -> None:
+    def __init__(self, raw_datasets: dict[str, pd.DataFrame]) -> None:
         self.raw_datasets = raw_datasets
-        self.computed_at = computed_at
 
     def build(self) -> dict[str, pd.DataFrame]:
         raw_resale = self.raw_datasets["resale_flat_prices"]
@@ -57,7 +53,7 @@ class ResaleTransformer:
             + "|"
             + resale["street_name"].map(key)
             + "|"
-            + resale["lease_commence_year"].astype(int).astype(str)
+            + resale["lease_commence_year"].astype(str)
         )
         resale["transaction_key"] = [f"resale:{i}" for i in range(1, len(resale) + 1)]
 

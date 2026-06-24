@@ -1,4 +1,4 @@
-// Create alerts collection with schema validation and indexes
+// Create alerts collection with schema validation
 db.alerts.drop();
 db.createCollection("alerts", {
   validator: {
@@ -65,23 +65,6 @@ db.createCollection("alerts", {
     },
   },
 });
-db.alerts.createIndex(
-  { user_id: 1, is_active: 1 },
-  { name: "alerts_user_active_idx" },
-);
-db.alerts.createIndex(
-  { is_active: 1, last_triggered_at: -1 },
-  { name: "alerts_active_last_triggered_idx" },
-);
-db.alerts.createIndex({ "filters.town_id": 1 }, { name: "alerts_town_idx" });
-db.alerts.createIndex(
-  { "filters.flat_type_id": 1 },
-  { name: "alerts_flat_type_idx" },
-);
-db.alerts.createIndex(
-  { "filters.flat_model_id": 1 },
-  { name: "alerts_flat_model_idx" },
-);
 
 // Create statistics collection
 db.statistics.drop();
@@ -140,20 +123,6 @@ db.createCollection("statistics", {
     },
   },
 });
-db.statistics.createIndex(
-  {
-    metric: 1,
-    granularity: 1,
-    "dimensions.town_id": 1,
-    "dimensions.flat_type_id": 1,
-    "dimensions.flat_model_id": 1,
-  },
-  { name: "statistics_lookup_idx" },
-);
-db.statistics.createIndex(
-  { computed_at: -1 },
-  { name: "statistics_computed_at_idx" },
-);
 
 // Create reviews collection
 db.reviews.drop();
@@ -186,14 +155,6 @@ db.createCollection("reviews", {
     },
   },
 });
-db.reviews.createIndex(
-  { user_id: 1, created_at: -1 },
-  { name: "reviews_user_idx" },
-);
-db.reviews.createIndex(
-  { property_id: 1, created_at: -1 },
-  { name: "reviews_property_idx" },
-);
 
 // Create towns collection
 db.towns.drop();
@@ -243,11 +204,6 @@ db.createCollection("towns", {
     },
   },
 });
-db.towns.createIndex(
-  { "transaction_summary.latest_transaction": -1 },
-  { name: "towns_latest_transaction_idx" },
-);
-db.towns.createIndex({ updated_at: -1 }, { name: "towns_updated_at_idx" });
 
 // Create search_history collection
 db.search_history.drop();
@@ -264,20 +220,46 @@ db.createCollection("search_history", {
           properties: {
             town_id: { bsonType: "array", items: { bsonType: "string" } },
             flat_type_id: { bsonType: "array", items: { bsonType: "string" } },
-            min_price: { bsonType: ["int", "long", "double", "decimal"] },
-            max_price: { bsonType: ["int", "long", "double", "decimal"] },
-            floor_area_min: { bsonType: ["int", "long", "double", "decimal"] },
-            floor_area_max: { bsonType: ["int", "long", "double", "decimal"] },
-            storey_min: { bsonType: ["null", "int", "long"] },
-            storey_max: { bsonType: ["null", "int", "long"] },
-            lease_remaining_min: {
-              bsonType: ["null", "int", "long", "double", "decimal"],
+            price: {
+              bsonType: "object",
+              properties: {
+                min: { bsonType: ["int", "long", "double", "decimal"] },
+                max: { bsonType: ["int", "long", "double", "decimal"] },
+              },
+              additionalProperties: false,
             },
-            lease_remaining_max: {
-              bsonType: ["null", "int", "long", "double", "decimal"],
+            floor_area_sqm: {
+              bsonType: "object",
+              properties: {
+                min: { bsonType: ["int", "long", "double", "decimal"] },
+                max: { bsonType: ["int", "long", "double", "decimal"] },
+              },
+              additionalProperties: false,
             },
-            transaction_year_from: { bsonType: ["null", "int", "long"] },
-            transaction_year_to: { bsonType: ["null", "int", "long"] },
+            storey: {
+              bsonType: "object",
+              properties: {
+                min: { bsonType: ["null", "int", "long"] },
+                max: { bsonType: ["null", "int", "long"] },
+              },
+              additionalProperties: false,
+            },
+            lease_remaining: {
+              bsonType: "object",
+              properties: {
+                min: { bsonType: ["null", "int", "long", "double", "decimal"] },
+                max: { bsonType: ["null", "int", "long", "double", "decimal"] },
+              },
+              additionalProperties: false,
+            },
+            transaction_year: {
+              bsonType: "object",
+              properties: {
+                from: { bsonType: ["null", "int", "long"] },
+                to: { bsonType: ["null", "int", "long"] },
+              },
+              additionalProperties: false,
+            },
           },
           additionalProperties: false,
         },
@@ -287,15 +269,3 @@ db.createCollection("search_history", {
     },
   },
 });
-db.search_history.createIndex(
-  { user_id: 1, searched_at: -1 },
-  { name: "search_history_user_time_idx" },
-);
-db.search_history.createIndex(
-  { "query.town_id": 1 },
-  { name: "search_history_town_idx" },
-);
-db.search_history.createIndex(
-  { "query.flat_type_id": 1 },
-  { name: "search_history_flat_type_idx" },
-);

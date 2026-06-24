@@ -25,15 +25,18 @@ class AmenityTransformer:
     ) -> None:
         self.raw_datasets = raw_datasets
         self.town_transformer = town_transformer
+        # Precompute lookup tables
+        self.valid_town_keys = set(self.town_transformer.town_geometries.keys())
+        self.town_key_by_spacefree = {
+            tk.replace(" ", ""): tk for tk in self.valid_town_keys
+        }
 
     def build(self) -> tuple[pd.DataFrame, pd.DataFrame]:
         amenity_types = self._build_amenity_types()
-        valid_town_keys = set(self.town_transformer.town_geometries.keys())
         amenities = self._build_amenities(
             schools=self.raw_datasets["schools"],
             parks=self.raw_datasets["parks"],
             gyms=self.raw_datasets["gyms"],
-            valid_town_keys=valid_town_keys,
         )
         return amenity_types, amenities
 
@@ -53,11 +56,10 @@ class AmenityTransformer:
         schools: pd.DataFrame,
         parks: pd.DataFrame,
         gyms: pd.DataFrame,
-        valid_town_keys: set[str],
     ) -> pd.DataFrame:
         """Build the amenities dataframe from all three raw amenity datasets."""
         rows: list[dict[str, Any]] = []
-        rows.extend(self._school_amenity_rows(schools, valid_town_keys))
+        rows.extend(self._school_amenity_rows(schools))
         rows.extend(self._geojson_amenity_rows(parks, "Park"))
         rows.extend(self._geojson_amenity_rows(gyms, "Gym"))
 
@@ -77,13 +79,12 @@ class AmenityTransformer:
     def _school_amenity_rows(
         self,
         schools: pd.DataFrame,
-        valid_town_keys: set[str],
     ) -> list[dict[str, Any]]:
         """Build amenity rows from the schools dataset using dgp_code to town_key fuzzy match."""
         rows = []
         for _, row in schools.iterrows():
             raw_town_key = key(get_value(row, "dgp_code"))
-            town_key = self._resolve_town_key(raw_town_key, valid_town_keys)
+            town_key = self._resolve_town_key(raw_town_key)
             if town_key is None:
                 continue
             name = clean_text(get_value(row, "school_name"))
@@ -139,18 +140,12 @@ class AmenityTransformer:
             )
         return rows
 
-    @staticmethod
-    def _resolve_town_key(town_key: str, valid_town_keys: set[str]) -> str | None:
+    def _resolve_town_key(self, town_key: str) -> str | None:
         """Match a raw town key against valid keys, trying space-insensitive fallback."""
-        if town_key in valid_town_keys:
+        if town_key in self.valid_town_keys:
             return town_key
 
-        town_key_without_spaces = town_key.replace(" ", "")
-        for valid_town_key in valid_town_keys:
-            if valid_town_key.replace(" ", "") == town_key_without_spaces:
-                return valid_town_key
-
-        return None
+        return self.town_key_by_spacefree.get(town_key.replace(" ", ""))
 
     @staticmethod
     def _extract_description_fields(description: Any) -> dict[str, str]:

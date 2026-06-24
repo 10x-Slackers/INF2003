@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -6,7 +7,7 @@ class DatasetConfig:
     key: str
     dataset_id: str
     column_names: list[str]
-    filters: list[dict[str, str]]
+    filters: list[dict[str, Any]]
 
 
 RESALE = DatasetConfig(

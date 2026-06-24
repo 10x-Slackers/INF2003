@@ -13,6 +13,16 @@ class MariaDBLoader:
         self.cursor = db.cursor()
         self.id_maps: dict[str, dict[str, str]] = {}
 
+    def close(self) -> None:
+        """Close the cursor to release database resources promptly."""
+        self.cursor.close()
+
+    def __enter__(self) -> "MariaDBLoader":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.close()
+
     def load(self, result: TransformResult) -> dict[str, dict[str, str]]:
         """Load all frames and return id_maps."""
         frames = result.sql

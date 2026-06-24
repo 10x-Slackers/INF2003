@@ -18,7 +18,7 @@ _REQUIRED_DATASETS = [
 ]
 
 
-@dataclass(frozen=True)
+@dataclass()
 class TransformResult:
     sql: dict[str, pd.DataFrame]
     documents: dict[str, pd.DataFrame]
@@ -33,16 +33,16 @@ class Transformer:
         computed_at: datetime | None = None,
     ) -> None:
         self.raw_datasets = raw_datasets
-        self.computed_at = computed_at if computed_at is not None else datetime.now(UTC)
+        self.computed_at = computed_at if computed_at else datetime.now(UTC)
 
     def transform(self) -> TransformResult:
         """Transforms towns -> resale -> amenities -> documents. Returns a TransformResult with SQL and documents dataframes."""
         self._validate_required_datasets()
 
-        town_tx = TownTransformer(self.raw_datasets, self.computed_at)
+        town_tx = TownTransformer(self.raw_datasets)
         towns_df = town_tx.build()
 
-        resale_tx = ResaleTransformer(self.raw_datasets, self.computed_at)
+        resale_tx = ResaleTransformer(self.raw_datasets)
         resale = resale_tx.build()
 
         amenity_tx = AmenityTransformer(self.raw_datasets, town_tx)
