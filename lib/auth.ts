@@ -1,5 +1,5 @@
 import { NextAuthOptions } from "next-auth";
-import { pool } from "@/lib/db";
+import { pool } from "@/lib/db/mariadb";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
