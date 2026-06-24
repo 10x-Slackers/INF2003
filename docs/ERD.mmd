@@ -1,0 +1,100 @@
+erDiagram
+    USERS {
+        BINARY(16) id PK "UUIDv7"
+        VARCHAR(255) name
+        VARCHAR(320) email UK
+        VARCHAR(255) password_hash
+        ENUM role "ADMIN, AGENT, USER"
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    TOWNS {
+        BINARY(16) id PK "UUIDv7"
+        ENUM region "North, South, North-East, etc."
+        VARCHAR(100) name
+    }
+
+    PROPERTIES {
+        BINARY(16) id PK "UUIDv7"
+        BINARY(16) town_id FK
+        VARCHAR(20) block
+        VARCHAR(255) street_name
+        INT lease_commence_year
+    }
+
+    SAVED_PROPERTIES {
+        BINARY(16) id PK "UUIDv7"
+        BINARY(16) user_id FK
+        BINARY(16) property_id FK
+        TIMESTAMP created_at
+    }
+
+    AMENITY_TYPES {
+        SMALLINT id PK
+        VARCHAR(50) name UK "School, Park, Gym"
+    }
+
+    AMENITIES {
+        BINARY(16) id PK "UUIDv7"
+        BINARY(16) town_id FK
+        SMALLINT amenity_type_id FK
+        VARCHAR(255) name
+        VARCHAR(255) street_name
+        VARCHAR(10) postal_code
+        DECIMAL longitude "Nullable"
+        DECIMAL latitude "Nullable"
+    }
+
+    FLAT_TYPES {
+        SMALLINT id PK
+        VARCHAR(50) name UK
+    }
+
+    FLAT_MODELS {
+        SMALLINT id PK
+        VARCHAR(100) name UK
+    }
+
+    STOREY_RANGES {
+        SMALLINT id PK
+        INT min_storey
+        INT max_storey
+    }
+
+    RESALE_TRANSACTIONS {
+        BINARY(16) id PK "UUIDv7"
+        BINARY(16) uploaded_by_user_id FK "Nullable"
+        BINARY(16) property_id FK
+        SMALLINT flat_type_id FK
+        SMALLINT flat_model_id FK
+        SMALLINT storey_range_id FK
+        DECIMAL floor_area_sqm
+        DATE transaction_month
+        DECIMAL resale_price
+    }
+
+    ALERT_NOTIFICATIONS {
+        BINARY(16) id PK "UUIDv7"
+        VARCHAR(36) alert_uuid "MongoDB Ref"
+        BINARY(16) transaction_id FK
+        TIMESTAMP read_at "Nullable"
+        TIMESTAMP created_at
+    }
+
+    USERS ||--o{ RESALE_TRANSACTIONS : uploads
+    USERS ||--o{ SAVED_PROPERTIES : saves
+
+    TOWNS ||--o{ PROPERTIES : contains
+    TOWNS ||--o{ AMENITIES : contains
+
+    AMENITY_TYPES ||--o{ AMENITIES : classifies
+
+    PROPERTIES ||--o{ SAVED_PROPERTIES : bookmarked_as
+    PROPERTIES ||--o{ RESALE_TRANSACTIONS : sold_as
+
+    FLAT_TYPES ||--o{ RESALE_TRANSACTIONS : classifies
+    FLAT_MODELS ||--o{ RESALE_TRANSACTIONS : describes
+    STOREY_RANGES ||--o{ RESALE_TRANSACTIONS : categorizes
+
+    RESALE_TRANSACTIONS ||--o{ ALERT_NOTIFICATIONS : matches
