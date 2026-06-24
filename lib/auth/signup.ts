@@ -6,7 +6,6 @@ import {
   type ActionState,
 } from "@/lib/action-helpers";
 import { redirect } from "next/navigation";
-import { ROUTES } from "@/lib/routes";
 import bcrypt from "bcryptjs";
 import { pool } from "@/lib/db/mariadb";
 import z from "zod";
@@ -59,5 +58,5 @@ export async function signUpEmail(
     });
   }
 
-  redirect(ROUTES.LOGIN);
+  redirect("/login");
 }

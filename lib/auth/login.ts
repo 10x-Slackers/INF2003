@@ -2,8 +2,7 @@ import { getServerSession, NextAuthOptions } from "next-auth";
 import { query } from "@/lib/db/mariadb";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { UserRole } from "./next-auth";
-import { ROUTES } from "./routes";
+import { UserRole } from "@/lib/auth/next-auth";
 
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions);
@@ -81,8 +80,13 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
   },
   pages: {
-    signIn: ROUTES.LOGIN,
+    signIn: "/login",
   },
 };
