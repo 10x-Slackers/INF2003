@@ -62,15 +62,10 @@ def run_load(db, mongo, result) -> None:
     except Exception:
         db.rollback()
         raise
-    finally:
-        db.close()
 
     print("[load] MongoDB...", end=" ", flush=True)
-    try:
-        MongoDBLoader(mongo, id_maps).load(result)
-        print("done")
-    finally:
-        mongo.close()
+    MongoDBLoader(mongo, id_maps).load(result)
+    print("done")
 
 
 def main():
@@ -85,14 +80,23 @@ def main():
         password=MARIADB_PASSWORD,
         db=MARIADB_DATABASE,
     )
-    mongo = connect_mongodb(
-        host=MONGO_HOST,
-        port=MONGO_PORT,
-        user=MONGO_USER,
-        password=MONGO_PASSWORD,
-        db=MONGO_DATABASE,
-    )
-    run_load(db, mongo, result)
+    try:
+        mongo = connect_mongodb(
+            host=MONGO_HOST,
+            port=MONGO_PORT,
+            user=MONGO_USER,
+            password=MONGO_PASSWORD,
+            db=MONGO_DATABASE,
+        )
+    except Exception:
+        db.close()
+        raise
+
+    try:
+        run_load(db, mongo, result)
+    finally:
+        mongo.close()
+        db.close()
 
     print("ETL complete!")
 

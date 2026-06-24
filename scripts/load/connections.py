@@ -14,7 +14,13 @@ def connect_mariadb(
 ) -> Connection:
     """Open a MariaDB connection. Caller is responsible for commit/close."""
     return MySQLdb.connect(
-        host=host, port=port, user=user, passwd=password, db=db, connect_timeout=5
+        host=host,
+        port=port,
+        user=user,
+        passwd=password,
+        db=db,
+        charset="utf8mb4",
+        connect_timeout=5,
     )
 
 

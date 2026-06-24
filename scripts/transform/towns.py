@@ -29,6 +29,7 @@ class TownTransformer:
     def build(self) -> pd.DataFrame:
         raw_towns = self.raw_datasets["region_towns"]
         rows: list[dict[str, Any]] = []
+        self.town_geometries.clear()
 
         for _, row in raw_towns.iterrows():
             town_name = clean_text(get_value(row, "properties.PLN_AREA_N"))

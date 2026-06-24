@@ -15,7 +15,7 @@ MONGO_PASSWORD="${MONGO_PASSWORD:-P@ssw0rd}"
 MONGO_HOST="${MONGO_HOST:-mongo}"
 
 echo "Executing mariadb.sql against MariaDB..."
-mysql -h "${MARIADB_HOST}" -u ${MARIADB_USER} -p${MARIADB_PASSWORD} < "${SCRIPT_DIR}/schema/mariadb.sql"
+mysql -h "${MARIADB_HOST}" -u "${MARIADB_USER}" -p"${MARIADB_PASSWORD}" < "${SCRIPT_DIR}/schema/mariadb.sql"
 echo "MariaDB schema applied."
 
 echo "Executing mongodb.js against MongoDB..."

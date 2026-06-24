@@ -20,7 +20,7 @@ class DocumentTransformer:
     def build_towns(self, resale_transactions_df: pd.DataFrame) -> pd.DataFrame:
         """Build town documents with transaction summaries."""
         rows: list[dict[str, Any]] = []
-        coordinates_by_town: dict[str, list[str]] = {
+        coordinates_by_town: dict[str, list[Any]] = {
             town_key: tg.coordinates
             for town_key, tg in self.town_transformer.town_geometries.items()
         }
@@ -43,7 +43,7 @@ class DocumentTransformer:
                     "_id": town_key,
                     "town_key": town_key,
                     "transaction_summary": {
-                        "total_transaction": int(len(group.index)),
+                        "total_transaction": len(group),
                         "earliest_transaction": str(group_months.min()),
                         "latest_transaction": str(group_months.max()),
                         "avg_resale_price_by_flat_type": {
