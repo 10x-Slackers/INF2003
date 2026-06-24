@@ -1,7 +1,13 @@
-import { NextAuthOptions } from "next-auth";
+import { getServerSession, NextAuthOptions } from "next-auth";
 import { pool } from "@/lib/db/mariadb";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { UserRole } from "./next-auth";
+
+export async function getCurrentUser() {
+  const session = await getServerSession(authOptions);
+  return session?.user;
+}
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -31,7 +37,7 @@ export const authOptions: NextAuthOptions = {
             name: string;
             email: string;
             password_hash: string;
-            role: "ADMIN" | "USER" | "AGENT";
+            role: UserRole;
           }[];
 
           const user = users[0];
@@ -53,7 +59,7 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           };
         } catch (error) {
-          console.error("Error during user authorization:", error);
+          console.error("Error during user authorization for email:", email);
           return null;
         }
       },
@@ -70,7 +76,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as "ADMIN" | "USER" | "AGENT";
+        session.user.role = token.role as UserRole;
       }
       return session;
     },

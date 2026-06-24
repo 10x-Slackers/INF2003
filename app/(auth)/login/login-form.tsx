@@ -11,21 +11,77 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useActionState } from "react";
-import { loginEmail } from "../actions";
+import { useState, useTransition } from "react";
+import { signIn } from "next-auth/react";
+import { ROUTES } from "@/lib/routes";
+import { useRouter, useSearchParams } from "next/navigation";
 
+type LoginFields = {
+    email: string;
+    password: string;
+};
+
+type ActionState<T> = {
+    error: string;
+    fields?: Partial<T>;
+}
+
+const initialState: ActionState<LoginFields> = {
+    error: "",
+    fields: {
+        email: "",
+        password: "",
+    },
+};
 
 
 export function LoginForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
-    const [state, formAction, pending] = useActionState(loginEmail, {
-        fields: {
-            email: "",
-            password: "",
-        },
-    });
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const callbackUrl = searchParams.get("callbackUrl") || ROUTES.HOME;
+
+    const [state, setState] = useState<ActionState<LoginFields>>(initialState);
+    const [pending, startTransition] = useTransition();
+    async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const email = String(formData.get("email") || "");
+        const password = String(formData.get("password") || "");
+
+        startTransition(async () => {
+            if (!email || !password) {
+                setState({
+                    error: "Email and password are required",
+                    fields: {
+                        email,
+                        password,
+                    },
+                });
+                return;
+            }
+
+            const result = await signIn("credentials", {
+                redirect: false,
+                email,
+                password,
+            });
+
+            if (result?.error) {
+                setState({
+                    error: "Invalid email or password",
+                    fields: {
+                        email,
+                    },
+                });
+                return;
+            }
+            router.push(callbackUrl);
+        })
+    }
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -37,7 +93,7 @@ export function LoginForm({
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={formAction}>
+                    <form onSubmit={handleSubmit}>
                         <div className="flex flex-col gap-6">
                             <div className="grid gap-3">
                                 <Label htmlFor="email">Email</Label>
@@ -46,7 +102,7 @@ export function LoginForm({
                                     name="email"
                                     type="email"
                                     placeholder="m@example.com"
-                                    defaultValue={state.fields.email}
+                                    defaultValue={state.fields?.email}
                                     required
                                 />
                             </div>
@@ -56,7 +112,7 @@ export function LoginForm({
                                     id="password"
                                     name="password"
                                     type="password"
-                                    defaultValue={state.fields.password}
+                                    defaultValue={state.fields?.password}
                                     required
                                 />
                             </div>
@@ -71,7 +127,7 @@ export function LoginForm({
                         )}
                         <div className="mt-4 text-center text-sm">
                             Don&apos;t have an account?{" "}
-                            <Link href="/signup" className="underline underline-offset-4">
+                            <Link href={ROUTES.SIGNUP} className="underline underline-offset-4">
                                 Sign up
                             </Link>
                         </div>

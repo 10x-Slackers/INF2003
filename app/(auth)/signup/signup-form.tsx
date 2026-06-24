@@ -11,8 +11,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { signUpEmail } from "../actions";
+import { signUpEmail } from "./action";
 import { useActionState } from "react";
+import { ROUTES } from "@/lib/routes";
 
 
 export function SignUpForm({
@@ -84,7 +85,7 @@ export function SignUpForm({
 
                         <div className="mt-4 text-center text-sm">
                             Already have an account?{" "}
-                            <Link href="/login" className="underline underline-offset-4">
+                            <Link href={ROUTES.LOGIN} className="underline underline-offset-4">
                                 Login
                             </Link>
                         </div>
