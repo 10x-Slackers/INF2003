@@ -1,0 +1,204 @@
+import { execute, query, withTransaction } from "@/lib/db";
+import { HttpError } from "@/lib/api-response";
+import type {
+  CreateTransactionPayload,
+  ResaleTransaction,
+  UpdateTransactionPayload,
+} from "@/lib/types";
+
+type DbError = { code?: string };
+
+function isDuplicateKeyError(err: unknown): boolean {
+  return (err as DbError)?.code === "ER_DUP_ENTRY";
+}
+
+function isForeignKeyViolation(err: unknown): boolean {
+  return (
+    (err as DbError)?.code === "ER_NO_REFERENCED_ROW_2" ||
+    (err as DbError)?.code === "ER_ROW_IS_REFERENCED_2"
+  );
+}
+
+export async function listTransactions(filters: {
+  town_id?: string;
+  flat_type_id?: number;
+  storey_range_id?: number;
+  price_min?: number;
+  price_max?: number;
+  year?: number;
+  property_id?: string;
+  page: number;
+  pageSize: number;
+}): Promise<{ data: ResaleTransaction[]; total: number }> {
+  const { page, pageSize } = filters;
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  const needsPropertyJoin = filters.town_id !== undefined;
+
+  if (filters.town_id !== undefined) {
+    conditions.push("p.town_id = ?");
+    params.push(filters.town_id);
+  }
+  if (filters.flat_type_id !== undefined) {
+    conditions.push("rt.flat_type_id = ?");
+    params.push(filters.flat_type_id);
+  }
+  if (filters.storey_range_id !== undefined) {
+    conditions.push("rt.storey_range_id = ?");
+    params.push(filters.storey_range_id);
+  }
+  if (filters.price_min !== undefined) {
+    conditions.push("rt.resale_price >= ?");
+    params.push(filters.price_min);
+  }
+  if (filters.price_max !== undefined) {
+    conditions.push("rt.resale_price <= ?");
+    params.push(filters.price_max);
+  }
+  if (filters.year !== undefined) {
+    conditions.push("YEAR(rt.transaction_month) = ?");
+    params.push(filters.year);
+  }
+  if (filters.property_id !== undefined) {
+    conditions.push("rt.property_id = ?");
+    params.push(filters.property_id);
+  }
+
+  const join = needsPropertyJoin ? "JOIN properties p ON p.id = rt.property_id" : "";
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const [rows, countRows] = await Promise.all([
+    query<ResaleTransaction>(
+      `SELECT rt.id, rt.uploaded_by_user_id, rt.property_id, rt.flat_type_id,
+              rt.flat_model_id, rt.storey_range_id, rt.floor_area_sqm,
+              rt.transaction_month, rt.resale_price
+       FROM resale_transactions rt
+       ${join}
+       ${where}
+       ORDER BY rt.transaction_month DESC
+       LIMIT ? OFFSET ?`,
+      [...params, pageSize, (page - 1) * pageSize],
+    ),
+    query<{ total: number }>(
+      `SELECT COUNT(*) AS total FROM resale_transactions rt ${join} ${where}`,
+      params,
+    ),
+  ]);
+
+  return { data: rows, total: countRows[0].total };
+}
+
+export async function getTransactionById(
+  id: string,
+): Promise<ResaleTransaction | null> {
+  const rows = await query<ResaleTransaction>(
+    `SELECT id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
+            storey_range_id, floor_area_sqm, transaction_month, resale_price
+     FROM resale_transactions WHERE id = ? LIMIT 1`,
+    [id],
+  );
+  return rows[0] ?? null;
+}
+
+export async function createTransaction(
+  payload: CreateTransactionPayload,
+  uploadedByUserId: string,
+): Promise<ResaleTransaction> {
+  try {
+    return await withTransaction(async ({ query: txQuery }) => {
+      let propertyId: string;
+
+      if ("property_id" in payload) {
+        propertyId = payload.property_id;
+      } else {
+        try {
+          const [inserted] = await txQuery<{ id: string }>(
+            `INSERT INTO properties (town_id, block, street_name, lease_commence_year)
+             VALUES (?, ?, ?, ?) RETURNING id`,
+            [
+              payload.property.town_id,
+              payload.property.block,
+              payload.property.street_name,
+              payload.property.lease_commence_year,
+            ],
+          );
+          propertyId = inserted.id;
+        } catch (err) {
+          if (isDuplicateKeyError(err)) {
+            throw new HttpError(409, "Property already exists");
+          }
+          throw err;
+        }
+      }
+
+      const [inserted] = await txQuery<{ id: string }>(
+        `INSERT INTO resale_transactions
+           (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
+            storey_range_id, floor_area_sqm, transaction_month, resale_price)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+        [
+          uploadedByUserId,
+          propertyId,
+          payload.flat_type_id,
+          payload.flat_model_id,
+          payload.storey_range_id,
+          payload.floor_area_sqm,
+          payload.transaction_month,
+          payload.resale_price,
+        ],
+      );
+
+      const [transaction] = await txQuery<ResaleTransaction>(
+        `SELECT id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
+                storey_range_id, floor_area_sqm, transaction_month, resale_price
+         FROM resale_transactions WHERE id = ?`,
+        [inserted.id],
+      );
+      return transaction;
+    });
+  } catch (err) {
+    if (isForeignKeyViolation(err)) {
+      throw new HttpError(
+        400,
+        "Invalid reference: property_id, flat_type_id, flat_model_id, or storey_range_id does not exist",
+      );
+    }
+    throw err;
+  }
+}
+
+export async function updateTransaction(
+  id: string,
+  payload: UpdateTransactionPayload,
+): Promise<ResaleTransaction | null> {
+  const existing = await getTransactionById(id);
+  if (!existing) return null;
+
+  const fields: string[] = [];
+  const params: (string | number)[] = [];
+  for (const [key, value] of Object.entries(payload)) {
+    if (value !== undefined) {
+      fields.push(`${key} = ?`);
+      params.push(value);
+    }
+  }
+
+  try {
+    await execute(`UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`, [
+      ...params,
+      id,
+    ]);
+  } catch (err) {
+    if (isForeignKeyViolation(err)) {
+      throw new HttpError(400, "Invalid reference in update payload");
+    }
+    throw err;
+  }
+
+  return getTransactionById(id);
+}
+
+export async function deleteTransaction(id: string): Promise<boolean> {
+  const result = await execute("DELETE FROM resale_transactions WHERE id = ?", [id]);
+  return result.affectedRows > 0;
+}
