@@ -1,0 +1,73 @@
+import bcrypt from "bcryptjs";
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { loginSchema } from "@/lib/auth-schemas";
+import { query } from "@/lib/db";
+
+export type UserRole = "ADMIN" | "AGENT" | "USER";
+
+type DbUser = {
+  id: string;
+  name: string;
+  email: string;
+  password_hash: string;
+  role: UserRole;
+};
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  pages: {
+    signIn: "/login",
+  },
+  session: {
+    strategy: "jwt",
+  },
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const parsed = loginSchema.safeParse(credentials);
+        if (!parsed.success) return null;
+
+        const users = await query<DbUser>(
+          "SELECT id, name, email, password_hash, role FROM users WHERE email = ? LIMIT 1",
+          [parsed.data.email.toLowerCase()],
+        );
+        const user = users[0];
+
+        if (!user) return null;
+
+        const validPassword = await bcrypt.compare(
+          parsed.data.password,
+          user.password_hash,
+        );
+        if (!validPassword) return null;
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
+      },
+    }),
+  ],
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as UserRole;
+      }
+      return session;
+    },
+  },
+});

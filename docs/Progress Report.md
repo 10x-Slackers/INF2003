@@ -22,29 +22,29 @@ Lastly, ETL (Extract, Transform, Load) scripts written in Python are used to pop
 
 # **Data**
 
-*USERS* is where the platform’s identity and access management. The *role* enum specifies what each user can do in the platform; Admins manage the entire platform, agents upload transaction data and view statistics, and users can explore, analyse and save transactions. *TOWNS* is the geographical anchor, every property and amenity belongs to a town. *PROPERTIES* is where the attributes of the HDB blocks are stored, and *SAVED\_PROPERTIES* is used to store properties saved by users. *AMENITIES* stores the points of interests available and they are classified with the *AMENITY\_TYPES reference table*. *FLAT\_TYPES*, *FLAT\_MODELS* and *STOREY\_RANGES* decompose the attributes of resale transactions into reference tables, allowing for efficient storage and retrieval. *RESALE\_TRANSACTIONS* table stores all the transactions where each row is a single sale. *ALERT\_NOTIFICATIONS* is a cross database bridge entity that stores an alert\_uuid to point to the corresponding document in MongoDB and links to the resale transaction that triggered the alert.
+_USERS_ is where the platform’s identity and access management. The _role_ enum specifies what each user can do in the platform; Admins manage the entire platform, agents upload transaction data and view statistics, and users can explore, analyse and save transactions. _TOWNS_ is the geographical anchor, every property and amenity belongs to a town. _PROPERTIES_ is where the attributes of the HDB blocks are stored, and _SAVED_PROPERTIES_ is used to store properties saved by users. _AMENITIES_ stores the points of interests available and they are classified with the _AMENITY_TYPES reference table_. _FLAT_TYPES_, _FLAT_MODELS_ and _STOREY_RANGES_ decompose the attributes of resale transactions into reference tables, allowing for efficient storage and retrieval. _RESALE_TRANSACTIONS_ table stores all the transactions where each row is a single sale. _ALERT_NOTIFICATIONS_ is a cross database bridge entity that stores an alert_uuid to point to the corresponding document in MongoDB and links to the resale transaction that triggered the alert.
 
 ## **Document DB Collections Schema**
 
-| Collection | Purpose | Main Schema Fields |
-| :---- | :---- | :---- |
-| saved\_alerts | Saves user alerts, independent data. | \_id, user\_id, filters, is\_active, created\_at, updated\_at, last\_triggered\_at  |
-| reviews | Store user reviews and ratings, independent data. | \_id, user\_id, property\_id, rating, pros, cons, remarks, created\_at, updated\_at |
-| search\_logs | Stores user search activity and identify demand trends, independent data. | \_id, user\_id, query, searched\_at  |
-| town\_profiles | Stores summarised data and polygons for towns, derived data. | \_id, transaction\_summary, coordinates, updated\_at  |
-| statistics | Stores pre-computed data for charts and trends, derived data. | \_id, metric, granularity, time\_range, dimensions, series, computed\_at  |
+| Collection    | Purpose                                                                   | Main Schema Fields                                                              |
+| :------------ | :------------------------------------------------------------------------ | :------------------------------------------------------------------------------ |
+| saved_alerts  | Saves user alerts, independent data.                                      | \_id, user_id, filters, is_active, created_at, updated_at, last_triggered_at    |
+| reviews       | Store user reviews and ratings, independent data.                         | \_id, user_id, property_id, rating, pros, cons, remarks, created_at, updated_at |
+| search_logs   | Stores user search activity and identify demand trends, independent data. | \_id, user_id, query, searched_at                                               |
+| town_profiles | Stores summarised data and polygons for towns, derived data.              | \_id, transaction_summary, coordinates, updated_at                              |
+| statistics    | Stores pre-computed data for charts and trends, derived data.             | \_id, metric, granularity, time_range, dimensions, series, computed_at          |
 
 The document database stores flexible and nested data, and the above table summarises the main collections that will be created. Independent data are records created directly from user activity on the platform, such as the search log and reviews. Derived data are records generated from existing data such as the resale transaction data stored in the relational database.
 
-A document model is suitable because users may provide different filter combinations for saved\_alerts and search\_logs, making the data flexible. It is also suitable for reviews because details such as pros, cons, which are a list of comments, can be embedded and stored together in one document.
+A document model is suitable because users may provide different filter combinations for saved_alerts and search_logs, making the data flexible. It is also suitable for reviews because details such as pros, cons, which are a list of comments, can be embedded and stored together in one document.
 
 ## **Datasets**
 
-| Datasets | Used In |
-| :---- | :---- |
-| [HDB Resale Prices](https://data.gov.sg/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/view) | PROPERTIES, RESALE\_TRANSACTIONS, and related schemas |
-| [Towns](https://data.gov.sg/datasets/d_2cc750190544007400b2cfd5d7f53209/view) | TOWNS |
-| [Schools](https://data.gov.sg/datasets/d_688b934f82c1059ed0a6993d2a829089/view), [Parks](https://data.gov.sg/datasets/d_99b71f5d34cf57a3a592fbfdef1f42b6/view), [Gyms](https://data.gov.sg/datasets/d_b3ae090692ecf632116c9885cfbd3424/view)  | AMENITIES |
+| Datasets                                                                                                                                                                                                                                     | Used In                                              |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------- |
+| [HDB Resale Prices](https://data.gov.sg/datasets/d_8b84c4ee58e3cfc0ece0d773c8ca6abc/view)                                                                                                                                                    | PROPERTIES, RESALE_TRANSACTIONS, and related schemas |
+| [Towns](https://data.gov.sg/datasets/d_2cc750190544007400b2cfd5d7f53209/view)                                                                                                                                                                | TOWNS                                                |
+| [Schools](https://data.gov.sg/datasets/d_688b934f82c1059ed0a6993d2a829089/view), [Parks](https://data.gov.sg/datasets/d_99b71f5d34cf57a3a592fbfdef1f42b6/view), [Gyms](https://data.gov.sg/datasets/d_b3ae090692ecf632116c9885cfbd3424/view) | AMENITIES                                            |
 
 ### **Extract, Transform, Load**
 
@@ -60,7 +60,7 @@ Raw data is fetched programmatically using data.gov.sg’s Dataset API. Relevant
 
 **Reviews and ratings.** Users can rate properties and share their experiences. By combining actual user experiences in addition to data-driven insights, a more comprehensive perspective is provided.
 
-**Amenities listing.** Information about amenities such as  schools, parks, gyms within each town is provided, allowing users to evaluate transactions while factoring in the surrounding environment, thus enhancing their decision making.
+**Amenities listing.** Information about amenities such as schools, parks, gyms within each town is provided, allowing users to evaluate transactions while factoring in the surrounding environment, thus enhancing their decision making.
 
 **User-customisable alerts**. Users can receive in platform notifications when new resale transactions match their configured alerts, keeping users updated without requiring them to monitor all transactions.
 
@@ -68,15 +68,15 @@ Raw data is fetched programmatically using data.gov.sg’s Dataset API. Relevant
 
 ### **Implementation Plan**
 
-| Item | Status |
-| :---- | :---- |
-| High-level Architecture | Done |
-| ER diagram for relational database | Done |
-| Document DB collections schema | Done |
-| Progress Report | Done |
-| ETL pipeline scripts | Done |
-| Authentication | In Progress |
-| CRUD (transactions, towns, amenities, users) | In Progress |
-| Core features (search, dashboard, statistics) | In Progress |
-| Frontend | Planned |
-| Advanced features (pagination, alerts, chart visualisation) | Planned |
+| Item                                                        | Status      |
+| :---------------------------------------------------------- | :---------- |
+| High-level Architecture                                     | Done        |
+| ER diagram for relational database                          | Done        |
+| Document DB collections schema                              | Done        |
+| Progress Report                                             | Done        |
+| ETL pipeline scripts                                        | Done        |
+| Authentication                                              | In Progress |
+| CRUD (transactions, towns, amenities, users)                | In Progress |
+| Core features (search, dashboard, statistics)               | In Progress |
+| Frontend                                                    | Planned     |
+| Advanced features (pagination, alerts, chart visualisation) | Planned     |
