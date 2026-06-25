@@ -7,7 +7,7 @@ import {
 } from "@/lib/action-helpers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
-import { pool } from "@/lib/db/mariadb";
+import { execute } from "@/lib/db/mariadb";
 import z from "zod";
 
 const signUpSchema = z
@@ -47,7 +47,7 @@ export async function signUpEmail(
 
   try {
     const passwordHash = await bcrypt.hash(password, 12);
-    await pool.execute(
+    await execute(
       "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
       [name, email.toLowerCase(), passwordHash],
     );
