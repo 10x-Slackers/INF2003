@@ -86,10 +86,7 @@ export const transactions: PlaceholderTransaction[] = [
   },
 ];
 
-export const bookmarkedPropertyIds = [
-  "property-queenstown-12",
-  "property-bishan-150",
-];
+export const bookmarkedPropertyIds: string[] = [];
 
 export const propertyAlerts: PropertyAlert[] = [
   {
