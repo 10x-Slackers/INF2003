@@ -15,6 +15,11 @@ This is a **university coursework project** done by undergraduates. It is not a 
 - Clarify ambiguities before proceeding — ask rather than guess.
 - When in doubt about scope, priorities, or critical decisions, surface the uncertainty and let the user decide.
 
+## Task completion
+
+- After every task, run `pnpm format` and `pnpm lint`.
+- If either command cannot be run or fails, mention that clearly in the final response.
+
 ## Engineering posture
 
 Optimize for **low line count, readability, and simplicity** — not for production hardening. When a tradeoff exists:
