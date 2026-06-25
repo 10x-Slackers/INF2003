@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { loginSchema } from "@/lib/auth-schemas";
+import { loginSchema } from "@/lib/auth/schemas";
 import { query } from "@/lib/db";
 
 export type UserRole = "ADMIN" | "AGENT" | "USER";

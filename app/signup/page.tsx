@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signupSchema } from "@/lib/auth-schemas";
+import { signupSchema } from "@/lib/auth/schemas";
 
 export default function SignupPage() {
   const router = useRouter();

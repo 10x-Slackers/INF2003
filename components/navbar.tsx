@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
-import { LogoutButton } from "./logout-button";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { Button } from "./ui/button";
 
 const links = [
   { href: "/", label: "Home" },
@@ -25,7 +25,12 @@ export function Navbar() {
             <span className="text-sm font-medium text-muted-foreground">
               {session.user.name}
             </span>
-            <LogoutButton />
+            <Button
+              variant="outline"
+              onClick={() => signOut({ redirectTo: "/" })}
+            >
+              Logout
+            </Button>
           </div>
         ) : (
           links.map((link) => (

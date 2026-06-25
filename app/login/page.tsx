@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginSchema } from "@/lib/auth-schemas";
+import { loginSchema } from "@/lib/auth/schemas";
 
 function LoginForm() {
   const router = useRouter();

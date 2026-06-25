@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { signupSchema } from "@/lib/auth-schemas";
+import { signupSchema } from "@/lib/auth/schemas";
 import { execute } from "@/lib/db";
 
 export async function signup(request: Request) {
