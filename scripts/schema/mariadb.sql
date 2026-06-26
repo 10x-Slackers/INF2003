@@ -109,9 +109,11 @@ CREATE TABLE IF NOT EXISTS resale_transactions (
 -- Create alert_notifications table
 CREATE TABLE IF NOT EXISTS alert_notifications (
     id UUID NOT NULL DEFAULT (UUID_v7()) PRIMARY KEY,
+    user_id UUID NOT NULL,
     alert_uuid UUID NOT NULL,
     transaction_id UUID NOT NULL,
     read_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_alert_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_alert_notifications_transaction FOREIGN KEY (transaction_id) REFERENCES resale_transactions(id) ON DELETE CASCADE
 );
