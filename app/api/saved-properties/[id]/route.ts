@@ -15,7 +15,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     const saved = await getSavedPropertyById(id);
     if (!saved) return notFound(`Saved property ${id} not found`);
 
-    if (currentUser.id !== saved.user_id && currentUser.role !== "ADMIN") {
+    if (currentUser.id !== saved.user_id) {
       return forbidden();
     }
 
@@ -33,7 +33,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const saved = await getSavedPropertyById(id);
     if (!saved) return notFound(`Saved property ${id} not found`);
 
-    if (currentUser.id !== saved.user_id && currentUser.role !== "ADMIN") {
+    if (currentUser.id !== saved.user_id) {
       return forbidden();
     }
 

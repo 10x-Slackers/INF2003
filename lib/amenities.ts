@@ -1,12 +1,5 @@
-import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
-import type { Amenity, CreateAmenityPayload, UpdateAmenityPayload } from "@/lib/types";
-
-type DbError = { code?: string };
-
-function isForeignKeyViolation(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_NO_REFERENCED_ROW_2";
-}
+import { query } from "@/lib/db";
+import type { Amenity } from "@/lib/types";
 
 const AMENITY_COLUMNS =
   "id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude";
@@ -49,70 +42,4 @@ export async function getAmenityById(id: string): Promise<Amenity | null> {
     [id],
   );
   return rows[0] ?? null;
-}
-
-export async function createAmenity(payload: CreateAmenityPayload): Promise<Amenity> {
-  let inserted: { id: string };
-  try {
-    [inserted] = await query<{ id: string }>(
-      `INSERT INTO amenities (town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude)
-       VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-      [
-        payload.town_id,
-        payload.amenity_type_id,
-        payload.name,
-        payload.street_name ?? null,
-        payload.postal_code ?? null,
-        payload.longitude ?? null,
-        payload.latitude ?? null,
-      ],
-    );
-  } catch (err) {
-    if (isForeignKeyViolation(err)) {
-      throw new HttpError(400, "Invalid town_id or amenity_type_id");
-    }
-    throw err;
-  }
-
-  const amenity = await getAmenityById(inserted.id);
-  if (!amenity) {
-    throw new HttpError(500, "Failed to read back created amenity");
-  }
-  return amenity;
-}
-
-export async function updateAmenity(
-  id: string,
-  payload: UpdateAmenityPayload,
-): Promise<Amenity | null> {
-  const existing = await getAmenityById(id);
-  if (!existing) return null;
-
-  const fields: string[] = [];
-  const params: (string | number)[] = [];
-  for (const [key, value] of Object.entries(payload)) {
-    if (value !== undefined) {
-      fields.push(`${key} = ?`);
-      params.push(value);
-    }
-  }
-
-  try {
-    await execute(`UPDATE amenities SET ${fields.join(", ")} WHERE id = ?`, [
-      ...params,
-      id,
-    ]);
-  } catch (err) {
-    if (isForeignKeyViolation(err)) {
-      throw new HttpError(400, "Invalid town_id or amenity_type_id");
-    }
-    throw err;
-  }
-
-  return getAmenityById(id);
-}
-
-export async function deleteAmenity(id: string): Promise<boolean> {
-  const result = await execute("DELETE FROM amenities WHERE id = ?", [id]);
-  return result.affectedRows > 0;
 }

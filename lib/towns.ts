@@ -1,23 +1,5 @@
-import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
-import type {
-  Amenity,
-  CreateTownPayload,
-  Property,
-  Region,
-  Town,
-  UpdateTownPayload,
-} from "@/lib/types";
-
-type DbError = { code?: string; errno?: number };
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_DUP_ENTRY";
-}
-
-function isForeignKeyConstraintError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_ROW_IS_REFERENCED_2";
-}
+import { query } from "@/lib/db";
+import type { Amenity, Property, Region, Town } from "@/lib/types";
 
 export async function listTowns(
   region: Region | undefined,
@@ -106,80 +88,4 @@ export async function listAllAmenitiesByTown(townId: string): Promise<Amenity[]>
      FROM amenities WHERE town_id = ? ORDER BY name`,
     [townId],
   );
-}
-
-export async function createTown(payload: CreateTownPayload): Promise<Town> {
-  try {
-    await execute("INSERT INTO towns (region, name) VALUES (?, ?)", [
-      payload.region,
-      payload.name,
-    ]);
-  } catch (err) {
-    if (isDuplicateKeyError(err)) {
-      throw new HttpError(409, "A town with this name already exists");
-    }
-    throw err;
-  }
-
-  const town = await getTownByName(payload.name);
-  if (!town) {
-    throw new HttpError(500, "Failed to read back created town");
-  }
-  return town;
-}
-
-async function getTownByName(name: string): Promise<Town | null> {
-  const rows = await query<Town>(
-    "SELECT id, region, name FROM towns WHERE name = ? LIMIT 1",
-    [name],
-  );
-  return rows[0] ?? null;
-}
-
-export async function updateTown(
-  id: string,
-  payload: UpdateTownPayload,
-): Promise<Town | null> {
-  const existing = await getTownById(id);
-  if (!existing) return null;
-
-  const fields: string[] = [];
-  const params: string[] = [];
-  if (payload.name !== undefined) {
-    fields.push("name = ?");
-    params.push(payload.name);
-  }
-  if (payload.region !== undefined) {
-    fields.push("region = ?");
-    params.push(payload.region);
-  }
-
-  try {
-    await execute(`UPDATE towns SET ${fields.join(", ")} WHERE id = ?`, [
-      ...params,
-      id,
-    ]);
-  } catch (err) {
-    if (isDuplicateKeyError(err)) {
-      throw new HttpError(409, "A town with this name already exists");
-    }
-    throw err;
-  }
-
-  return getTownById(id);
-}
-
-export async function deleteTown(id: string): Promise<boolean> {
-  try {
-    const result = await execute("DELETE FROM towns WHERE id = ?", [id]);
-    return result.affectedRows > 0;
-  } catch (err) {
-    if (isForeignKeyConstraintError(err)) {
-      throw new HttpError(
-        409,
-        "Town has properties or amenities and cannot be deleted",
-      );
-    }
-    throw err;
-  }
 }

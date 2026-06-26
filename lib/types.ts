@@ -52,16 +52,6 @@ export type Town = {
   name: string;
 };
 
-export type CreateTownPayload = {
-  region: Region;
-  name: string;
-};
-
-export type UpdateTownPayload = {
-  region?: Region;
-  name?: string;
-};
-
 export type Property = {
   id: string;
   town_id: string;
@@ -79,26 +69,6 @@ export type Amenity = {
   postal_code: string | null;
   longitude: number | null;
   latitude: number | null;
-};
-
-export type CreateAmenityPayload = {
-  town_id: string;
-  amenity_type_id: number;
-  name: string;
-  street_name?: string;
-  postal_code?: string;
-  longitude?: number;
-  latitude?: number;
-};
-
-export type UpdateAmenityPayload = {
-  town_id?: string;
-  amenity_type_id?: number;
-  name?: string;
-  street_name?: string;
-  postal_code?: string;
-  longitude?: number;
-  latitude?: number;
 };
 
 export type CreatePropertyPayload = {
