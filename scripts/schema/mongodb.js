@@ -124,38 +124,6 @@ db.createCollection("statistics", {
   },
 });
 
-// Create reviews collection
-db.reviews.drop();
-db.createCollection("reviews", {
-  validator: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: [
-        "_id",
-        "user_id",
-        "property_id",
-        "rating",
-        "pros",
-        "cons",
-        "created_at",
-        "updated_at",
-      ],
-      properties: {
-        _id: { bsonType: "string" },
-        user_id: { bsonType: "string" },
-        property_id: { bsonType: "string" },
-        rating: { bsonType: ["int", "long"], minimum: 1, maximum: 5 },
-        pros: { bsonType: "array", items: { bsonType: "string" } },
-        cons: { bsonType: "array", items: { bsonType: "string" } },
-        remarks: { bsonType: "string" },
-        created_at: { bsonType: ["int"] },
-        updated_at: { bsonType: ["int"] },
-      },
-      additionalProperties: false,
-    },
-  },
-});
-
 // Create towns collection
 db.towns.drop();
 db.createCollection("towns", {
