@@ -5,7 +5,7 @@ export function FilterBar({ children }: { children: ReactNode }) {
   return (
     <Card className="mb-6">
       <CardContent>
-        <form className="grid gap-3 md:grid-cols-4">{children}</form>
+        <div className="grid gap-3 md:grid-cols-4">{children}</div>
       </CardContent>
     </Card>
   );

@@ -39,6 +39,7 @@ export type PropertyAlert = {
 export type PlaceholderTransaction = {
   id: string;
   propertyId: string;
+  uploadedByUserId: string;
   town: string;
   flatType: string;
   flatModel: string;
@@ -46,16 +47,6 @@ export type PlaceholderTransaction = {
   floorAreaSqm: string;
   month: string;
   price: string;
-};
-
-export type TransactionDraft = {
-  propertyId: string;
-  flatTypeId: string;
-  flatModelId: string;
-  storeyRangeId: string;
-  floorAreaSqm: string;
-  transactionMonth: string;
-  resalePrice: string;
 };
 
 export type PlaceholderTableColumn<T> = {

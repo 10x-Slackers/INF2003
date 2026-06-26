@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { auth, type UserRole } from "@/lib/auth";
 
-export async function requireRole(roles: UserRole[], redirectTo: string) {
+export async function requireRole(
+  roles: readonly UserRole[],
+  redirectTo: string,
+) {
   const session = await auth();
 
   if (!session?.user) {

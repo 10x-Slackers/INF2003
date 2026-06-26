@@ -4,6 +4,7 @@ import { PlaceholderPanel } from "@/components/display/placeholder-panel";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { requireRole } from "@/lib/auth/guards";
+import { signedInRoles } from "@/lib/auth/permissions";
 import { properties } from "@/lib/frontend/placeholders";
 
 export default async function AlertsPage({
@@ -12,7 +13,7 @@ export default async function AlertsPage({
   searchParams: Promise<{ propertyId?: string }>;
 }) {
   const { propertyId } = await searchParams;
-  const session = await requireRole(["USER", "AGENT", "ADMIN"], "/alerts");
+  const session = await requireRole(signedInRoles, "/alerts");
 
   if (!session) {
     return (

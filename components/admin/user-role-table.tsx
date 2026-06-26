@@ -29,7 +29,7 @@ export function UserRoleTable({ users }: { users: PlaceholderUser[] }) {
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    if (!query) return [];
+    if (!query) return rows;
 
     return rows.filter((user) =>
       `${user.name} ${user.email}`.toLowerCase().includes(query),
@@ -53,64 +53,58 @@ export function UserRoleTable({ users }: { users: PlaceholderUser[] }) {
         placeholder="Search by name or email"
       />
       {message && <p className="text-sm text-muted-foreground">{message}</p>}
-      {search ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Current role</TableHead>
-              <TableHead>Grant role</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead>Action</TableHead>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Current role</TableHead>
+            <TableHead>Grant role</TableHead>
+            <TableHead>Joined</TableHead>
+            <TableHead>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredRows.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell>
+                <Badge variant="outline">{user.role}</Badge>
+              </TableCell>
+              <TableCell>
+                <Select
+                  value={selectedRoles[user.id]}
+                  onChange={(event) =>
+                    setSelectedRoles((current) => ({
+                      ...current,
+                      [user.id]: event.target.value as UserRole,
+                    }))
+                  }
+                >
+                  {roleOptions.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </Select>
+              </TableCell>
+              <TableCell>{user.createdAt}</TableCell>
+              <TableCell>
+                <Button
+                  disabled={selectedRoles[user.id] === user.role}
+                  size="sm"
+                  type="button"
+                  onClick={() => updateRole(user.id)}
+                >
+                  Grant
+                </Button>
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredRows.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{user.role}</Badge>
-                </TableCell>
-                <TableCell>
-                  <Select
-                    value={selectedRoles[user.id]}
-                    onChange={(event) =>
-                      setSelectedRoles((current) => ({
-                        ...current,
-                        [user.id]: event.target.value as UserRole,
-                      }))
-                    }
-                  >
-                    {roleOptions.map((role) => (
-                      <option key={role} value={role}>
-                        {role}
-                      </option>
-                    ))}
-                  </Select>
-                </TableCell>
-                <TableCell>{user.createdAt}</TableCell>
-                <TableCell>
-                  <Button
-                    disabled={selectedRoles[user.id] === user.role}
-                    size="sm"
-                    type="button"
-                    onClick={() => updateRole(user.id)}
-                  >
-                    Grant
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Enter a name or email to find a user.
-        </p>
-      )}
-      {search && !filteredRows.length && (
+          ))}
+        </TableBody>
+      </Table>
+      {!filteredRows.length && (
         <p className="text-sm text-muted-foreground">No users found.</p>
       )}
     </div>

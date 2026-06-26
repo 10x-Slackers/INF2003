@@ -3,11 +3,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import type { UserRole } from "@/lib/auth";
+import { canAccessAdmin, canCreateTransaction } from "@/lib/auth/permissions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 const primaryLinks = [
-  { href: "/", label: "Overview" },
+  { href: "/", label: "Home" },
   { href: "/properties", label: "Properties" },
 ];
 
@@ -15,32 +16,44 @@ export function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const role = session?.user.role as UserRole | undefined;
-  const isAdmin = role === "ADMIN";
+  const isAdmin = canAccessAdmin(role);
+  const canManageTransactions = canCreateTransaction(role);
+  const signedInLinks = [
+    ...(canManageTransactions
+      ? [{ href: "/transactions", label: "Transactions" }]
+      : []),
+    { href: "/bookmarks", label: "Bookmarks" },
+    { href: "/alerts", label: "Alerts" },
+    ...(isAdmin ? [{ href: "/admin", label: "Admin" }] : []),
+  ];
+  const links = session?.user
+    ? [...primaryLinks, ...signedInLinks]
+    : primaryLinks;
 
   return (
-    <div className="container mx-auto flex min-h-16 items-center justify-between gap-4 px-4 py-3">
+    <div className="container mx-auto grid min-h-16 grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-3">
       <Link href="/" className="text-lg font-semibold">
         HDB Trackr
       </Link>
 
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <nav className="flex items-center justify-end gap-4">
-          {primaryLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                (pathname === link.href ||
-                  (link.href !== "/" && pathname.startsWith(link.href))) &&
-                  "text-foreground",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+      <nav className="flex flex-wrap items-center justify-center gap-4">
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn(
+              "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+              (pathname === link.href ||
+                (link.href !== "/" && pathname.startsWith(link.href))) &&
+                "text-foreground",
+            )}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
 
+      <div className="flex flex-wrap items-center justify-end gap-3">
         {status === "loading" && (
           <span className="text-sm text-muted-foreground">Loading...</span>
         )}
@@ -50,36 +63,13 @@ export function Navbar() {
             <div className="flex items-center gap-3 ">
               <Link
                 className={cn(
-                  "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                  pathname === "/bookmarks" && "text-foreground",
+                  "hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline",
+                  pathname === "/profile" && "text-foreground",
                 )}
-                href="/bookmarks"
+                href="/profile"
               >
-                Bookmarks
-              </Link>
-              <Link
-                className={cn(
-                  "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                  pathname === "/alerts" && "text-foreground",
-                )}
-                href="/alerts"
-              >
-                Alerts
-              </Link>
-              {isAdmin && (
-                <Link
-                  className={cn(
-                    "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                    pathname === "/admin" && "text-foreground",
-                  )}
-                  href="/admin"
-                >
-                  Admin
-                </Link>
-              )}
-              <span className="hidden text-sm font-medium text-muted-foreground sm:inline">
                 {session.user.name}
-              </span>
+              </Link>
               <Button
                 variant="outline"
                 onClick={() => signOut({ redirectTo: "/" })}

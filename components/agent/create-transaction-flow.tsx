@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import { DataTablePlaceholder } from "@/components/data/data-table-placeholder";
 import { PlaceholderPanel } from "@/components/display/placeholder-panel";
+import { ConfirmationModal } from "@/components/forms/confirmation-modal";
 import {
   FormFieldSelect,
   FormFieldText,
@@ -14,9 +15,18 @@ import {
   flatModelOptions,
   flatTypeOptions,
   properties,
-  storeyRangeOptions,
 } from "@/lib/frontend/placeholders";
 import type { PlaceholderProperty } from "@/lib/frontend/types";
+
+type TransactionFormValues = {
+  flatTypeId: string;
+  flatModelId: string;
+  minStorey: string;
+  maxStorey: string;
+  floorAreaSqm: string;
+  transactionMonth: string;
+  resalePrice: string;
+};
 
 function optionLabel(
   options: { value: string; label: string }[],
@@ -26,10 +36,15 @@ function optionLabel(
 }
 
 export function CreateTransactionFlow() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [selectedProperty, setSelectedProperty] =
     useState<PlaceholderProperty | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingTransaction, setPendingTransaction] = useState<{
+    property: PlaceholderProperty;
+    values: TransactionFormValues;
+  } | null>(null);
 
   const searchResults = useMemo(() => properties, []);
 
@@ -39,15 +54,16 @@ export function CreateTransactionFlow() {
     setMessage("");
 
     if (!selectedProperty) {
-      setError("Select a property before creating the transaction draft.");
+      setError("Select a property before creating the transaction.");
       return;
     }
 
     const formData = new FormData(event.currentTarget);
-    const required = [
+    const required: (keyof TransactionFormValues)[] = [
       "flatTypeId",
       "flatModelId",
-      "storeyRangeId",
+      "minStorey",
+      "maxStorey",
       "floorAreaSqm",
       "transactionMonth",
       "resalePrice",
@@ -55,17 +71,24 @@ export function CreateTransactionFlow() {
 
     const values = Object.fromEntries(
       required.map((field) => [field, String(formData.get(field) ?? "")]),
-    );
+    ) as TransactionFormValues;
 
     if (required.some((field) => !values[field])) {
       setError("Fill in all transaction details.");
       return;
     }
 
+    setPendingTransaction({ property: selectedProperty, values });
+  }
+
+  function confirmTransaction() {
+    if (!pendingTransaction) return;
+
     setMessage(
-      `Placeholder transaction ready for ${optionLabel(flatTypeOptions, values.flatTypeId)} at ${selectedProperty.block} ${selectedProperty.streetName}.`,
+      `Placeholder transaction ready for ${optionLabel(flatTypeOptions, pendingTransaction.values.flatTypeId)} at ${pendingTransaction.property.block} ${pendingTransaction.property.streetName}.`,
     );
-    event.currentTarget.reset();
+    setPendingTransaction(null);
+    formRef.current?.reset();
   }
 
   return (
@@ -74,7 +97,7 @@ export function CreateTransactionFlow() {
         title="1. Search for property"
         description="This form is static for now and shows sample properties from placeholder data."
       >
-        <form className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-4">
           <FormFieldText label="Town" name="town" placeholder="Queenstown" />
           <FormFieldText label="Block" name="block" placeholder="12" />
           <FormFieldText
@@ -87,7 +110,7 @@ export function CreateTransactionFlow() {
             name="leaseCommenceYear"
             type="number"
           />
-        </form>
+        </div>
       </PlaceholderPanel>
 
       <PlaceholderPanel
@@ -125,7 +148,11 @@ export function CreateTransactionFlow() {
         title="3. Enter transaction details"
         description="The fields mirror the resale_transactions table. This placeholder does not persist anything yet."
       >
-        <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+        <form
+          ref={formRef}
+          className="grid gap-4 md:grid-cols-2"
+          onSubmit={handleSubmit}
+        >
           <div className="md:col-span-2">
             {selectedProperty ? (
               <Badge variant="outline">
@@ -146,10 +173,17 @@ export function CreateTransactionFlow() {
             name="flatModelId"
             options={flatModelOptions}
           />
-          <FormFieldSelect
-            label="Storey range"
-            name="storeyRangeId"
-            options={storeyRangeOptions}
+          <FormFieldText
+            label="Minimum storey"
+            name="minStorey"
+            min="1"
+            type="number"
+          />
+          <FormFieldText
+            label="Maximum storey"
+            name="maxStorey"
+            min="1"
+            type="number"
           />
           <FormFieldText
             label="Floor area sqm"
@@ -181,9 +215,61 @@ export function CreateTransactionFlow() {
           )}
 
           <div className="md:col-span-2">
-            <SubmitButton>Create transaction draft</SubmitButton>
+            <SubmitButton>Create transaction</SubmitButton>
           </div>
         </form>
+        <ConfirmationModal
+          open={Boolean(pendingTransaction)}
+          title="Create transaction?"
+          description="Confirm the placeholder transaction details."
+          confirmLabel="Create transaction"
+          items={[
+            {
+              label: "Property",
+              value: pendingTransaction
+                ? `${pendingTransaction.property.block} ${pendingTransaction.property.streetName}, ${pendingTransaction.property.town}`
+                : "",
+            },
+            {
+              label: "Flat type",
+              value: pendingTransaction
+                ? optionLabel(
+                    flatTypeOptions,
+                    pendingTransaction.values.flatTypeId,
+                  )
+                : "",
+            },
+            {
+              label: "Flat model",
+              value: pendingTransaction
+                ? optionLabel(
+                    flatModelOptions,
+                    pendingTransaction.values.flatModelId,
+                  )
+                : "",
+            },
+            {
+              label: "Storey range",
+              value: pendingTransaction
+                ? `${pendingTransaction.values.minStorey} to ${pendingTransaction.values.maxStorey}`
+                : "",
+            },
+            {
+              label: "Floor area sqm",
+              value: pendingTransaction?.values.floorAreaSqm ?? "",
+            },
+            {
+              label: "Transaction month",
+              value: pendingTransaction?.values.transactionMonth ?? "",
+            },
+            {
+              label: "Resale price",
+              value: pendingTransaction?.values.resalePrice ?? "",
+            },
+          ]}
+          onCancel={() => setPendingTransaction(null)}
+          onConfirm={confirmTransaction}
+        />
       </PlaceholderPanel>
     </div>
   );

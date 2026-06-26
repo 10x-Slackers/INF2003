@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { DataTablePlaceholder } from "@/components/data/data-table-placeholder";
+import { ConfirmationModal } from "@/components/forms/confirmation-modal";
 import {
   FormFieldSelect,
   FormFieldText,
@@ -24,6 +25,7 @@ const rangeMetrics: AlertMetric[] = [
   "resalePrice",
   "floorAreaSqm",
   "leaseCommenceYear",
+  "storeyRange",
 ];
 
 const metricLabels = Object.fromEntries(
@@ -38,9 +40,6 @@ const metricValueOptions: Partial<
   ].map((value) => ({ value, label: value })),
   flatModel: [
     ...new Set(transactions.map((transaction) => transaction.flatModel)),
-  ].map((value) => ({ value, label: value })),
-  storeyRange: [
-    ...new Set(transactions.map((transaction) => transaction.storeyRange)),
   ].map((value) => ({ value, label: value })),
 };
 
@@ -65,6 +64,14 @@ export function PropertyAlertManager({
   const [maxValue, setMaxValue] = useState("");
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<AlertFormErrors>({});
+  const [pendingAlert, setPendingAlert] = useState<PropertyAlert | null>(null);
+  const [editingAlertId, setEditingAlertId] = useState("");
+  const [alertToRemove, setAlertToRemove] = useState<PropertyAlert | null>(
+    null,
+  );
+  const [alertToToggle, setAlertToToggle] = useState<PropertyAlert | null>(
+    null,
+  );
 
   const propertyOptions = useMemo(
     () =>
@@ -127,7 +134,7 @@ export function PropertyAlertManager({
     return !Object.keys(nextErrors).length;
   }
 
-  function createAlert(event: FormEvent<HTMLFormElement>) {
+  function saveAlert(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
 
@@ -135,32 +142,99 @@ export function PropertyAlertManager({
 
     const isRangeMetric = rangeMetrics.includes(metric);
     const nextAlert: PropertyAlert = {
-      id: `alert-${Date.now()}`,
+      id: editingAlertId || `alert-${Date.now()}`,
       propertyId,
       metric,
       matchValue: isRangeMetric ? "" : matchValue.trim(),
       minValue: isRangeMetric ? minValue : "",
       maxValue: isRangeMetric ? maxValue : "",
-      isActive: true,
-      createdAt: new Date().toISOString().slice(0, 10),
+      isActive:
+        alerts.find((alert) => alert.id === editingAlertId)?.isActive ?? true,
+      createdAt:
+        alerts.find((alert) => alert.id === editingAlertId)?.createdAt ??
+        new Date().toISOString().slice(0, 10),
     };
-    const nextAlerts = [nextAlert, ...alerts];
+    setPendingAlert(nextAlert);
+  }
 
-    setAlerts(nextAlerts);
-    setMessage("Property alert created.");
+  function confirmSaveAlert() {
+    if (!pendingAlert) return;
+
+    setAlerts((current) =>
+      editingAlertId
+        ? current.map((alert) =>
+            alert.id === pendingAlert.id ? pendingAlert : alert,
+          )
+        : [pendingAlert, ...current],
+    );
+    setMessage(
+      editingAlertId ? "Property alert updated." : "Property alert created.",
+    );
+    setEditingAlertId("");
     setMatchValue("");
     setMinValue("");
     setMaxValue("");
     setErrors({});
+    setPendingAlert(null);
   }
 
-  function removeAlert(alertId: string) {
-    const nextAlerts = alerts.filter((alert) => alert.id !== alertId);
-    setAlerts(nextAlerts);
+  function editAlert(alert: PropertyAlert) {
+    setEditingAlertId(alert.id);
+    setPropertyId(alert.propertyId);
+    setMetric(alert.metric);
+    setMatchValue(alert.matchValue);
+    setMinValue(alert.minValue);
+    setMaxValue(alert.maxValue);
+    setErrors({});
+    setMessage("Editing property alert. Submit the form to save.");
+  }
+
+  function cancelEdit() {
+    setEditingAlertId("");
+    setMatchValue("");
+    setMinValue("");
+    setMaxValue("");
+    setErrors({});
+    setMessage("");
+  }
+
+  function confirmRemoveAlert() {
+    if (!alertToRemove) return;
+
+    setAlerts((current) =>
+      current.filter((alert) => alert.id !== alertToRemove.id),
+    );
+    setAlertToRemove(null);
+  }
+
+  function confirmToggleAlert() {
+    if (!alertToToggle) return;
+
+    setAlerts((current) =>
+      current.map((alert) =>
+        alert.id === alertToToggle.id
+          ? { ...alert, isActive: !alert.isActive }
+          : alert,
+      ),
+    );
+    setMessage(
+      alertToToggle.isActive
+        ? "Property alert paused."
+        : "Property alert activated.",
+    );
+    setAlertToToggle(null);
   }
 
   const usesRange = rangeMetrics.includes(metric);
   const metricOptions = metricValueOptions[metric] ?? [];
+  const minLabel =
+    metric === "storeyRange"
+      ? "Minimum storey"
+      : `Minimum ${metricLabels[metric].toLowerCase()}`;
+  const maxLabel =
+    metric === "storeyRange"
+      ? "Maximum storey"
+      : `Maximum ${metricLabels[metric].toLowerCase()}`;
 
   function criteriaLabel(alert: PropertyAlert) {
     if (rangeMetrics.includes(alert.metric)) {
@@ -172,75 +246,174 @@ export function PropertyAlertManager({
 
   return (
     <div className="grid gap-6">
-      <form className="grid gap-4 md:grid-cols-3" onSubmit={createAlert}>
-        <FormFieldSelect
-          label="Property"
-          name="propertyId"
-          options={propertyOptions}
-          value={propertyId}
-          onChange={(event) => {
-            setPropertyId(event.target.value);
-            setErrors((current) => ({ ...current, propertyId: undefined }));
-          }}
-          error={errors.propertyId}
-        />
-        <FormFieldSelect
-          label="Metric"
-          name="metric"
-          options={alertMetricOptions}
-          value={metric}
-          onChange={(event) => updateMetric(event.target.value as AlertMetric)}
-        />
-        {usesRange ? (
-          <>
-            <FormFieldText
-              label={`Minimum ${metricLabels[metric].toLowerCase()}`}
-              name="minValue"
-              min="0"
-              type="number"
-              value={minValue}
-              onChange={(event) => {
-                setMinValue(event.target.value);
-                setErrors((current) => ({ ...current, minValue: undefined }));
-              }}
-              error={errors.minValue}
-            />
-            <FormFieldText
-              label={`Maximum ${metricLabels[metric].toLowerCase()}`}
-              name="maxValue"
-              min="0"
-              type="number"
-              value={maxValue}
-              onChange={(event) => {
-                setMaxValue(event.target.value);
-                setErrors((current) => ({ ...current, maxValue: undefined }));
-              }}
-              error={errors.maxValue}
-            />
-          </>
-        ) : (
+      <form className="grid gap-4" onSubmit={saveAlert}>
+        <div className="grid gap-4 md:grid-cols-2">
           <FormFieldSelect
-            label={metricLabels[metric]}
-            name="matchValue"
-            options={metricOptions}
-            placeholder={`Select ${metricLabels[metric].toLowerCase()}`}
-            value={matchValue}
+            label="Property"
+            name="propertyId"
+            options={propertyOptions}
+            value={propertyId}
             onChange={(event) => {
-              setMatchValue(event.target.value);
-              setErrors((current) => ({ ...current, matchValue: undefined }));
+              setPropertyId(event.target.value);
+              setErrors((current) => ({ ...current, propertyId: undefined }));
             }}
-            error={errors.matchValue}
+            error={errors.propertyId}
           />
-        )}
-        <div className="self-end">
-          <SubmitButton>Create property alert</SubmitButton>
+          <FormFieldSelect
+            label="Metric"
+            name="metric"
+            options={alertMetricOptions}
+            value={metric}
+            onChange={(event) =>
+              updateMetric(event.target.value as AlertMetric)
+            }
+          />
         </div>
-        {message && (
-          <p className="text-sm text-muted-foreground md:col-span-2">
-            {message}
-          </p>
-        )}
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {usesRange ? (
+            <>
+              <FormFieldText
+                label={minLabel}
+                name="minValue"
+                min="0"
+                type="number"
+                value={minValue}
+                onChange={(event) => {
+                  setMinValue(event.target.value);
+                  setErrors((current) => ({
+                    ...current,
+                    minValue: undefined,
+                  }));
+                }}
+                error={errors.minValue}
+              />
+              <FormFieldText
+                label={maxLabel}
+                name="maxValue"
+                min="0"
+                type="number"
+                value={maxValue}
+                onChange={(event) => {
+                  setMaxValue(event.target.value);
+                  setErrors((current) => ({
+                    ...current,
+                    maxValue: undefined,
+                  }));
+                }}
+                error={errors.maxValue}
+              />
+            </>
+          ) : (
+            <FormFieldSelect
+              label={metricLabels[metric]}
+              name="matchValue"
+              options={metricOptions}
+              placeholder={`Select ${metricLabels[metric].toLowerCase()}`}
+              value={matchValue}
+              onChange={(event) => {
+                setMatchValue(event.target.value);
+                setErrors((current) => ({
+                  ...current,
+                  matchValue: undefined,
+                }));
+              }}
+              error={errors.matchValue}
+            />
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <SubmitButton>
+            {editingAlertId ? "Update property alert" : "Create property alert"}
+          </SubmitButton>
+          {editingAlertId && (
+            <Button type="button" variant="outline" onClick={cancelEdit}>
+              Cancel edit
+            </Button>
+          )}
+        </div>
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </form>
+
+      <ConfirmationModal
+        open={Boolean(pendingAlert)}
+        title={
+          editingAlertId ? "Update property alert?" : "Create property alert?"
+        }
+        description="Confirm the alert details before saving it to your placeholder list."
+        confirmLabel={editingAlertId ? "Update alert" : "Create alert"}
+        items={[
+          {
+            label: "Property",
+            value: propertyLabel(pendingAlert?.propertyId ?? ""),
+          },
+          {
+            label: "Metric",
+            value: pendingAlert ? metricLabels[pendingAlert.metric] : "",
+          },
+          {
+            label: "Criteria",
+            value: pendingAlert ? criteriaLabel(pendingAlert) : "",
+          },
+        ]}
+        onCancel={() => setPendingAlert(null)}
+        onConfirm={confirmSaveAlert}
+      />
+      <ConfirmationModal
+        open={Boolean(alertToRemove)}
+        title="Remove property alert?"
+        description="Confirm before removing this placeholder alert."
+        confirmLabel="Remove"
+        items={[
+          {
+            label: "Property",
+            value: propertyLabel(alertToRemove?.propertyId ?? ""),
+          },
+          {
+            label: "Metric",
+            value: alertToRemove ? metricLabels[alertToRemove.metric] : "",
+          },
+          {
+            label: "Criteria",
+            value: alertToRemove ? criteriaLabel(alertToRemove) : "",
+          },
+        ]}
+        onCancel={() => setAlertToRemove(null)}
+        onConfirm={confirmRemoveAlert}
+      />
+      <ConfirmationModal
+        open={Boolean(alertToToggle)}
+        title={
+          alertToToggle?.isActive
+            ? "Pause property alert?"
+            : "Activate property alert?"
+        }
+        description="Confirm before changing this placeholder alert status."
+        confirmLabel={
+          alertToToggle?.isActive ? "Pause alert" : "Activate alert"
+        }
+        items={[
+          {
+            label: "Property",
+            value: propertyLabel(alertToToggle?.propertyId ?? ""),
+          },
+          {
+            label: "Metric",
+            value: alertToToggle ? metricLabels[alertToToggle.metric] : "",
+          },
+          {
+            label: "Criteria",
+            value: alertToToggle ? criteriaLabel(alertToToggle) : "",
+          },
+          {
+            label: "Current status",
+            value: alertToToggle?.isActive ? "Active" : "Paused",
+          },
+        ]}
+        onCancel={() => setAlertToToggle(null)}
+        onConfirm={confirmToggleAlert}
+      />
 
       <DataTablePlaceholder
         columns={[
@@ -272,14 +445,32 @@ export function PropertyAlertManager({
             key: "actions",
             header: "Actions",
             render: (alert) => (
-              <Button
-                size="sm"
-                type="button"
-                variant="ghost"
-                onClick={() => removeAlert(alert.id)}
-              >
-                Remove
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => editAlert(alert)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAlertToToggle(alert)}
+                >
+                  {alert.isActive ? "Pause" : "Activate"}
+                </Button>
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setAlertToRemove(alert)}
+                >
+                  Remove
+                </Button>
+              </div>
             ),
           },
         ]}

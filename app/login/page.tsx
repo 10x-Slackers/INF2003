@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { SubmitEvent, Suspense, useState } from "react";
+import { ConfirmationModal } from "@/components/forms/confirmation-modal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,6 +23,10 @@ function LoginForm() {
   const redirectTo = searchParams.get("redirectTo") ?? "/";
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const [pendingLogin, setPendingLogin] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,9 +44,15 @@ function LoginForm() {
       return;
     }
 
+    setPendingLogin(parsed.data);
+  }
+
+  async function confirmLogin() {
+    if (!pendingLogin) return;
+
     setPending(true);
     const result = await signIn("credentials", {
-      ...parsed.data,
+      ...pendingLogin,
       redirect: false,
       redirectTo,
     });
@@ -52,6 +63,7 @@ function LoginForm() {
       return;
     }
 
+    setPendingLogin(null);
     router.push(redirectTo);
     router.refresh();
   }
@@ -86,6 +98,19 @@ function LoginForm() {
             </Link>
           </p>
         </form>
+        <ConfirmationModal
+          open={Boolean(pendingLogin)}
+          title="Confirm login"
+          description="Review the account before signing in."
+          confirmLabel="Login"
+          pending={pending}
+          items={[
+            { label: "Email", value: pendingLogin?.email ?? "" },
+            { label: "Redirect", value: redirectTo },
+          ]}
+          onCancel={() => setPendingLogin(null)}
+          onConfirm={confirmLogin}
+        />
       </CardContent>
     </Card>
   );

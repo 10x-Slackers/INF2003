@@ -7,11 +7,12 @@ import { AppShell } from "@/components/layout/app-shell";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
+import { canCreateTransaction } from "@/lib/auth/permissions";
 import { properties } from "@/lib/frontend/placeholders";
 
 export default async function PropertiesPage() {
   const session = await auth();
-  const isAgent = session?.user.role === "AGENT";
+  const canAddTransaction = canCreateTransaction(session?.user.role);
 
   return (
     <AppShell>
@@ -19,7 +20,7 @@ export default async function PropertiesPage() {
         title="Properties"
         description="Browse HDB properties, open a property to see its details, and review its recent resale transactions."
         action={
-          isAgent && (
+          canAddTransaction && (
             <Button asChild>
               <Link href="/agent/transactions/new">Add transaction</Link>
             </Button>

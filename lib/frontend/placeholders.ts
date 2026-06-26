@@ -33,6 +33,7 @@ export const transactions: PlaceholderTransaction[] = [
   {
     id: "txn-001",
     propertyId: "property-queenstown-12",
+    uploadedByUserId: "user-002",
     town: "QUEENSTOWN",
     flatType: "4 ROOM",
     flatModel: "Improved",
@@ -44,6 +45,7 @@ export const transactions: PlaceholderTransaction[] = [
   {
     id: "txn-002",
     propertyId: "property-tampines-220",
+    uploadedByUserId: "user-002",
     town: "TAMPINES",
     flatType: "5 ROOM",
     flatModel: "Model A",
@@ -55,6 +57,7 @@ export const transactions: PlaceholderTransaction[] = [
   {
     id: "txn-003",
     propertyId: "property-bishan-150",
+    uploadedByUserId: "user-004",
     town: "BISHAN",
     flatType: "3 ROOM",
     flatModel: "New Generation",
@@ -66,6 +69,7 @@ export const transactions: PlaceholderTransaction[] = [
   {
     id: "txn-004",
     propertyId: "property-queenstown-12",
+    uploadedByUserId: "user-002",
     town: "QUEENSTOWN",
     flatType: "3 ROOM",
     flatModel: "Improved",
@@ -77,6 +81,7 @@ export const transactions: PlaceholderTransaction[] = [
   {
     id: "txn-005",
     propertyId: "property-queenstown-12",
+    uploadedByUserId: "user-004",
     town: "QUEENSTOWN",
     flatType: "4 ROOM",
     flatModel: "Improved",
@@ -120,69 +125,6 @@ export const placeholderUsers: PlaceholderUser[] = [
   },
 ];
 
-export const placeholderTowns = [
-  {
-    id: "town-queenstown",
-    name: "QUEENSTOWN",
-    region: "CENTRAL REGION",
-    properties: "12,430",
-  },
-  {
-    id: "town-tampines",
-    name: "TAMPINES",
-    region: "EAST REGION",
-    properties: "21,870",
-  },
-  {
-    id: "town-bishan",
-    name: "BISHAN",
-    region: "CENTRAL REGION",
-    properties: "8,640",
-  },
-];
-
-export const placeholderAmenities = [
-  {
-    id: "amenity-001",
-    name: "SIT",
-    type: "School",
-    town: "PUNGGOL",
-  },
-  {
-    id: "amenity-002",
-    name: "Gym",
-    type: "Gym",
-    town: "TAMPINES",
-  },
-  {
-    id: "amenity-003",
-    name: "Bishan Active Park",
-    type: "Park",
-    town: "BISHAN",
-  },
-];
-
-export const placeholderReferenceTables = [
-  {
-    id: "reference-flat-types",
-    name: "Flat types",
-    records: "3",
-    status: "Placeholder",
-  },
-  {
-    id: "reference-flat-models",
-    name: "Flat models",
-    records: "3",
-    status: "Placeholder",
-  },
-  {
-    id: "reference-storey-ranges",
-    name: "Storey ranges",
-    records: "3",
-    status: "Placeholder",
-  },
-];
-
 export const propertyAlerts: PropertyAlert[] = [
   {
     id: "alert-001",
@@ -216,12 +158,6 @@ export const flatModelOptions = [
   { value: "1", label: "Improved" },
   { value: "2", label: "Model A" },
   { value: "3", label: "New Generation" },
-];
-
-export const storeyRangeOptions = [
-  { value: "1", label: "01 to 03" },
-  { value: "2", label: "04 to 06" },
-  { value: "3", label: "07 to 09" },
 ];
 
 export const alertMetricOptions = [
