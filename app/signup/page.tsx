@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
-import { ConfirmationModal } from "@/components/forms/confirmation-modal";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,12 +19,6 @@ export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const [pendingSignup, setPendingSignup] = useState<{
-    name: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-  } | null>(null);
 
   async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,17 +38,11 @@ export default function SignupPage() {
       return;
     }
 
-    setPendingSignup(parsed.data);
-  }
-
-  async function confirmSignup() {
-    if (!pendingSignup) return;
-
     setPending(true);
     const response = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(pendingSignup),
+      body: JSON.stringify(parsed.data),
     });
     setPending(false);
 
@@ -65,7 +52,6 @@ export default function SignupPage() {
       return;
     }
 
-    setPendingSignup(null);
     router.push("/login");
   }
 
@@ -113,20 +99,6 @@ export default function SignupPage() {
               </Link>
             </p>
           </form>
-          <ConfirmationModal
-            open={Boolean(pendingSignup)}
-            title="Confirm sign up"
-            description="Review the account details before creating the account."
-            confirmLabel="Create account"
-            pending={pending}
-            items={[
-              { label: "Name", value: pendingSignup?.name ?? "" },
-              { label: "Email", value: pendingSignup?.email ?? "" },
-              { label: "Password", value: pendingSignup ? "Provided" : "" },
-            ]}
-            onCancel={() => setPendingSignup(null)}
-            onConfirm={confirmSignup}
-          />
         </CardContent>
       </Card>
     </main>
