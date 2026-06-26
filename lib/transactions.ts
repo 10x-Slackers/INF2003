@@ -1,19 +1,11 @@
 import { execute, query } from "@/lib/db";
 import { HttpError } from "@/lib/api-response";
+import { isMissingReferenceError } from "@/lib/db-errors";
 import type {
   CreateTransactionPayload,
   ResaleTransaction,
   UpdateTransactionPayload,
 } from "@/lib/types";
-
-type DbError = { code?: string };
-
-function isForeignKeyViolation(err: unknown): boolean {
-  return (
-    (err as DbError)?.code === "ER_NO_REFERENCED_ROW_2" ||
-    (err as DbError)?.code === "ER_ROW_IS_REFERENCED_2"
-  );
-}
 
 export async function listTransactions(filters: {
   town_id?: string;
@@ -119,7 +111,7 @@ export async function createTransaction(
       ],
     );
   } catch (err) {
-    if (isForeignKeyViolation(err)) {
+    if (isMissingReferenceError(err)) {
       throw new HttpError(
         400,
         "Invalid reference: property_id, flat_type_id, flat_model_id, or storey_range_id does not exist",
@@ -157,7 +149,7 @@ export async function updateTransaction(
       id,
     ]);
   } catch (err) {
-    if (isForeignKeyViolation(err)) {
+    if (isMissingReferenceError(err)) {
       throw new HttpError(400, "Invalid reference in update payload");
     }
     throw err;

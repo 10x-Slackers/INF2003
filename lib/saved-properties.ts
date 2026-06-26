@@ -1,17 +1,8 @@
 import { execute, query } from "@/lib/db";
 import { HttpError } from "@/lib/api-response";
+import { isDuplicateKeyError, isMissingReferenceError } from "@/lib/db-errors";
 import { getPropertiesWithLatestTransaction } from "@/lib/properties";
 import type { SavedProperty, SavedPropertyDetail } from "@/lib/types";
-
-type DbError = { code?: string };
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_DUP_ENTRY";
-}
-
-function isForeignKeyViolation(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_NO_REFERENCED_ROW_2";
-}
 
 async function attachProperty(row: SavedProperty): Promise<SavedPropertyDetail> {
   const [property] = await getPropertiesWithLatestTransaction([row.property_id]);
@@ -74,7 +65,7 @@ export async function createSavedProperty(
     if (isDuplicateKeyError(err)) {
       throw new HttpError(409, "Property already saved");
     }
-    if (isForeignKeyViolation(err)) {
+    if (isMissingReferenceError(err)) {
       throw new HttpError(400, "Invalid property_id");
     }
     throw err;

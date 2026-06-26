@@ -1,5 +1,6 @@
 import { execute, query } from "@/lib/db";
 import { HttpError } from "@/lib/api-response";
+import { isDuplicateKeyError, isReferencedByOthersError } from "@/lib/db-errors";
 import { getTownById, listAllAmenitiesByTown } from "@/lib/towns";
 import type {
   CreatePropertyPayload,
@@ -7,16 +8,6 @@ import type {
   PropertyDetail,
   PropertyWithLatestTransaction,
 } from "@/lib/types";
-
-type DbError = { code?: string };
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_DUP_ENTRY";
-}
-
-function isForeignKeyConstraintError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_ROW_IS_REFERENCED_2";
-}
 
 // Each property is joined to its latest transaction (by transaction_month)
 // via a correlated subquery, so list filters on flat_type/price act on that
@@ -212,7 +203,7 @@ export async function deleteProperty(id: string): Promise<boolean> {
     const result = await execute("DELETE FROM properties WHERE id = ?", [id]);
     return result.affectedRows > 0;
   } catch (err) {
-    if (isForeignKeyConstraintError(err)) {
+    if (isReferencedByOthersError(err)) {
       throw new HttpError(
         409,
         "Property has resale transactions and cannot be deleted",

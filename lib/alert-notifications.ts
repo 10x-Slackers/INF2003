@@ -1,17 +1,12 @@
 import { db, execute, query } from "@/lib/db";
 import { HttpError } from "@/lib/api-response";
+import { isMissingReferenceError } from "@/lib/db-errors";
 import type {
   Alert,
   AlertNotification,
   AlertNotificationDetail,
   ResaleTransaction,
 } from "@/lib/types";
-
-type DbError = { code?: string };
-
-function isForeignKeyViolation(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_NO_REFERENCED_ROW_2";
-}
 
 const SELECT_COLUMNS =
   "id, user_id, alert_uuid, transaction_id, read_at, created_at";
@@ -103,7 +98,7 @@ export async function createAlertNotification(
       [alert.user_id, alertUuid, transactionId],
     );
   } catch (err) {
-    if (isForeignKeyViolation(err)) {
+    if (isMissingReferenceError(err)) {
       throw new HttpError(400, "Invalid transaction_id or user_id");
     }
     throw err;
@@ -117,7 +112,9 @@ export async function createAlertNotification(
       { $set: { last_triggered_at: Math.floor(Date.now() / 1000) } },
     );
   } catch (err) {
-    await execute("DELETE FROM alert_notifications WHERE id = ?", [inserted.id]);
+    await execute("DELETE FROM alert_notifications WHERE id = ?", [
+      inserted.id,
+    ]);
     throw err;
   }
 
@@ -147,7 +144,7 @@ export async function deleteAlertNotification(id: string): Promise<boolean> {
   const row = await fetchRow(id);
   if (!row) return false;
 
-  // Per spec: remove the MariaDB row and the MongoDB alerts document it points to.
+  // Remove the MariaDB row and the MongoDB alerts document it points to.
   await execute("DELETE FROM alert_notifications WHERE id = ?", [id]);
   await alerts().deleteOne({ _id: row.alert_uuid });
   return true;

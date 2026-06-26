@@ -1,15 +1,10 @@
 import { execute, query } from "@/lib/db";
 import { HttpError } from "@/lib/api-response";
+import { isDuplicateKeyError } from "@/lib/db-errors";
 import type { PublicUser, UpdateUserPayload } from "@/lib/types";
 
 const PUBLIC_USER_COLUMNS =
   "id, name, email, role, created_at, updated_at";
-
-type DbError = { code?: string };
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_DUP_ENTRY";
-}
 
 export async function listUsers(
   page: number,
