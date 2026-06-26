@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { UserRole } from "@/lib/auth";
 
 export type PlaceholderProperty = {
   id: string;
@@ -6,6 +7,14 @@ export type PlaceholderProperty = {
   block: string;
   streetName: string;
   leaseCommenceYear: number;
+};
+
+export type PlaceholderUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: string;
 };
 
 export type AlertMetric =

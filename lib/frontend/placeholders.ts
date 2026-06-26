@@ -1,6 +1,7 @@
 import type {
   PlaceholderProperty,
   PlaceholderTransaction,
+  PlaceholderUser,
   PropertyAlert,
 } from "@/lib/frontend/types";
 
@@ -87,6 +88,100 @@ export const transactions: PlaceholderTransaction[] = [
 ];
 
 export const bookmarkedPropertyIds: string[] = [];
+
+export const placeholderUsers: PlaceholderUser[] = [
+  {
+    id: "user-001",
+    name: "Alicia Tan",
+    email: "alicia@example.com",
+    role: "USER",
+    createdAt: "2026-06-01",
+  },
+  {
+    id: "user-002",
+    name: "Brandon Lim",
+    email: "brandon.agent@example.com",
+    role: "AGENT",
+    createdAt: "2026-06-04",
+  },
+  {
+    id: "user-003",
+    name: "Cheryl Ng",
+    email: "cheryl@example.com",
+    role: "USER",
+    createdAt: "2026-06-09",
+  },
+  {
+    id: "user-004",
+    name: "Dinesh Kumar",
+    email: "dinesh.admin@example.com",
+    role: "ADMIN",
+    createdAt: "2026-06-12",
+  },
+];
+
+export const placeholderTowns = [
+  {
+    id: "town-queenstown",
+    name: "QUEENSTOWN",
+    region: "CENTRAL REGION",
+    properties: "12,430",
+  },
+  {
+    id: "town-tampines",
+    name: "TAMPINES",
+    region: "EAST REGION",
+    properties: "21,870",
+  },
+  {
+    id: "town-bishan",
+    name: "BISHAN",
+    region: "CENTRAL REGION",
+    properties: "8,640",
+  },
+];
+
+export const placeholderAmenities = [
+  {
+    id: "amenity-001",
+    name: "SIT",
+    type: "School",
+    town: "PUNGGOL",
+  },
+  {
+    id: "amenity-002",
+    name: "Gym",
+    type: "Gym",
+    town: "TAMPINES",
+  },
+  {
+    id: "amenity-003",
+    name: "Bishan Active Park",
+    type: "Park",
+    town: "BISHAN",
+  },
+];
+
+export const placeholderReferenceTables = [
+  {
+    id: "reference-flat-types",
+    name: "Flat types",
+    records: "3",
+    status: "Placeholder",
+  },
+  {
+    id: "reference-flat-models",
+    name: "Flat models",
+    records: "3",
+    status: "Placeholder",
+  },
+  {
+    id: "reference-storey-ranges",
+    name: "Storey ranges",
+    records: "3",
+    status: "Placeholder",
+  },
+];
 
 export const propertyAlerts: PropertyAlert[] = [
   {

@@ -24,7 +24,6 @@ export default async function NewTransactionPage() {
       <PageHeader
         title="New transaction"
         description="Search for an existing property, select it, and enter resale transaction details."
-        action={<Badge variant="outline">AGENT</Badge>}
       />
       <CreateTransactionFlow />
     </AppShell>

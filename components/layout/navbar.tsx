@@ -67,9 +67,15 @@ export function Navbar() {
                 Alerts
               </Link>
               {isAdmin && (
-                <Button asChild variant="outline">
-                  <Link href="/admin">Admin</Link>
-                </Button>
+                <Link
+                  className={cn(
+                    "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                    pathname === "/admin" && "text-foreground",
+                  )}
+                  href="/admin"
+                >
+                  Admin
+                </Link>
               )}
               <span className="hidden text-sm font-medium text-muted-foreground sm:inline">
                 {session.user.name}
