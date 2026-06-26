@@ -3,7 +3,7 @@ export type NumberRange = {
   max?: number | null;
 };
 
-export type SearchFilters = {
+export type SavedAlertFilters = {
   town_id?: string[];
   flat_model_id?: string[];
   flat_type_id?: string[];
@@ -11,6 +11,9 @@ export type SearchFilters = {
   floor_area_sqm?: NumberRange;
   storey?: NumberRange;
   lease_remaining?: NumberRange;
+};
+
+export type SearchLogQuery = SavedAlertFilters & {
   transaction_year?: {
     from?: number | null;
     to?: number | null;
@@ -20,7 +23,7 @@ export type SearchFilters = {
 export type SavedAlert = {
   _id: string;
   user_id: string;
-  filters: SearchFilters;
+  filters: SavedAlertFilters;
   is_active: boolean;
   created_at: number;
   updated_at: number;
@@ -30,6 +33,6 @@ export type SavedAlert = {
 export type SearchLog = {
   _id: string;
   user_id: string;
-  query: SearchFilters;
+  query: SearchLogQuery;
   searched_at: number;
 };
