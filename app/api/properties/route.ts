@@ -4,7 +4,7 @@ import {
   propertyListQuerySchema,
 } from "@/lib/validation/property";
 import { badRequest, created, handleApiError, okPaginated } from "@/lib/api-response";
-import { requireUser } from "@/lib/auth/guards";
+import { requireRole } from "@/lib/auth/guards";
 import { createProperty, listProperties } from "@/lib/properties";
 
 export async function GET(request: NextRequest) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireUser();
+    await requireRole("AGENT", "ADMIN");
 
     let body: unknown;
     try {

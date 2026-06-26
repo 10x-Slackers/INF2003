@@ -4,7 +4,7 @@ import {
   transactionListQuerySchema,
 } from "@/lib/validation/transaction";
 import { badRequest, created, handleApiError, okPaginated } from "@/lib/api-response";
-import { requireUser } from "@/lib/auth/guards";
+import { requireRole } from "@/lib/auth/guards";
 import { createTransaction, listTransactions } from "@/lib/transactions";
 
 export async function GET(request: NextRequest) {
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireUser();
+    const user = await requireRole("AGENT", "ADMIN");
 
     let body: unknown;
     try {
