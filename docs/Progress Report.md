@@ -26,17 +26,16 @@ _USERS_ is where the platform’s identity and access management. The _role_ enu
 
 ## **Document DB Collections Schema**
 
-| Collection    | Purpose                                                                   | Main Schema Fields                                                              |
-| :------------ | :------------------------------------------------------------------------ | :------------------------------------------------------------------------------ |
-| saved_alerts  | Saves user alerts, independent data.                                      | \_id, user_id, filters, is_active, created_at, updated_at, last_triggered_at    |
-| reviews       | Store user reviews and ratings, independent data.                         | \_id, user_id, property_id, rating, pros, cons, remarks, created_at, updated_at |
-| search_logs   | Stores user search activity and identify demand trends, independent data. | \_id, user_id, query, searched_at                                               |
-| town_profiles | Stores summarised data and polygons for towns, derived data.              | \_id, transaction_summary, coordinates, updated_at                              |
-| statistics    | Stores pre-computed data for charts and trends, derived data.             | \_id, metric, granularity, time_range, dimensions, series, computed_at          |
+| Collection    | Purpose                                                                   | Main Schema Fields                                                           |
+| :------------ | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------- |
+| saved_alerts  | Saves user alerts, independent data.                                      | \_id, user_id, filters, is_active, created_at, updated_at, last_triggered_at |
+| search_logs   | Stores user search activity and identify demand trends, independent data. | \_id, user_id, query, searched_at                                            |
+| town_profiles | Stores summarised data and polygons for towns, derived data.              | \_id, transaction_summary, coordinates, updated_at                           |
+| statistics    | Stores pre-computed data for charts and trends, derived data.             | \_id, metric, granularity, time_range, dimensions, series, computed_at       |
 
-The document database stores flexible and nested data, and the above table summarises the main collections that will be created. Independent data are records created directly from user activity on the platform, such as the search log and reviews. Derived data are records generated from existing data such as the resale transaction data stored in the relational database.
+The document database stores flexible and nested data, and the above table summarises the main collections that will be created. Independent data are records created directly from user activity on the platform, such as the search log. Derived data are records generated from existing data such as the resale transaction data stored in the relational database.
 
-A document model is suitable because users may provide different filter combinations for saved_alerts and search_logs, making the data flexible. It is also suitable for reviews because details such as pros, cons, which are a list of comments, can be embedded and stored together in one document.
+A document model is suitable because users may provide different filter combinations for saved_alerts and search_logs, making the data flexible.
 
 ## **Datasets**
 
@@ -57,8 +56,6 @@ Raw data is fetched programmatically using data.gov.sg’s Dataset API. Relevant
 **Search and filter.** Users will be able to filter resale transactions by towns, price range, flat type, etc, allowing retrieval of more specific and relevant results. Pagination is done using SQL LIMIT and OFFSET to manage search results displayed per page.
 
 **User Bookmarks.** Users can save properties or towns they are interested in for their own reference with basic CRUD operations supported.
-
-**Reviews and ratings.** Users can rate properties and share their experiences. By combining actual user experiences in addition to data-driven insights, a more comprehensive perspective is provided.
 
 **Amenities listing.** Information about amenities such as schools, parks, gyms within each town is provided, allowing users to evaluate transactions while factoring in the surrounding environment, thus enhancing their decision making.
 
