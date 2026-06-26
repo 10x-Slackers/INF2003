@@ -1,4 +1,4 @@
-import { execute, query, withTransaction } from "@/lib/db";
+import { execute, query } from "@/lib/db";
 import { HttpError } from "@/lib/api-response";
 import type {
   CreateTransactionPayload,
@@ -7,10 +7,6 @@ import type {
 } from "@/lib/types";
 
 type DbError = { code?: string };
-
-function isDuplicateKeyError(err: unknown): boolean {
-  return (err as DbError)?.code === "ER_DUP_ENTRY";
-}
 
 function isForeignKeyViolation(err: unknown): boolean {
   return (
@@ -104,58 +100,24 @@ export async function createTransaction(
   payload: CreateTransactionPayload,
   uploadedByUserId: string,
 ): Promise<ResaleTransaction> {
+  let inserted: { id: string };
   try {
-    return await withTransaction(async ({ query: txQuery }) => {
-      let propertyId: string;
-
-      if ("property_id" in payload) {
-        propertyId = payload.property_id;
-      } else {
-        try {
-          const [inserted] = await txQuery<{ id: string }>(
-            `INSERT INTO properties (town_id, block, street_name, lease_commence_year)
-             VALUES (?, ?, ?, ?) RETURNING id`,
-            [
-              payload.property.town_id,
-              payload.property.block,
-              payload.property.street_name,
-              payload.property.lease_commence_year,
-            ],
-          );
-          propertyId = inserted.id;
-        } catch (err) {
-          if (isDuplicateKeyError(err)) {
-            throw new HttpError(409, "Property already exists");
-          }
-          throw err;
-        }
-      }
-
-      const [inserted] = await txQuery<{ id: string }>(
-        `INSERT INTO resale_transactions
-           (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
-            storey_range_id, floor_area_sqm, transaction_month, resale_price)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-        [
-          uploadedByUserId,
-          propertyId,
-          payload.flat_type_id,
-          payload.flat_model_id,
-          payload.storey_range_id,
-          payload.floor_area_sqm,
-          payload.transaction_month,
-          payload.resale_price,
-        ],
-      );
-
-      const [transaction] = await txQuery<ResaleTransaction>(
-        `SELECT id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
-                storey_range_id, floor_area_sqm, transaction_month, resale_price
-         FROM resale_transactions WHERE id = ?`,
-        [inserted.id],
-      );
-      return transaction;
-    });
+    [inserted] = await query<{ id: string }>(
+      `INSERT INTO resale_transactions
+         (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
+          storey_range_id, floor_area_sqm, transaction_month, resale_price)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+      [
+        uploadedByUserId,
+        payload.property_id,
+        payload.flat_type_id,
+        payload.flat_model_id,
+        payload.storey_range_id,
+        payload.floor_area_sqm,
+        payload.transaction_month,
+        payload.resale_price,
+      ],
+    );
   } catch (err) {
     if (isForeignKeyViolation(err)) {
       throw new HttpError(
@@ -165,6 +127,12 @@ export async function createTransaction(
     }
     throw err;
   }
+
+  const transaction = await getTransactionById(inserted.id);
+  if (!transaction) {
+    throw new HttpError(500, "Failed to read back created transaction");
+  }
+  return transaction;
 }
 
 export async function updateTransaction(

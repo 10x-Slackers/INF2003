@@ -108,13 +108,14 @@ export type ResaleTransaction = {
 };
 
 export type CreateTransactionPayload = {
+  property_id: string;
   flat_type_id: number;
   flat_model_id: number;
   storey_range_id: number;
   floor_area_sqm: number;
   transaction_month: string;
   resale_price: number;
-} & ({ property_id: string } | { property: CreatePropertyPayload });
+};
 
 export type UpdateTransactionPayload = {
   flat_type_id?: number;

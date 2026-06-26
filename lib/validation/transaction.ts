@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { createPropertySchema } from "@/lib/validation/property";
 
-const transactionFieldsSchema = z.object({
+export const createTransactionSchema = z.object({
+  property_id: z.string().uuid(),
   flat_type_id: z.coerce.number().int().positive(),
   flat_model_id: z.coerce.number().int().positive(),
   storey_range_id: z.coerce.number().int().positive(),
@@ -9,11 +9,6 @@ const transactionFieldsSchema = z.object({
   transaction_month: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD"),
   resale_price: z.coerce.number().positive(),
 });
-
-export const createTransactionSchema = z.union([
-  transactionFieldsSchema.extend({ property_id: z.string().uuid() }),
-  transactionFieldsSchema.extend({ property: createPropertySchema }),
-]);
 
 export const updateTransactionSchema = z
   .object({
