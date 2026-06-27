@@ -92,11 +92,11 @@ export function Navbar() {
           </>
         ) : (
           <>
-            <Button onClick={() => signOut({ redirectTo: "/login" })}>
-              Login
+            <Button asChild>
+              <Link href="/login">Login</Link>
             </Button>
-            <Button onClick={() => signOut({ redirectTo: "/signup" })}>
-              Signup
+            <Button asChild>
+              <Link href="/signup">Signup</Link>
             </Button>
           </>
         )}
