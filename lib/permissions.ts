@@ -3,6 +3,7 @@ import type { UserRole } from "@/lib/auth";
 const signedInRoles: UserRole[] = ["USER", "AGENT", "ADMIN"];
 const agentAdminRoles: UserRole[] = ["AGENT", "ADMIN"];
 const adminRoles: UserRole[] = ["ADMIN"];
+const agentRoles: UserRole[] = ["AGENT"];
 
 function hasRole(
   role: UserRole | null | undefined,
@@ -16,7 +17,7 @@ export function isAdmin(role: UserRole | null | undefined): boolean {
 }
 
 export function isAgent(role: UserRole | null | undefined): boolean {
-  return hasRole(role, ["AGENT"]);
+  return hasRole(role, agentRoles);
 }
 
 export function isAgentOrAdmin(role: UserRole | null | undefined): boolean {
