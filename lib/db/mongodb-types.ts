@@ -36,3 +36,17 @@ export type SearchLog = {
   query: SearchLogQuery;
   searched_at: number;
 };
+
+export type TownProfileSummary = {
+  total_transaction: number;
+  earliest_transaction: string;
+  latest_transaction: string;
+  avg_resale_price_by_flat_type: Record<string, number>;
+};
+
+export type TownProfile = {
+  _id: string;
+  transaction_summary: TownProfileSummary;
+  coordinates: number[][][];
+  updated_at: number;
+};
