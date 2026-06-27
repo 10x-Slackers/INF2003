@@ -1,28 +1,38 @@
 import type { UserRole } from "@/lib/auth";
 
-export const signedInRoles = ["USER", "AGENT", "ADMIN"] satisfies UserRole[];
-export const transactionCreatorRoles = ["AGENT", "ADMIN"] satisfies UserRole[];
-export const adminRoles = ["ADMIN"] satisfies UserRole[];
+const signedInRoles: UserRole[] = ["USER", "AGENT", "ADMIN"];
+const agentAdminRoles: UserRole[] = ["AGENT", "ADMIN"];
+const adminRoles: UserRole[] = ["ADMIN"];
 
-export function hasRole(
+function hasRole(
   role: UserRole | null | undefined,
-  roles: readonly UserRole[],
-) {
-  return Boolean(role && roles.includes(role));
+  allowedRoles: readonly UserRole[],
+): boolean {
+  return role !== null && role !== undefined && allowedRoles.includes(role);
 }
 
-export function canCreateTransaction(role: UserRole | null | undefined) {
-  return hasRole(role, transactionCreatorRoles);
-}
-
-export function canAccessAdmin(role: UserRole | null | undefined) {
+export function canAccessAdmin(role: UserRole | null | undefined): boolean {
   return hasRole(role, adminRoles);
 }
 
 export function canManageTransaction(
   role: UserRole | null | undefined,
-  actorId: string | undefined,
-  ownerId: string | undefined,
-) {
-  return canAccessAdmin(role) || (role === "AGENT" && actorId === ownerId);
+): boolean {
+  return hasRole(role, agentAdminRoles);
+}
+
+export function isAdmin(role: UserRole | null | undefined): boolean {
+  return hasRole(role, adminRoles);
+}
+
+export function isAgent(role: UserRole | null | undefined): boolean {
+  return hasRole(role, ["AGENT"]);
+}
+
+export function isAgentOrAdmin(role: UserRole | null | undefined): boolean {
+  return hasRole(role, agentAdminRoles);
+}
+
+export function isSignedIn(role: UserRole | null | undefined): boolean {
+  return hasRole(role, signedInRoles);
 }

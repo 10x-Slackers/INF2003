@@ -1,77 +1,44 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import type { UserRole } from "@/lib/auth";
-import {
-  canAccessAdmin,
-  canCreateTransaction,
-  hasRole,
-  signedInRoles,
-} from "@/lib/permissions";
+import { isAdmin, isSignedIn } from "@/lib/permissions";
 import { Button } from "./ui/button";
+import { ROUTES } from "@/lib/routes";
 
 type NavLink = {
   href: string;
   label: string;
-  canView: (role: UserRole | null | undefined) => boolean;
+  canView: (role?: UserRole) => boolean;
 };
 
 const links: NavLink[] = [
-  { href: "/", label: "Home", canView: () => true },
-  { href: "/properties", label: "Properties", canView: () => true },
-  { href: "/transactions", label: "Transactions", canView: () => true },
-  {
-    href: "/bookmarks",
-    label: "Bookmarks",
-    canView: (role) => hasRole(role, signedInRoles),
-  },
-  {
-    href: "/alerts",
-    label: "Alerts",
-    canView: (role) => hasRole(role, signedInRoles),
-  },
-  {
-    href: "/agent/transactions/new",
-    label: "Create transaction",
-    canView: canCreateTransaction,
-  },
-  { href: "/admin", label: "Admin", canView: canAccessAdmin },
+  { href: ROUTES.HOME, label: "Home", canView: () => true },
+  { href: ROUTES.PROPERTIES, label: "Properties", canView: () => true },
+  { href: ROUTES.TRANSACTIONS, label: "Transactions", canView: () => true },
+  { href: ROUTES.BOOKMARKS, label: "Bookmarks", canView: isSignedIn },
+  { href: ROUTES.ALERTS, label: "Alerts", canView: isSignedIn },
+  { href: ROUTES.ADMIN, label: "Admin", canView: isAdmin },
 ];
-
-function isActivePath(pathname: string, href: string) {
-  return href === "/"
-    ? pathname === href
-    : pathname === href || pathname.startsWith(`${href}/`);
-}
 
 export function Navbar() {
   const { data: session, status } = useSession();
-  const pathname = usePathname();
   const role = session?.user.role;
   const visibleLinks = links.filter((link) => link.canView(role));
 
   return (
     <div className="container mx-auto flex h-16 items-center px-4">
       <div className="flex flex-1 items-center">
-        <Link href="/" className="text-lg font-semibold">
+        <Link href={ROUTES.HOME} className="text-lg font-semibold">
           HDB Trackr
         </Link>
       </div>
 
       <nav className="hidden items-center gap-1 md:flex">
         {visibleLinks.map((link) => {
-          const active = isActivePath(pathname, link.href);
-
           return (
-            <Button
-              key={link.href}
-              asChild
-              variant={active ? "secondary" : "ghost"}
-            >
-              <Link href={link.href} aria-current={active ? "page" : undefined}>
-                {link.label}
-              </Link>
+            <Button key={link.href} asChild variant="ghost">
+              <Link href={link.href}>{link.label}</Link>
             </Button>
           );
         })}
@@ -82,21 +49,21 @@ export function Navbar() {
           <span className="text-sm text-muted-foreground">Loading...</span>
         ) : session?.user ? (
           <>
-            <Link href="/profile">{session.user.name}</Link>
+            <Link href={ROUTES.PROFILE}>{session.user.name}</Link>
             <Button
-              variant="outline"
-              onClick={() => signOut({ redirectTo: "/" })}
+              variant="ghost"
+              onClick={() => signOut({ redirectTo: ROUTES.HOME })}
             >
               Logout
             </Button>
           </>
         ) : (
           <>
-            <Button asChild>
-              <Link href="/login">Login</Link>
+            <Button asChild variant="ghost">
+              <Link href={ROUTES.LOGIN}>Login</Link>
             </Button>
-            <Button asChild>
-              <Link href="/signup">Signup</Link>
+            <Button asChild variant="ghost">
+              <Link href={ROUTES.SIGNUP}>Signup</Link>
             </Button>
           </>
         )}

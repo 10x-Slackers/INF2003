@@ -3,14 +3,14 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <main className="container mx-auto grid gap-7 px-5 py-6">
+    <main className="container mx-auto flex flex-col gap-7 px-5 py-6">
       <Card className="min-h-[480px]">
         <CardHeader>
           <CardTitle>Town map</CardTitle>
         </CardHeader>
       </Card>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="flex flex-col gap-4 md:flex-row [&>*]:flex-1">
         <MetricCard label="Average price" value="$735,000" caption="May 2026" />
         <MetricCard label="Sales this month" value="2" caption="May 2026" />
         <MetricCard
