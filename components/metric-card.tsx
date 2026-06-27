@@ -17,27 +17,24 @@ export function MetricCard({
   isLoading,
   valueClassName,
 }: MetricCardProps) {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader className="gap-4">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <div className="flex flex-col gap-2">
-            <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-5 w-20" />
-          </div>
-        </CardHeader>
-      </Card>
-    );
-  }
-
   return (
     <Card>
       <CardHeader className="gap-4">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
         <div>
-          <p className={cn("text-3xl font-bold", valueClassName)}>{value}</p>
-          <p className="text-muted-foreground">{caption}</p>
+          {
+            isLoading ? (
+              <>
+                <Skeleton className="h-9 w-32" />
+                <Skeleton className="h-5 w-20" />
+              </>
+            ) : (
+              <>
+                <p className={cn("text-3xl font-bold", valueClassName)}>{value}</p>
+                {caption && <p className="text-muted-foreground">{caption}</p>}
+              </>
+            )
+          }
         </div>
       </CardHeader>
     </Card>

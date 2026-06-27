@@ -5,6 +5,7 @@ import type { UserRole } from "@/lib/auth";
 import { isAdmin, isSignedIn } from "@/lib/permissions";
 import { Button } from "./ui/button";
 import { ROUTES } from "@/lib/routes";
+import { useMemo } from "react";
 
 type NavLink = {
   href: string;
@@ -24,7 +25,7 @@ const links: NavLink[] = [
 export function Navbar() {
   const { data: session, status } = useSession();
   const role = session?.user.role;
-  const visibleLinks = links.filter((link) => link.canView(role));
+  const visibleLinks = useMemo(() => links.filter((link) => link.canView(role)), [role]);
 
   return (
     <div className="container mx-auto flex h-16 items-center px-4">
@@ -49,7 +50,7 @@ export function Navbar() {
           <span className="text-sm text-muted-foreground">Loading...</span>
         ) : session?.user ? (
           <>
-            <Link href={ROUTES.PROFILE}>{session.user.name}</Link>
+            <Link href={ROUTES.PROFILE}>{session.user.name ?? "Profile"}</Link>
             <Button
               variant="ghost"
               onClick={() => signOut({ redirectTo: ROUTES.HOME })}
