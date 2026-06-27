@@ -17,7 +17,7 @@ export function MetricCard({
   isLoading,
   valueClassName,
 }: MetricCardProps) {
-  if (isLoading || !value || !caption) {
+  if (isLoading) {
     return (
       <Card aria-busy="true">
         <CardHeader className="gap-4">
@@ -26,6 +26,16 @@ export function MetricCard({
             <Skeleton className="h-9 w-32" />
             <Skeleton className="h-5 w-20" />
           </div>
+        </CardHeader>
+      </Card>
+    );
+  }
+  if (!value || !caption) {
+    return (
+      <Card>
+        <CardHeader className="gap-4">
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+          <p className="text-sm text-muted-foreground">No data available</p>
         </CardHeader>
       </Card>
     );
