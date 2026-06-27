@@ -11,16 +11,6 @@ function hasRole(
   return role !== null && role !== undefined && allowedRoles.includes(role);
 }
 
-export function canAccessAdmin(role: UserRole | null | undefined): boolean {
-  return hasRole(role, adminRoles);
-}
-
-export function canManageTransaction(
-  role: UserRole | null | undefined,
-): boolean {
-  return hasRole(role, agentAdminRoles);
-}
-
 export function isAdmin(role: UserRole | null | undefined): boolean {
   return hasRole(role, adminRoles);
 }
