@@ -1,5 +1,5 @@
 import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
+import { HttpError } from "@/lib/http-error";
 import { isDuplicateKeyError } from "@/lib/db-errors";
 import type { PublicUser, UpdateUserPayload } from "@/lib/types";
 
@@ -13,7 +13,7 @@ export async function listUsers(
   const [rows, countRows] = await Promise.all([
     query<PublicUser>(
       `SELECT ${PUBLIC_USER_COLUMNS} FROM users ORDER BY created_at LIMIT ? OFFSET ?`,
-      [pageSize, (page - 1) * pageSize],
+      [pageSize, Math.max(0, (page - 1) * pageSize)],
     ),
     query<{ total: number }>("SELECT COUNT(*) AS total FROM users"),
   ]);
@@ -50,6 +50,8 @@ export async function updateUser(
     fields.push("role = ?");
     params.push(payload.role);
   }
+
+  if (fields.length === 0) return existing;
 
   try {
     await execute(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, [

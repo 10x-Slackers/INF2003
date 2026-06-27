@@ -138,8 +138,8 @@ export type SavedPropertyDetail = SavedProperty & {
 };
 
 export type AlertRange = {
-  min: number;
-  max: number;
+  min?: number;
+  max?: number;
 };
 
 export type AlertFilters = {

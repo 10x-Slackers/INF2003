@@ -1,5 +1,5 @@
 import { db, execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
+import { HttpError } from "@/lib/http-error";
 import { isMissingReferenceError } from "@/lib/db-errors";
 import type {
   Alert,
@@ -144,8 +144,9 @@ export async function deleteAlertNotification(id: string): Promise<boolean> {
   const row = await fetchRow(id);
   if (!row) return false;
 
-  // Remove the MariaDB row and the MongoDB alerts document it points to.
+  // Delete only this notification. The MongoDB alert document is a standing
+  // definition that can produce many notifications, so it must outlive any
+  // single one (deleting the alert itself is a separate operation).
   await execute("DELETE FROM alert_notifications WHERE id = ?", [id]);
-  await alerts().deleteOne({ _id: row.alert_uuid });
   return true;
 }

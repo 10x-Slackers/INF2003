@@ -1,5 +1,5 @@
 import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
+import { HttpError } from "@/lib/http-error";
 import { isMissingReferenceError } from "@/lib/db-errors";
 import type {
   CreateTransactionPayload,
@@ -142,6 +142,8 @@ export async function updateTransaction(
       params.push(value);
     }
   }
+
+  if (fields.length === 0) return existing;
 
   try {
     await execute(`UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`, [

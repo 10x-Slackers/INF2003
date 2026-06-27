@@ -1,5 +1,5 @@
 import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
+import { HttpError } from "@/lib/http-error";
 import { isDuplicateKeyError, isReferencedByOthersError } from "@/lib/db-errors";
 import { getTownById, listAllAmenitiesByTown } from "@/lib/towns";
 import type {
@@ -105,6 +105,16 @@ export async function listProperties(filters: {
 
   const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
+  // The count only needs the latest-transaction join when a filter references
+  // its columns (flat_type/price); otherwise the correlated subquery would run
+  // per property just to count rows. The data query always needs it for SELECT.
+  const countJoin =
+    filters.flat_type !== undefined ||
+    filters.price_min !== undefined ||
+    filters.price_max !== undefined
+      ? LATEST_TRANSACTION_JOIN
+      : "";
+
   const [rows, countRows] = await Promise.all([
     query<PropertyRow>(
       `SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
@@ -119,7 +129,7 @@ export async function listProperties(filters: {
       [...params, pageSize, (page - 1) * pageSize],
     ),
     query<{ total: number }>(
-      `SELECT COUNT(*) AS total FROM properties p ${LATEST_TRANSACTION_JOIN} ${where}`,
+      `SELECT COUNT(*) AS total FROM properties p ${countJoin} ${where}`,
       params,
     ),
   ]);

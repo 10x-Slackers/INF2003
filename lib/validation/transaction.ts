@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { paginationSchema } from "@/lib/validation/pagination";
 
 export const createTransactionSchema = z.object({
-  property_id: z.string().uuid(),
+  property_id: z.uuid(),
   flat_type_id: z.coerce.number().int().positive(),
   flat_model_id: z.coerce.number().int().positive(),
   storey_range_id: z.coerce.number().int().positive(),
@@ -26,14 +27,12 @@ export const updateTransactionSchema = z
     message: "At least one field must be provided.",
   });
 
-export const transactionListQuerySchema = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  town_id: z.string().uuid().optional(),
+export const transactionListQuerySchema = paginationSchema.extend({
+  town_id: z.uuid().optional(),
   flat_type_id: z.coerce.number().int().positive().optional(),
   storey_range_id: z.coerce.number().int().positive().optional(),
   price_min: z.coerce.number().nonnegative().optional(),
   price_max: z.coerce.number().nonnegative().optional(),
   year: z.coerce.number().int().min(1960).max(2100).optional(),
-  property_id: z.string().uuid().optional(),
+  property_id: z.uuid().optional(),
 });

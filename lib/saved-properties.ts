@@ -1,5 +1,5 @@
 import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/api-response";
+import { HttpError } from "@/lib/http-error";
 import { isDuplicateKeyError, isMissingReferenceError } from "@/lib/db-errors";
 import { getPropertiesWithLatestTransaction } from "@/lib/properties";
 import type { SavedProperty, SavedPropertyDetail } from "@/lib/types";

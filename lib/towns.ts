@@ -1,4 +1,5 @@
 import { query } from "@/lib/db";
+import { listAmenities } from "@/lib/amenities";
 import type { Amenity, Property, Region, Town } from "@/lib/types";
 
 export async function listTowns(
@@ -58,31 +59,17 @@ export async function listAmenitiesByTown(
   page: number,
   pageSize: number,
 ): Promise<{ data: Amenity[]; total: number }> {
-  const conditions = ["town_id = ?"];
-  const params: unknown[] = [townId];
-  if (amenityTypeId !== undefined) {
-    conditions.push("amenity_type_id = ?");
-    params.push(amenityTypeId);
-  }
-  const where = `WHERE ${conditions.join(" AND ")}`;
-
-  const [rows, countRows] = await Promise.all([
-    query<Amenity>(
-      `SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
-       FROM amenities ${where}
-       ORDER BY name LIMIT ? OFFSET ?`,
-      [...params, pageSize, (page - 1) * pageSize],
-    ),
-    query<{ total: number }>(
-      `SELECT COUNT(*) AS total FROM amenities ${where}`,
-      params,
-    ),
-  ]);
-
-  return { data: rows, total: countRows[0].total };
+  return listAmenities({
+    town_id: townId,
+    amenity_type_id: amenityTypeId,
+    page,
+    pageSize,
+  });
 }
 
-export async function listAllAmenitiesByTown(townId: string): Promise<Amenity[]> {
+export async function listAllAmenitiesByTown(
+  townId: string,
+): Promise<Amenity[]> {
   return query<Amenity>(
     `SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
      FROM amenities WHERE town_id = ? ORDER BY name`,
