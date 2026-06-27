@@ -25,7 +25,10 @@ const links: NavLink[] = [
 export function Navbar() {
   const { data: session, status } = useSession();
   const role = session?.user.role;
-  const visibleLinks = useMemo(() => links.filter((link) => link.canView(role)), [role]);
+  const visibleLinks = useMemo(
+    () => links.filter((link) => link.canView(role)),
+    [role],
+  );
 
   return (
     <div className="container mx-auto flex h-16 items-center px-4">
