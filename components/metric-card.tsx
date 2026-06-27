@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 type MetricCardProps = {
   label: string;
-  value?: string | null;
+  value: string;
   caption?: string | null;
   isLoading?: boolean;
   valueClassName?: string;
@@ -19,23 +19,13 @@ export function MetricCard({
 }: MetricCardProps) {
   if (isLoading) {
     return (
-      <Card aria-busy="true">
+      <Card>
         <CardHeader className="gap-4">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
           <div className="flex flex-col gap-2">
             <Skeleton className="h-9 w-32" />
             <Skeleton className="h-5 w-20" />
           </div>
-        </CardHeader>
-      </Card>
-    );
-  }
-  if (!value || !caption) {
-    return (
-      <Card>
-        <CardHeader className="gap-4">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="text-sm text-muted-foreground">No data available</p>
         </CardHeader>
       </Card>
     );
