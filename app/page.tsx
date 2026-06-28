@@ -1,5 +1,5 @@
-import { MetricCard } from "@/components/MetricCard";
-import { MetricCardSkeleton } from "@/components/MetricCardSkeleton";
+import { MetricCard } from "@/components/dashboard/MetricCard";
+import { MetricCardSkeleton } from "@/components/dashboard/MetricCardSkeleton";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
 
