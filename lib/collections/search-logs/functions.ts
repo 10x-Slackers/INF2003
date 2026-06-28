@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { MongoError } from "mongodb";
 import { db } from "@/lib/db";
 import {
   createSearchLogSchema,
@@ -8,17 +7,11 @@ import {
   type SearchLogCreate,
   type SearchLogUpdate,
   updateSearchLogSchema,
-} from "./type";
+} from "./types";
+import { handleCollectionError, type CollectionResult } from "../utils";
 
 const searchHistory = db.collection<SearchLog>("search_history");
 const now = () => Math.floor(Date.now() / 1000);
-type CollectionResult<T> = T | Error;
-const handleError = (error: unknown) => {
-  if (error instanceof MongoError) {
-    throw error;
-  }
-  return error instanceof Error ? error : new Error(String(error));
-};
 
 export async function listSearchLogs(
   userId?: string,
@@ -30,7 +23,7 @@ export async function listSearchLogs(
       .limit(50)
       .toArray();
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -40,7 +33,7 @@ export async function getSearchLogById(
   try {
     return await searchHistory.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -59,7 +52,7 @@ export async function createSearchLog(
     await searchHistory.insertOne(searchLog);
     return searchLog;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -79,7 +72,7 @@ export async function updateSearchLog(
       ? await searchHistory.findOne({ _id: parsedId })
       : null;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -90,6 +83,6 @@ export async function deleteSearchLog(
     const result = await searchHistory.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }

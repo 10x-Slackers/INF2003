@@ -1,21 +1,14 @@
-import { MongoError } from "mongodb";
 import { db } from "@/lib/db";
 import {
   idSchema,
   type TownProfile,
   type TownProfileUpsert,
   UpsertTownProfileSchema,
-} from "./type";
+} from "./types";
+import { handleCollectionError, type CollectionResult } from "../utils";
 
 const towns = db.collection<TownProfile>("towns");
 const now = () => Math.floor(Date.now() / 1000);
-type CollectionResult<T> = T | Error;
-const handleError = (error: unknown) => {
-  if (error instanceof MongoError) {
-    throw error;
-  }
-  return error instanceof Error ? error : new Error(String(error));
-};
 
 export async function listTownProfiles(): Promise<
   CollectionResult<TownProfile[]>
@@ -23,7 +16,7 @@ export async function listTownProfiles(): Promise<
   try {
     return await towns.find({}).sort({ _id: 1 }).toArray();
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -33,7 +26,7 @@ export async function getTownProfileById(
   try {
     return await towns.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -57,7 +50,7 @@ export async function upsertTownProfile(
     );
     return townProfile;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -68,6 +61,6 @@ export async function deleteTownProfile(
     const result = await towns.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }

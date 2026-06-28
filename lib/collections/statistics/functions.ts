@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { MongoError } from "mongodb";
 import { db } from "@/lib/db";
 import {
   createStatisticsSchema,
@@ -12,17 +11,11 @@ import {
   type StatisticsUpdate,
   upsertStatisticsSchema,
   updateStatisticsSchema,
-} from "./type";
+} from "./types";
+import { handleCollectionError, type CollectionResult } from "../utils";
 
 const statistics = db.collection<Statistics>("statistics");
 const now = () => Math.floor(Date.now() / 1000);
-type CollectionResult<T> = T | Error;
-const handleError = (error: unknown) => {
-  if (error instanceof MongoError) {
-    throw error;
-  }
-  return error instanceof Error ? error : new Error(String(error));
-};
 
 export async function listStatistics(
   page: number,
@@ -36,7 +29,7 @@ export async function listStatistics(
       .limit(pageSize)
       .toArray();
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -46,7 +39,7 @@ export async function getStatisticsById(
   try {
     return await statistics.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -60,7 +53,7 @@ export async function createStatistics(
     await statistics.insertOne(document);
     return document;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -78,7 +71,7 @@ export async function upsertStatistics(
     );
     return document;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -98,7 +91,7 @@ export async function updateStatistics(
       ? await statistics.findOne({ _id: parsedId })
       : null;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -109,7 +102,7 @@ export async function deleteStatistics(
     const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -132,6 +125,6 @@ export async function getStatisticsByMetricAndDimensions(
       ),
     );
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }

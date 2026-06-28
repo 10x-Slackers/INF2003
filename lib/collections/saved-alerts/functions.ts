@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { MongoError } from "mongodb";
 import { db } from "@/lib/db";
 import {
   createSavedAlertSchema,
@@ -8,17 +7,11 @@ import {
   type SavedAlertCreate,
   type SavedAlertUpdate,
   updateSavedAlertSchema,
-} from "./type";
+} from "./types";
+import { handleCollectionError, type CollectionResult } from "../utils";
 
 const alerts = db.collection<SavedAlert>("alerts");
 const now = () => Math.floor(Date.now() / 1000);
-type CollectionResult<T> = T | Error;
-const handleError = (error: unknown) => {
-  if (error instanceof MongoError) {
-    throw error;
-  }
-  return error instanceof Error ? error : new Error(String(error));
-};
 
 export async function listSavedAlerts(
   userId?: string,
@@ -29,7 +22,7 @@ export async function listSavedAlerts(
       .sort({ created_at: -1 })
       .toArray();
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -39,7 +32,7 @@ export async function getSavedAlertById(
   try {
     return await alerts.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -61,7 +54,7 @@ export async function createSavedAlert(
     await alerts.insertOne(alert);
     return alert;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -87,7 +80,7 @@ export async function updateSavedAlert(
 
     return result;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
 
@@ -98,6 +91,6 @@ export async function deleteSavedAlert(
     const result = await alerts.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleError(error);
+    return handleCollectionError(error);
   }
 }
