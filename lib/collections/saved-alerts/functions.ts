@@ -1,44 +1,51 @@
 import { randomUUID } from "node:crypto";
-import { db } from "@/lib/db/mongodb";
-import type {
-  SavedAlert,
-  SavedAlertCreate,
-  SavedAlertUpdate,
-} from "@/lib/schema/saved-alert";
-import { idSchema, now } from "@/lib/schema/mongodb-common";
+import { MongoError } from "mongodb";
+import { db } from "@/lib/db";
 import {
   createSavedAlertSchema,
+  idSchema,
+  type SavedAlert,
+  type SavedAlertCreate,
+  type SavedAlertUpdate,
   updateSavedAlertSchema,
-} from "@/lib/schema/saved-alert";
+} from "./type";
 
 const alerts = db.collection<SavedAlert>("alerts");
+const now = () => Math.floor(Date.now() / 1000);
+type CollectionResult<T> = T | Error;
+const handleError = (error: unknown) => {
+  if (error instanceof MongoError) {
+    throw error;
+  }
+  return error instanceof Error ? error : new Error(String(error));
+};
 
 export async function listSavedAlerts(
   userId?: string,
-): Promise<SavedAlert[] | null> {
+): Promise<CollectionResult<SavedAlert[]>> {
   try {
     return await alerts
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
       .sort({ created_at: -1 })
       .toArray();
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function getSavedAlertById(
   id: string,
-): Promise<SavedAlert | null> {
+): Promise<CollectionResult<SavedAlert | null>> {
   try {
     return await alerts.findOne({ _id: idSchema.parse(id) });
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function createSavedAlert(
   input: SavedAlertCreate,
-): Promise<SavedAlert | null> {
+): Promise<CollectionResult<SavedAlert>> {
   try {
     const data = createSavedAlertSchema.parse(input);
     const timestamp = now();
@@ -53,15 +60,15 @@ export async function createSavedAlert(
 
     await alerts.insertOne(alert);
     return alert;
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function updateSavedAlert(
   id: string,
   input: SavedAlertUpdate,
-): Promise<SavedAlert | null> {
+): Promise<CollectionResult<SavedAlert | null>> {
   try {
     const data = updateSavedAlertSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -78,16 +85,18 @@ export async function updateSavedAlert(
     );
 
     return result.matchedCount ? alerts.findOne({ _id: parsedId }) : null;
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-export async function deleteSavedAlert(id: string): Promise<boolean | null> {
+export async function deleteSavedAlert(
+  id: string,
+): Promise<CollectionResult<boolean>> {
   try {
     const result = await alerts.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const idSchema = z.uuid();
+
 export const TownProfileSummarySchema = z
   .object({
     total_transaction: z.number().int().min(0),

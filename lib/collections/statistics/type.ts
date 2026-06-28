@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const idSchema = z.uuid();
+
 export const metricsSchema = z.enum([
   "town",
   "resale_price",
@@ -7,6 +9,7 @@ export const metricsSchema = z.enum([
   "flat_model",
   "flat_type",
 ]);
+
 export const statisticsGranularitySchema = z.enum(["monthly", "yearly"]);
 
 export const statisticsTimeRangeSchema = z
@@ -16,7 +19,6 @@ export const statisticsTimeRangeSchema = z
   })
   .strict();
 
-// dimensions of a statistics series, e.g. town, flat type, flat model
 export const statisticsDimensionsSchema = z
   .object({
     town_id: z.uuid().nullable(),
@@ -25,7 +27,6 @@ export const statisticsDimensionsSchema = z
   })
   .strict();
 
-// single point in a statistics series, e.g. a single month or year
 export const statisticsSeriesPointSchema = z
   .object({
     period: z.string().min(1),

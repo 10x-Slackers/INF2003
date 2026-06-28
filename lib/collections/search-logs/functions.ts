@@ -1,41 +1,52 @@
 import { randomUUID } from "node:crypto";
-import { db } from "@/lib/db/mongodb";
-import { idSchema, now } from "@/lib/schema/mongodb-common";
+import { MongoError } from "mongodb";
+import { db } from "@/lib/db";
 import {
   createSearchLogSchema,
-  SearchLogCreate,
-  SearchLogUpdate,
+  idSchema,
+  type SearchLog,
+  type SearchLogCreate,
+  type SearchLogUpdate,
   updateSearchLogSchema,
-  SearchLog,
-} from "@/lib/schema/search-log";
+} from "./type";
 
 const searchHistory = db.collection<SearchLog>("search_history");
+const now = () => Math.floor(Date.now() / 1000);
+type CollectionResult<T> = T | Error;
+const handleError = (error: unknown) => {
+  if (error instanceof MongoError) {
+    throw error;
+  }
+  return error instanceof Error ? error : new Error(String(error));
+};
 
 export async function listSearchLogs(
   userId?: string,
-): Promise<SearchLog[] | null> {
+): Promise<CollectionResult<SearchLog[]>> {
   try {
     return await searchHistory
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
       .sort({ searched_at: -1 })
       .limit(50)
       .toArray();
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-export async function getSearchLogById(id: string): Promise<SearchLog | null> {
+export async function getSearchLogById(
+  id: string,
+): Promise<CollectionResult<SearchLog | null>> {
   try {
     return await searchHistory.findOne({ _id: idSchema.parse(id) });
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function createSearchLog(
   input: SearchLogCreate,
-): Promise<SearchLog | null> {
+): Promise<CollectionResult<SearchLog>> {
   try {
     const data = createSearchLogSchema.parse(input);
     const searchLog: SearchLog = {
@@ -47,15 +58,15 @@ export async function createSearchLog(
 
     await searchHistory.insertOne(searchLog);
     return searchLog;
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
 export async function updateSearchLog(
   id: string,
   input: SearchLogUpdate,
-): Promise<SearchLog | null> {
+): Promise<CollectionResult<SearchLog | null>> {
   try {
     const data = updateSearchLogSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -67,16 +78,18 @@ export async function updateSearchLog(
     return result.matchedCount
       ? searchHistory.findOne({ _id: parsedId })
       : null;
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
 
-export async function deleteSearchLog(id: string): Promise<boolean | null> {
+export async function deleteSearchLog(
+  id: string,
+): Promise<CollectionResult<boolean>> {
   try {
     const result = await searchHistory.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
-  } catch {
-    return null;
+  } catch (error) {
+    return handleError(error);
   }
 }
