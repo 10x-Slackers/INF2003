@@ -1,11 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/mongodb";
-import type { SavedAlert } from "@/lib/db/mongodb-types";
-import { idSchema } from "@/lib/validation/mongodb-common";
+import type {
+  SavedAlert,
+  SavedAlertCreate,
+  SavedAlertUpdate,
+} from "@/lib/schema/saved-alert";
+import { idSchema } from "@/lib/schema/mongodb-common";
 import {
   createSavedAlertSchema,
   updateSavedAlertSchema,
-} from "@/lib/validation/saved-alert";
+} from "@/lib/schema/saved-alert";
 
 const alerts = db.collection<SavedAlert>("alerts");
 
@@ -24,7 +28,9 @@ export async function getSavedAlertById(
   return alerts.findOne({ _id: idSchema.parse(id) });
 }
 
-export async function createSavedAlert(input: unknown): Promise<SavedAlert> {
+export async function createSavedAlert(
+  input: SavedAlertCreate,
+): Promise<SavedAlert> {
   const data = createSavedAlertSchema.parse(input);
   const timestamp = now();
   const alert: SavedAlert = {
@@ -42,7 +48,7 @@ export async function createSavedAlert(input: unknown): Promise<SavedAlert> {
 
 export async function updateSavedAlert(
   id: string,
-  input: unknown,
+  input: SavedAlertUpdate,
 ): Promise<SavedAlert | null> {
   const data = updateSavedAlertSchema.parse(input);
   const parsedId = idSchema.parse(id);

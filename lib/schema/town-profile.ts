@@ -14,8 +14,18 @@ const polygonSchema = z.array(z.array(coordinatePairSchema).min(4)).min(1);
 
 export const upsertTownProfileSchema = z
   .object({
-    _id: z.string().min(1),
+    _id: z.uuid(),
     transaction_summary: townProfileSummarySchema,
     coordinates: polygonSchema,
   })
   .strict();
+
+export const TownProfileSchema = z.object({
+  _id: z.uuid(),
+  transaction_summary: townProfileSummarySchema,
+  coordinates: polygonSchema,
+  updated_at: z.number().int().min(0),
+});
+
+export type TownProfile = z.infer<typeof TownProfileSchema>;
+export type TownProfileUpsert = z.infer<typeof upsertTownProfileSchema>;

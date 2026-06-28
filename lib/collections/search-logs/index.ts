@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/mongodb";
-import type { SearchLog } from "@/lib/db/mongodb-types";
-import { idSchema } from "@/lib/validation/mongodb-common";
+import { idSchema } from "@/lib/schema/mongodb-common";
 import {
   createSearchLogSchema,
+  SearchLogCreate,
+  SearchLogUpdate,
   updateSearchLogSchema,
-} from "@/lib/validation/search-log";
+  SearchLog,
+} from "@/lib/schema/search-log";
 
 const searchHistory = db.collection<SearchLog>("search_history");
 
@@ -23,7 +25,9 @@ export async function getSearchLogById(id: string): Promise<SearchLog | null> {
   return searchHistory.findOne({ _id: idSchema.parse(id) });
 }
 
-export async function createSearchLog(input: unknown): Promise<SearchLog> {
+export async function createSearchLog(
+  input: SearchLogCreate,
+): Promise<SearchLog> {
   const data = createSearchLogSchema.parse(input);
   const searchLog: SearchLog = {
     _id: randomUUID(),
@@ -38,7 +42,7 @@ export async function createSearchLog(input: unknown): Promise<SearchLog> {
 
 export async function updateSearchLog(
   id: string,
-  input: unknown,
+  input: SearchLogUpdate,
 ): Promise<SearchLog | null> {
   const data = updateSearchLogSchema.parse(input);
   const parsedId = idSchema.parse(id);

@@ -1,7 +1,9 @@
 import { db } from "@/lib/db/mongodb";
-import type { TownProfile } from "@/lib/db/mongodb-types";
-import { idSchema } from "@/lib/validation/mongodb-common";
-import { upsertTownProfileSchema } from "@/lib/validation/town-profile";
+import { idSchema } from "@/lib/schema/mongodb-common";
+import {
+  upsertTownProfileSchema,
+  TownProfile,
+} from "@/lib/schema/town-profile";
 
 const towns = db.collection<TownProfile>("towns");
 
@@ -17,7 +19,10 @@ export async function getTownProfileById(
   return towns.findOne({ _id: idSchema.parse(id) });
 }
 
-export async function upsertTownProfile(input: unknown): Promise<TownProfile> {
+export async function upsertTownProfile(
+  input: TownProfile,
+): Promise<TownProfile> {
+  // updates the town profile if it exists, otherwise inserts a new one
   const data = upsertTownProfileSchema.parse(input);
   const townProfile: TownProfile = { ...data, updated_at: now() };
 
