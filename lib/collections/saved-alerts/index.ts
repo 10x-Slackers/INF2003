@@ -5,15 +5,13 @@ import type {
   SavedAlertCreate,
   SavedAlertUpdate,
 } from "@/lib/schema/saved-alert";
-import { idSchema } from "@/lib/schema/mongodb-common";
+import { idSchema, now } from "@/lib/schema/mongodb-common";
 import {
   createSavedAlertSchema,
   updateSavedAlertSchema,
 } from "@/lib/schema/saved-alert";
 
 const alerts = db.collection<SavedAlert>("alerts");
-
-const now = () => Math.floor(Date.now() / 1000);
 
 export async function listSavedAlerts(userId?: string): Promise<SavedAlert[]> {
   return alerts
@@ -54,7 +52,14 @@ export async function updateSavedAlert(
   const parsedId = idSchema.parse(id);
   const result = await alerts.updateOne(
     { _id: parsedId },
-    { $set: { ...data, updated_at: now() } },
+    {
+      $set: {
+        ...Object.fromEntries(
+          Object.entries(data).filter(([, v]) => v !== undefined),
+        ),
+        updated_at: now(),
+      },
+    },
   );
 
   return result.matchedCount ? alerts.findOne({ _id: parsedId }) : null;

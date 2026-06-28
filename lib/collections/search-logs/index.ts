@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/mongodb";
-import { idSchema } from "@/lib/schema/mongodb-common";
+import { idSchema, now } from "@/lib/schema/mongodb-common";
 import {
   createSearchLogSchema,
   SearchLogCreate,
@@ -10,8 +10,6 @@ import {
 } from "@/lib/schema/search-log";
 
 const searchHistory = db.collection<SearchLog>("search_history");
-
-const now = () => Math.floor(Date.now() / 1000);
 
 export async function listSearchLogs(userId?: string): Promise<SearchLog[]> {
   return searchHistory
@@ -48,7 +46,7 @@ export async function updateSearchLog(
   const parsedId = idSchema.parse(id);
   const result = await searchHistory.updateOne(
     { _id: parsedId },
-    { $set: { query: data.query } },
+    { $set: { ...data } },
   );
 
   return result.matchedCount ? searchHistory.findOne({ _id: parsedId }) : null;

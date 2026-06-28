@@ -36,8 +36,7 @@ export const statisticsSeriesPointSchema = z
 
 export const createStatisticsSchema = z
   .object({
-    _id: z.uuid(),
-    metric: z.string().min(1),
+    metric: metricsSchema,
     granularity: statisticsGranularitySchema,
     time_range: statisticsTimeRangeSchema,
     dimensions: statisticsDimensionsSchema,

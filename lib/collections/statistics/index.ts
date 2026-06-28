@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db/mongodb";
-import { idSchema } from "@/lib/schema/mongodb-common";
+import { idSchema, now } from "@/lib/schema/mongodb-common";
 import {
   createStatisticsSchema,
   type Statistics,
@@ -10,8 +10,6 @@ import {
 } from "@/lib/schema/statistics";
 
 const statistics = db.collection<Statistics>("statistics");
-
-const now = () => Math.floor(Date.now() / 1000);
 
 export async function listStatistics(): Promise<Statistics[]> {
   return statistics.find({}).sort({ computed_at: -1 }).toArray();
@@ -27,11 +25,7 @@ export async function createStatistics(
   input: StatisticsCreate,
 ): Promise<Statistics> {
   const data = createStatisticsSchema.parse(input);
-  const document: Statistics = {
-    ...data,
-    _id: data._id ?? randomUUID(),
-    computed_at: now(),
-  };
+  const document = addUuidAndTime(data);
 
   await statistics.insertOne(document);
   return document;
@@ -39,20 +33,18 @@ export async function createStatistics(
 
 export async function upsertStatistics(
   input: StatisticsCreate,
-): Promise<Statistics> {
+): Promise<Statistics | null> {
   const data = createStatisticsSchema.parse(input);
-  const document: Statistics = {
-    ...data,
-    _id: data._id ?? randomUUID(),
-    computed_at: now(),
-  };
+  const document = addUuidAndTime(data);
 
-  await statistics.updateOne(
+  const result = await statistics.updateOne(
     { _id: document._id },
     { $set: document },
     { upsert: true },
   );
-  return document;
+  return result.upsertedCount
+    ? statistics.findOne({ _id: document._id })
+    : null;
 }
 
 export async function updateStatistics(
@@ -72,4 +64,12 @@ export async function updateStatistics(
 export async function deleteStatistics(id: string): Promise<boolean> {
   const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
   return result.deletedCount > 0;
+}
+
+function addUuidAndTime(data: StatisticsCreate): Statistics {
+  return {
+    ...data,
+    _id: randomUUID(),
+    computed_at: now(),
+  };
 }
