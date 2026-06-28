@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function MetricCardSkeleton() {
   return (
-    <Card aria-busy="true">
+    <Card>
       <CardHeader className="gap-4">
         <Skeleton className="h-5 w-24" />
         <div className="flex flex-col gap-2">
