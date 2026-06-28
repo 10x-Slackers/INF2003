@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { paginationSchema } from "@/lib/validation/pagination";
+import { paginationSchema } from "@/lib/schema/pagination";
 
 export const regionSchema = z.enum([
   "NORTH REGION",

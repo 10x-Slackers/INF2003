@@ -1,11 +1,18 @@
-import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/http-error";
-import { isDuplicateKeyError, isMissingReferenceError } from "@/lib/db-errors";
-import { getPropertiesWithLatestTransaction } from "@/lib/properties";
+import {
+  execute,
+  query,
+  isDuplicateKeyError,
+  isMissingReferenceError,
+} from "@/lib/db";
+import { getPropertiesWithLatestTransaction } from "@/lib/domain/properties";
 import type { SavedProperty, SavedPropertyDetail } from "@/lib/types";
 
-async function attachProperty(row: SavedProperty): Promise<SavedPropertyDetail> {
-  const [property] = await getPropertiesWithLatestTransaction([row.property_id]);
+async function attachProperty(
+  row: SavedProperty,
+): Promise<SavedPropertyDetail> {
+  const [property] = await getPropertiesWithLatestTransaction([
+    row.property_id,
+  ]);
   return { ...row, property: property ?? null };
 }
 
@@ -16,7 +23,10 @@ async function attachProperties(
     rows.map((row) => row.property_id),
   );
   const byId = new Map(properties.map((property) => [property.id, property]));
-  return rows.map((row) => ({ ...row, property: byId.get(row.property_id) ?? null }));
+  return rows.map((row) => ({
+    ...row,
+    property: byId.get(row.property_id) ?? null,
+  }));
 }
 
 export async function listSavedProperties(
@@ -63,23 +73,25 @@ export async function createSavedProperty(
     );
   } catch (err) {
     if (isDuplicateKeyError(err)) {
-      throw new HttpError(409, "Property already saved");
+      throw new Error("Property already saved");
     }
     if (isMissingReferenceError(err)) {
-      throw new HttpError(400, "Invalid property_id");
+      throw new Error("Invalid property_id");
     }
     throw err;
   }
 
   const saved = await getSavedPropertyById(inserted.id);
   if (!saved) {
-    throw new HttpError(500, "Failed to read back saved property");
+    throw new Error("Failed to read back saved property");
   }
   return saved;
 }
 
 export async function deleteSavedProperty(id: string): Promise<boolean> {
-  const result = await execute("DELETE FROM saved_properties WHERE id = ?", [id]);
+  const result = await execute("DELETE FROM saved_properties WHERE id = ?", [
+    id,
+  ]);
   return result.affectedRows > 0;
 }
 

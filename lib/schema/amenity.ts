@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { paginationSchema } from "@/lib/validation/pagination";
+import { paginationSchema } from "@/lib/schema/pagination";
 
 export const amenityListQuerySchema = paginationSchema.extend({
   town_id: z.uuid().optional(),

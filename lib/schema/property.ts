@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { paginationSchema } from "@/lib/validation/pagination";
+import { paginationSchema } from "@/lib/schema/pagination";
 
 const propertyIdentitySchema = z.object({
   town_id: z.uuid(),

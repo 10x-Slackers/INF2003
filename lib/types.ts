@@ -137,36 +137,7 @@ export type SavedPropertyDetail = SavedProperty & {
   property: PropertyWithLatestTransaction | null;
 };
 
-export type AlertRange = {
-  min?: number;
-  max?: number;
-};
-
-export type AlertFilters = {
-  town_id?: string[];
-  flat_model_id?: string[];
-  flat_type_id?: string[];
-  price?: AlertRange;
-  floor_area_sqm?: AlertRange;
-  storey?: AlertRange;
-  lease_remaining?: AlertRange;
-};
-
-/**
- * MongoDB `alerts` document. `_id` is the alert UUID stored as a string.
- * Timestamps are integer Unix timestamps (epoch seconds).
- */
-export type Alert = {
-  _id: string;
-  user_id: string;
-  filters: AlertFilters;
-  is_active: boolean;
-  created_at: number;
-  updated_at: number;
-  last_triggered_at?: number;
-};
-
-/** MariaDB `alert_notifications` row. `alert_uuid` references an Alert `_id`. */
+/** MariaDB `alert_notifications` row. `alert_uuid` references an alert `_id`. */
 export type AlertNotification = {
   id: string;
   user_id: string;
@@ -174,8 +145,4 @@ export type AlertNotification = {
   transaction_id: string;
   read_at: string | null;
   created_at: string;
-};
-
-export type AlertNotificationDetail = AlertNotification & {
-  transaction: ResaleTransaction | null;
 };

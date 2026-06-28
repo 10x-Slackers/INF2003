@@ -23,14 +23,18 @@ export async function listAmenities(filters: {
     params.push(filters.amenity_type_id);
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const [rows, countRows] = await Promise.all([
     query<Amenity>(
       `SELECT ${AMENITY_COLUMNS} FROM amenities ${where} ORDER BY name LIMIT ? OFFSET ?`,
       [...params, pageSize, (page - 1) * pageSize],
     ),
-    query<{ total: number }>(`SELECT COUNT(*) AS total FROM amenities ${where}`, params),
+    query<{ total: number }>(
+      `SELECT COUNT(*) AS total FROM amenities ${where}`,
+      params,
+    ),
   ]);
 
   return { data: rows, total: countRows[0].total };

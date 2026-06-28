@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { paginationSchema } from "@/lib/validation/pagination";
+import { paginationSchema } from "@/lib/schema/pagination";
+
+const transactionMonth = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 
 export const createTransactionSchema = z.object({
   property_id: z.uuid(),
@@ -7,7 +11,7 @@ export const createTransactionSchema = z.object({
   flat_model_id: z.coerce.number().int().positive(),
   storey_range_id: z.coerce.number().int().positive(),
   floor_area_sqm: z.coerce.number().positive(),
-  transaction_month: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD"),
+  transaction_month: transactionMonth,
   resale_price: z.coerce.number().positive(),
 });
 
@@ -17,10 +21,7 @@ export const updateTransactionSchema = z
     flat_model_id: z.coerce.number().int().positive().optional(),
     storey_range_id: z.coerce.number().int().positive().optional(),
     floor_area_sqm: z.coerce.number().positive().optional(),
-    transaction_month: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD")
-      .optional(),
+    transaction_month: transactionMonth.optional(),
     resale_price: z.coerce.number().positive().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {

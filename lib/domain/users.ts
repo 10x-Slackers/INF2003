@@ -1,10 +1,7 @@
-import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/http-error";
-import { isDuplicateKeyError } from "@/lib/db-errors";
+import { execute, query, isDuplicateKeyError } from "@/lib/db";
 import type { PublicUser, UpdateUserPayload } from "@/lib/types";
 
-const PUBLIC_USER_COLUMNS =
-  "id, name, email, role, created_at, updated_at";
+const PUBLIC_USER_COLUMNS = "id, name, email, role, created_at, updated_at";
 
 export async function listUsers(
   page: number,
@@ -13,7 +10,7 @@ export async function listUsers(
   const [rows, countRows] = await Promise.all([
     query<PublicUser>(
       `SELECT ${PUBLIC_USER_COLUMNS} FROM users ORDER BY created_at LIMIT ? OFFSET ?`,
-      [pageSize, Math.max(0, (page - 1) * pageSize)],
+      [pageSize, (page - 1) * pageSize],
     ),
     query<{ total: number }>("SELECT COUNT(*) AS total FROM users"),
   ]);
@@ -60,7 +57,7 @@ export async function updateUser(
     ]);
   } catch (err) {
     if (isDuplicateKeyError(err)) {
-      throw new HttpError(409, "A user with this email already exists");
+      throw new Error("A user with this email already exists");
     }
     throw err;
   }

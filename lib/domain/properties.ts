@@ -1,7 +1,11 @@
-import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/http-error";
-import { isDuplicateKeyError, isReferencedByOthersError } from "@/lib/db-errors";
-import { getTownById, listAllAmenitiesByTown } from "@/lib/towns";
+import {
+  execute,
+  query,
+  isDuplicateKeyError,
+  isMissingReferenceError,
+  isReferencedByOthersError,
+} from "@/lib/db";
+import { getTownById, listAllAmenitiesByTown } from "@/lib/domain/towns";
 import type {
   CreatePropertyPayload,
   Property,
@@ -22,6 +26,15 @@ const LATEST_TRANSACTION_JOIN = `
   LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
 `;
 
+// Column list for a property plus its latest transaction; must stay in sync
+// with PropertyRow and toPropertyWithLatestTransaction.
+const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
+  p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+  lt.id AS lt_id, lt.flat_type_id AS lt_flat_type_id,
+  lft.name AS lt_flat_type_name, lt.resale_price AS lt_resale_price,
+  lt.transaction_month AS lt_transaction_month
+`;
+
 type PropertyRow = {
   id: string;
   town_id: string;
@@ -38,7 +51,14 @@ type PropertyRow = {
 function toPropertyWithLatestTransaction(
   row: PropertyRow,
 ): PropertyWithLatestTransaction {
-  const { lt_id, lt_flat_type_id, lt_flat_type_name, lt_resale_price, lt_transaction_month, ...property } = row;
+  const {
+    lt_id,
+    lt_flat_type_id,
+    lt_flat_type_name,
+    lt_resale_price,
+    lt_transaction_month,
+    ...property
+  } = row;
   return {
     ...property,
     latest_transaction:
@@ -61,10 +81,7 @@ export async function getPropertiesWithLatestTransaction(
 
   const placeholders = propertyIds.map(() => "?").join(", ");
   const rows = await query<PropertyRow>(
-    `SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
-            lt.id AS lt_id, lt.flat_type_id AS lt_flat_type_id,
-            lft.name AS lt_flat_type_name, lt.resale_price AS lt_resale_price,
-            lt.transaction_month AS lt_transaction_month
+    `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
      FROM properties p
      ${LATEST_TRANSACTION_JOIN}
      WHERE p.id IN (${placeholders})`,
@@ -103,7 +120,8 @@ export async function listProperties(filters: {
     params.push(filters.price_max);
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   // The count only needs the latest-transaction join when a filter references
   // its columns (flat_type/price); otherwise the correlated subquery would run
@@ -117,10 +135,7 @@ export async function listProperties(filters: {
 
   const [rows, countRows] = await Promise.all([
     query<PropertyRow>(
-      `SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
-              lt.id AS lt_id, lt.flat_type_id AS lt_flat_type_id,
-              lft.name AS lt_flat_type_name, lt.resale_price AS lt_resale_price,
-              lt.transaction_month AS lt_transaction_month
+      `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
        FROM properties p
        ${LATEST_TRANSACTION_JOIN}
        ${where}
@@ -148,7 +163,9 @@ async function getPropertyRowById(id: string): Promise<Property | null> {
   return rows[0] ?? null;
 }
 
-export async function getPropertyById(id: string): Promise<PropertyDetail | null> {
+export async function getPropertyById(
+  id: string,
+): Promise<PropertyDetail | null> {
   const property = await getPropertyRowById(id);
   if (!property) return null;
 
@@ -179,10 +196,14 @@ export async function lookupProperty(criteria: {
   );
 
   const property = rows[0];
-  return property ? { found: true, property_id: property.id } : { found: false };
+  return property
+    ? { found: true, property_id: property.id }
+    : { found: false };
 }
 
-export async function createProperty(payload: CreatePropertyPayload): Promise<Property> {
+export async function createProperty(
+  payload: CreatePropertyPayload,
+): Promise<Property> {
   try {
     await execute(
       "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?)",
@@ -195,7 +216,10 @@ export async function createProperty(payload: CreatePropertyPayload): Promise<Pr
     );
   } catch (err) {
     if (isDuplicateKeyError(err)) {
-      throw new HttpError(409, "Property already exists");
+      throw new Error("Property already exists");
+    }
+    if (isMissingReferenceError(err)) {
+      throw new Error("Invalid town_id");
     }
     throw err;
   }
@@ -203,7 +227,7 @@ export async function createProperty(payload: CreatePropertyPayload): Promise<Pr
   const { property_id } = await lookupProperty(payload);
   const property = property_id ? await getPropertyById(property_id) : null;
   if (!property) {
-    throw new HttpError(500, "Failed to read back created property");
+    throw new Error("Failed to read back created property");
   }
   return property;
 }
@@ -214,10 +238,7 @@ export async function deleteProperty(id: string): Promise<boolean> {
     return result.affectedRows > 0;
   } catch (err) {
     if (isReferencedByOthersError(err)) {
-      throw new HttpError(
-        409,
-        "Property has resale transactions and cannot be deleted",
-      );
+      throw new Error("Property has resale transactions and cannot be deleted");
     }
     throw err;
   }

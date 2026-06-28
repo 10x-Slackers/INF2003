@@ -1,6 +1,4 @@
-import { execute, query } from "@/lib/db";
-import { HttpError } from "@/lib/http-error";
-import { isMissingReferenceError } from "@/lib/db-errors";
+import { execute, query, isMissingReferenceError } from "@/lib/db";
 import type {
   CreateTransactionPayload,
   ResaleTransaction,
@@ -52,8 +50,11 @@ export async function listTransactions(filters: {
     params.push(filters.property_id);
   }
 
-  const join = needsPropertyJoin ? "JOIN properties p ON p.id = rt.property_id" : "";
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const join = needsPropertyJoin
+    ? "JOIN properties p ON p.id = rt.property_id"
+    : "";
+  const where =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const [rows, countRows] = await Promise.all([
     query<ResaleTransaction>(
@@ -112,8 +113,7 @@ export async function createTransaction(
     );
   } catch (err) {
     if (isMissingReferenceError(err)) {
-      throw new HttpError(
-        400,
+      throw new Error(
         "Invalid reference: property_id, flat_type_id, flat_model_id, or storey_range_id does not exist",
       );
     }
@@ -122,7 +122,7 @@ export async function createTransaction(
 
   const transaction = await getTransactionById(inserted.id);
   if (!transaction) {
-    throw new HttpError(500, "Failed to read back created transaction");
+    throw new Error("Failed to read back created transaction");
   }
   return transaction;
 }
@@ -146,13 +146,13 @@ export async function updateTransaction(
   if (fields.length === 0) return existing;
 
   try {
-    await execute(`UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`, [
-      ...params,
-      id,
-    ]);
+    await execute(
+      `UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`,
+      [...params, id],
+    );
   } catch (err) {
     if (isMissingReferenceError(err)) {
-      throw new HttpError(400, "Invalid reference in update payload");
+      throw new Error("Invalid reference in update payload");
     }
     throw err;
   }
@@ -161,6 +161,8 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: string): Promise<boolean> {
-  const result = await execute("DELETE FROM resale_transactions WHERE id = ?", [id]);
+  const result = await execute("DELETE FROM resale_transactions WHERE id = ?", [
+    id,
+  ]);
   return result.affectedRows > 0;
 }

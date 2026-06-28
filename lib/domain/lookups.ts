@@ -1,5 +1,10 @@
 import { query } from "@/lib/db";
-import type { AmenityType, FlatModel, FlatType, StoreyRange } from "@/lib/types";
+import type {
+  AmenityType,
+  FlatModel,
+  FlatType,
+  StoreyRange,
+} from "@/lib/types";
 
 export async function listFlatTypes(): Promise<FlatType[]> {
   return query<FlatType>("SELECT id, name FROM flat_types ORDER BY name");

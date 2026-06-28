@@ -1,5 +1,5 @@
 import { query } from "@/lib/db";
-import { listAmenities } from "@/lib/amenities";
+import { listAmenities } from "@/lib/domain/amenities";
 import type { Amenity, Property, Region, Town } from "@/lib/types";
 
 export async function listTowns(
