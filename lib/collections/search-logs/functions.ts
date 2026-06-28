@@ -72,11 +72,11 @@ export async function updateSearchLog(
     const parsedId = idSchema.parse(id);
     const result = await searchHistory.updateOne(
       { _id: parsedId },
-      { $set: { ...data } },
+      { $set: { ...data, updated_at: now() } },
     );
 
     return result.matchedCount
-      ? searchHistory.findOne({ _id: parsedId })
+      ? await searchHistory.findOne({ _id: parsedId })
       : null;
   } catch (error) {
     return handleError(error);

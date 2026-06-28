@@ -72,7 +72,7 @@ export async function updateSavedAlert(
   try {
     const data = updateSavedAlertSchema.parse(input);
     const parsedId = idSchema.parse(id);
-    const result = await alerts.updateOne(
+    const result = await alerts.findOneAndUpdate(
       { _id: parsedId },
       {
         $set: {
@@ -82,9 +82,10 @@ export async function updateSavedAlert(
           updated_at: now(),
         },
       },
+      { returnDocument: "after" },
     );
 
-    return result.matchedCount ? alerts.findOne({ _id: parsedId }) : null;
+    return result;
   } catch (error) {
     return handleError(error);
   }
