@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
-import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   createSearchLogSchema,
   idSchema,
@@ -9,13 +8,11 @@ import {
   type SearchLogUpdate,
   updateSearchLogSchema,
 } from "./types";
+import { handleDbError, now } from "@/lib/utils";
 
 const searchHistory = db.collection<SearchLog>("search_history");
-const now = () => Math.floor(Date.now() / 1000);
 
-export async function listSearchLogs(
-  userId?: string,
-): Promise<DbResult<SearchLog[]>> {
+export async function listSearchLogs(userId?: string): Promise<SearchLog[]> {
   try {
     return await searchHistory
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
@@ -27,9 +24,7 @@ export async function listSearchLogs(
   }
 }
 
-export async function getSearchLogById(
-  id: string,
-): Promise<DbResult<SearchLog | null>> {
+export async function getSearchLogById(id: string): Promise<SearchLog | null> {
   try {
     return await searchHistory.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
@@ -39,7 +34,7 @@ export async function getSearchLogById(
 
 export async function createSearchLog(
   input: SearchLogCreate,
-): Promise<DbResult<SearchLog>> {
+): Promise<SearchLog> {
   try {
     const data = createSearchLogSchema.parse(input);
     const searchLog: SearchLog = {
@@ -59,7 +54,7 @@ export async function createSearchLog(
 export async function updateSearchLog(
   id: string,
   input: SearchLogUpdate,
-): Promise<DbResult<SearchLog | null>> {
+): Promise<SearchLog | null> {
   try {
     const data = updateSearchLogSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -76,7 +71,7 @@ export async function updateSearchLog(
   }
 }
 
-export async function deleteSearchLog(id: string): Promise<DbResult<boolean>> {
+export async function deleteSearchLog(id: string): Promise<boolean> {
   try {
     const result = await searchHistory.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;

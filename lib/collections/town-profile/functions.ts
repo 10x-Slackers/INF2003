@@ -1,16 +1,15 @@
 import { db } from "@/lib/db";
-import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   idSchema,
   type TownProfile,
   type TownProfileUpsert,
   UpsertTownProfileSchema,
 } from "./types";
+import { handleDbError, now } from "@/lib/utils";
 
 const towns = db.collection<TownProfile>("towns");
-const now = () => Math.floor(Date.now() / 1000);
 
-export async function listTownProfiles(): Promise<DbResult<TownProfile[]>> {
+export async function listTownProfiles(): Promise<TownProfile[]> {
   try {
     return await towns.find({}).sort({ _id: 1 }).toArray();
   } catch (error) {
@@ -20,7 +19,7 @@ export async function listTownProfiles(): Promise<DbResult<TownProfile[]>> {
 
 export async function getTownProfileById(
   id: string,
-): Promise<DbResult<TownProfile | null>> {
+): Promise<TownProfile | null> {
   try {
     return await towns.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
@@ -30,7 +29,7 @@ export async function getTownProfileById(
 
 export async function upsertTownProfile(
   input: TownProfileUpsert,
-): Promise<DbResult<TownProfile>> {
+): Promise<TownProfile> {
   try {
     const data = UpsertTownProfileSchema.parse(input);
     const townProfile: TownProfile = { ...data, updated_at: now() };
@@ -52,9 +51,7 @@ export async function upsertTownProfile(
   }
 }
 
-export async function deleteTownProfile(
-  id: string,
-): Promise<DbResult<boolean>> {
+export async function deleteTownProfile(id: string): Promise<boolean> {
   try {
     const result = await towns.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;

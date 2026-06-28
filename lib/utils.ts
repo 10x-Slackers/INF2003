@@ -1,11 +1,13 @@
 import { clsx, type ClassValue } from "clsx";
-import { MongoError } from "mongodb";
 import { twMerge } from "tailwind-merge";
+import { MongoError } from "mongodb";
 import type { QueryError } from "mysql2";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const now = () => Math.floor(Date.now() / 1000);
 
 export function requireEnv(name: string): string {
   const value = process.env[name];
@@ -15,11 +17,12 @@ export function requireEnv(name: string): string {
   return value;
 }
 
-export type DbError = {
-  message: string;
-};
-
-export type DbResult<T> = T | DbError | Error;
+export class DbError extends Error {
+  constructor() {
+    super("Database Error.");
+    this.name = "DbError";
+  }
+}
 
 function isMariaDbError(error: unknown): error is QueryError {
   return (
@@ -29,16 +32,9 @@ function isMariaDbError(error: unknown): error is QueryError {
   );
 }
 
-export function handleDbError(error: unknown): DbError | Error {
+export function handleDbError(error: unknown): never {
   if (error instanceof MongoError || isMariaDbError(error)) {
-    return {
-      message: "Database error occurred",
-    };
+    throw new DbError();
   }
-  if (error instanceof Error) {
-    return error;
-  }
-  return {
-    message: "An unknown error occurred",
-  };
+  throw error;
 }

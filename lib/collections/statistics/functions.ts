@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
-import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   createStatisticsSchema,
   idSchema,
@@ -13,14 +12,14 @@ import {
   upsertStatisticsSchema,
   updateStatisticsSchema,
 } from "./types";
+import { handleDbError, now } from "@/lib/utils";
 
 const statistics = db.collection<Statistics>("statistics");
-const now = () => Math.floor(Date.now() / 1000);
 
 export async function listStatistics(
   page: number,
   pageSize: number,
-): Promise<DbResult<Statistics[]>> {
+): Promise<Statistics[]> {
   try {
     return await statistics
       .find({})
@@ -35,7 +34,7 @@ export async function listStatistics(
 
 export async function getStatisticsById(
   id: string,
-): Promise<DbResult<Statistics | null>> {
+): Promise<Statistics | null> {
   try {
     return await statistics.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
@@ -45,7 +44,7 @@ export async function getStatisticsById(
 
 export async function createStatistics(
   input: StatisticsCreate,
-): Promise<DbResult<Statistics>> {
+): Promise<Statistics> {
   try {
     const data = createStatisticsSchema.parse(input);
     const document = addUuidAndTime(data);
@@ -59,7 +58,7 @@ export async function createStatistics(
 
 export async function upsertStatistics(
   input: StatisticsUpsert,
-): Promise<DbResult<Statistics>> {
+): Promise<Statistics> {
   try {
     const data = upsertStatisticsSchema.parse(input);
     const document: Statistics = { ...data, computed_at: now() };
@@ -78,7 +77,7 @@ export async function upsertStatistics(
 export async function updateStatistics(
   id: string,
   input: StatisticsUpdate,
-): Promise<DbResult<Statistics | null>> {
+): Promise<Statistics | null> {
   try {
     const data = updateStatisticsSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -95,7 +94,7 @@ export async function updateStatistics(
   }
 }
 
-export async function deleteStatistics(id: string): Promise<DbResult<boolean>> {
+export async function deleteStatistics(id: string): Promise<boolean> {
   try {
     const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
@@ -114,7 +113,7 @@ function addUuidAndTime(data: StatisticsCreate): Statistics {
 
 export async function getStatisticsByMetricAndDimensions(
   input: StatisticsSearch,
-): Promise<DbResult<Statistics | null>> {
+): Promise<Statistics | null> {
   try {
     const data = statisticsSearchSchema.parse(input);
     return await statistics.findOne(

@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
-import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   createSavedAlertSchema,
   idSchema,
@@ -9,13 +8,11 @@ import {
   type SavedAlertUpdate,
   updateSavedAlertSchema,
 } from "./types";
+import { handleDbError, now } from "@/lib/utils";
 
 const alerts = db.collection<SavedAlert>("alerts");
-const now = () => Math.floor(Date.now() / 1000);
 
-export async function listSavedAlerts(
-  userId?: string,
-): Promise<DbResult<SavedAlert[]>> {
+export async function listSavedAlerts(userId?: string): Promise<SavedAlert[]> {
   try {
     return await alerts
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
@@ -28,7 +25,7 @@ export async function listSavedAlerts(
 
 export async function getSavedAlertById(
   id: string,
-): Promise<DbResult<SavedAlert | null>> {
+): Promise<SavedAlert | null> {
   try {
     return await alerts.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
@@ -38,7 +35,7 @@ export async function getSavedAlertById(
 
 export async function createSavedAlert(
   input: SavedAlertCreate,
-): Promise<DbResult<SavedAlert>> {
+): Promise<SavedAlert> {
   try {
     const data = createSavedAlertSchema.parse(input);
     const timestamp = now();
@@ -61,7 +58,7 @@ export async function createSavedAlert(
 export async function updateSavedAlert(
   id: string,
   input: SavedAlertUpdate,
-): Promise<DbResult<SavedAlert | null>> {
+): Promise<SavedAlert | null> {
   try {
     const data = updateSavedAlertSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -84,7 +81,7 @@ export async function updateSavedAlert(
   }
 }
 
-export async function deleteSavedAlert(id: string): Promise<DbResult<boolean>> {
+export async function deleteSavedAlert(id: string): Promise<boolean> {
   try {
     const result = await alerts.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
