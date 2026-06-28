@@ -1,8 +1,5 @@
-"use client";
-
-import { useMemo, useState } from "react";
-import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
-import { PaginationWrapper } from "@/components/dashboard/PaginationWrapper";
+import Link from "next/link";
+import { PaginatedDataTable } from "@/components/dashboard/PaginatedDataTable";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,8 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { propertyType } from "../../lib/placeholder";
-
-const pageSize = 2;
+import { propertyColumns } from "./property-columns";
 
 type PropertyFilters = {
   flatTypeId: string;
@@ -29,118 +25,29 @@ type PropertiesTableProps = {
   properties: propertyType[];
   flatTypes: readonly { id: string; name: string }[];
   flatModels: readonly { id: string; name: string }[];
+  filters: PropertyFilters;
+  currentPage: number;
+  pageCount: number;
 };
-
-const initialFilters = {
-  flatTypeId: "all",
-  flatModelId: "all",
-  minPrice: "",
-  maxPrice: "",
-};
-
-const propertyColumns = [
-  { key: "town", header: "Town", cell: (row) => row.town },
-  { key: "flatType", header: "Flat Type", cell: (row) => row.flatType },
-  { key: "flatModel", header: "Flat Model", cell: (row) => row.flatModel },
-  { key: "block", header: "Block", cell: (row) => row.block },
-  { key: "streetName", header: "Street Name", cell: (row) => row.streetName },
-  {
-    key: "leaseCommenceYear",
-    header: "Lease Commence Year",
-    cell: (row) => row.leaseCommenceYear,
-  },
-  {
-    key: "resalePrice",
-    header: "Resale Price",
-    cell: (row) =>
-      row.resalePrice.toLocaleString("en-SG", {
-        currency: "SGD",
-        style: "currency",
-      }),
-  },
-] satisfies DataTableColumn<propertyType>[];
-
-function filterProperties(
-  properties: propertyType[],
-  filters: PropertyFilters,
-  page: number,
-) {
-  const filteredProperties = properties.filter(
-    (property) =>
-      (filters.flatTypeId === "all" ||
-        property.flatTypeId === filters.flatTypeId) &&
-      (filters.flatModelId === "all" ||
-        property.flatModelId === filters.flatModelId) &&
-      (filters.minPrice === "" ||
-        property.resalePrice >= Number(filters.minPrice)) &&
-      (filters.maxPrice === "" ||
-        property.resalePrice <= Number(filters.maxPrice)),
-  );
-
-  return {
-    properties: filteredProperties.slice(
-      (page - 1) * pageSize,
-      page * pageSize,
-    ),
-    total: filteredProperties.length,
-  };
-}
 
 export function PropertiesTable({
   properties,
   flatTypes,
   flatModels,
+  filters,
+  currentPage,
+  pageCount,
 }: PropertiesTableProps) {
-  const [draftFilters, setDraftFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
-  const [page, setPage] = useState(1);
-
-  const results = useMemo(
-    () => filterProperties(properties, appliedFilters, page),
-    [appliedFilters, page, properties],
-  );
-  const pageCount = Math.max(1, Math.ceil(results.total / pageSize));
-  const currentPage = Math.min(page, pageCount);
-
-  function applyFilters() {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-  }
-
-  function clearFilters() {
-    setDraftFilters(initialFilters);
-    setAppliedFilters(initialFilters);
-    setPage(1);
-  }
-
-  function updatePage(nextPage: number) {
-    setPage(Math.min(Math.max(nextPage, 1), pageCount));
-  }
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Properties</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <form
-          className="flex flex-wrap items-end gap-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            applyFilters();
-          }}
-        >
+        <form className="flex flex-wrap items-end gap-4" action="/properties">
           <div className="flex min-w-40 flex-1 flex-col gap-2">
             <Label>Flat Type</Label>
-            <Select
-              value={draftFilters.flatTypeId}
-              onValueChange={(value) => {
-                setDraftFilters((filters) => ({
-                  ...filters,
-                  flatTypeId: value,
-                }));
-              }}
-            >
+            <Select defaultValue={filters.flatTypeId} name="flatTypeId">
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -157,15 +64,7 @@ export function PropertiesTable({
 
           <div className="flex min-w-40 flex-1 flex-col gap-2">
             <Label>Flat Model</Label>
-            <Select
-              value={draftFilters.flatModelId}
-              onValueChange={(value) => {
-                setDraftFilters((filters) => ({
-                  ...filters,
-                  flatModelId: value,
-                }));
-              }}
-            >
+            <Select defaultValue={filters.flatModelId} name="flatModelId">
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -185,14 +84,9 @@ export function PropertiesTable({
             <Input
               id="min-price"
               min="0"
+              name="minPrice"
               type="number"
-              value={draftFilters.minPrice}
-              onChange={(event) => {
-                setDraftFilters((filters) => ({
-                  ...filters,
-                  minPrice: event.target.value,
-                }));
-              }}
+              defaultValue={filters.minPrice}
             />
           </div>
 
@@ -201,43 +95,50 @@ export function PropertiesTable({
             <Input
               id="max-price"
               min="0"
+              name="maxPrice"
               type="number"
-              value={draftFilters.maxPrice}
-              onChange={(event) => {
-                setDraftFilters((filters) => ({
-                  ...filters,
-                  maxPrice: event.target.value,
-                }));
-              }}
+              defaultValue={filters.maxPrice}
             />
           </div>
 
           <Button className="min-w-24 flex-1" type="submit">
             Apply
           </Button>
-          <Button
-            className="min-w-24 flex-1"
-            type="button"
-            variant="outline"
-            onClick={clearFilters}
-          >
-            Reset
+          <Button asChild className="min-w-24 flex-1" variant="outline">
+            <Link href="/properties">Reset</Link>
           </Button>
         </form>
 
-        <DataTable
+        <PaginatedDataTable
           columns={propertyColumns}
-          data={results.properties}
-          emptyMessage="No properties found."
-          getRowKey={(property) => property.id}
-        />
-
-        <PaginationWrapper
           currentPage={currentPage}
+          data={properties}
+          emptyMessage="No properties found."
+          getPageHref={(page) => getPageHref(page, filters)}
+          getRowKey={(property) => property.id}
           pageCount={pageCount}
-          onPageChange={updatePage}
         />
       </CardContent>
     </Card>
   );
+}
+
+function getPageHref(page: number, filters: PropertyFilters) {
+  const params = new URLSearchParams();
+
+  if (filters.flatTypeId !== "all") {
+    params.set("flatTypeId", filters.flatTypeId);
+  }
+  if (filters.flatModelId !== "all") {
+    params.set("flatModelId", filters.flatModelId);
+  }
+  if (filters.minPrice !== "") {
+    params.set("minPrice", filters.minPrice);
+  }
+  if (filters.maxPrice !== "") {
+    params.set("maxPrice", filters.maxPrice);
+  }
+  params.set("page", String(page));
+
+  return `/properties?${params.toString()}`;
 }
