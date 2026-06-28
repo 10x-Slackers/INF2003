@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
+import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   createSearchLogSchema,
   idSchema,
@@ -8,14 +9,13 @@ import {
   type SearchLogUpdate,
   updateSearchLogSchema,
 } from "./types";
-import { handleCollectionError, type CollectionResult } from "../utils";
 
 const searchHistory = db.collection<SearchLog>("search_history");
 const now = () => Math.floor(Date.now() / 1000);
 
 export async function listSearchLogs(
   userId?: string,
-): Promise<CollectionResult<SearchLog[]>> {
+): Promise<DbResult<SearchLog[]>> {
   try {
     return await searchHistory
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
@@ -23,23 +23,23 @@ export async function listSearchLogs(
       .limit(50)
       .toArray();
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function getSearchLogById(
   id: string,
-): Promise<CollectionResult<SearchLog | null>> {
+): Promise<DbResult<SearchLog | null>> {
   try {
     return await searchHistory.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function createSearchLog(
   input: SearchLogCreate,
-): Promise<CollectionResult<SearchLog>> {
+): Promise<DbResult<SearchLog>> {
   try {
     const data = createSearchLogSchema.parse(input);
     const searchLog: SearchLog = {
@@ -52,14 +52,14 @@ export async function createSearchLog(
     await searchHistory.insertOne(searchLog);
     return searchLog;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function updateSearchLog(
   id: string,
   input: SearchLogUpdate,
-): Promise<CollectionResult<SearchLog | null>> {
+): Promise<DbResult<SearchLog | null>> {
   try {
     const data = updateSearchLogSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -72,17 +72,15 @@ export async function updateSearchLog(
       ? await searchHistory.findOne({ _id: parsedId })
       : null;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
-export async function deleteSearchLog(
-  id: string,
-): Promise<CollectionResult<boolean>> {
+export async function deleteSearchLog(id: string): Promise<DbResult<boolean>> {
   try {
     const result = await searchHistory.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }

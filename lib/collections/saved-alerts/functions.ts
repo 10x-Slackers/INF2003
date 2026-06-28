@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
+import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   createSavedAlertSchema,
   idSchema,
@@ -8,37 +9,36 @@ import {
   type SavedAlertUpdate,
   updateSavedAlertSchema,
 } from "./types";
-import { handleCollectionError, type CollectionResult } from "../utils";
 
 const alerts = db.collection<SavedAlert>("alerts");
 const now = () => Math.floor(Date.now() / 1000);
 
 export async function listSavedAlerts(
   userId?: string,
-): Promise<CollectionResult<SavedAlert[]>> {
+): Promise<DbResult<SavedAlert[]>> {
   try {
     return await alerts
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
       .sort({ created_at: -1 })
       .toArray();
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function getSavedAlertById(
   id: string,
-): Promise<CollectionResult<SavedAlert | null>> {
+): Promise<DbResult<SavedAlert | null>> {
   try {
     return await alerts.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function createSavedAlert(
   input: SavedAlertCreate,
-): Promise<CollectionResult<SavedAlert>> {
+): Promise<DbResult<SavedAlert>> {
   try {
     const data = createSavedAlertSchema.parse(input);
     const timestamp = now();
@@ -54,14 +54,14 @@ export async function createSavedAlert(
     await alerts.insertOne(alert);
     return alert;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function updateSavedAlert(
   id: string,
   input: SavedAlertUpdate,
-): Promise<CollectionResult<SavedAlert | null>> {
+): Promise<DbResult<SavedAlert | null>> {
   try {
     const data = updateSavedAlertSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -80,17 +80,15 @@ export async function updateSavedAlert(
 
     return result;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
-export async function deleteSavedAlert(
-  id: string,
-): Promise<CollectionResult<boolean>> {
+export async function deleteSavedAlert(id: string): Promise<DbResult<boolean>> {
   try {
     const result = await alerts.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }

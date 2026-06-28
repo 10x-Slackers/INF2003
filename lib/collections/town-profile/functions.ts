@@ -1,38 +1,36 @@
 import { db } from "@/lib/db";
+import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   idSchema,
   type TownProfile,
   type TownProfileUpsert,
   UpsertTownProfileSchema,
 } from "./types";
-import { handleCollectionError, type CollectionResult } from "../utils";
 
 const towns = db.collection<TownProfile>("towns");
 const now = () => Math.floor(Date.now() / 1000);
 
-export async function listTownProfiles(): Promise<
-  CollectionResult<TownProfile[]>
-> {
+export async function listTownProfiles(): Promise<DbResult<TownProfile[]>> {
   try {
     return await towns.find({}).sort({ _id: 1 }).toArray();
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function getTownProfileById(
   id: string,
-): Promise<CollectionResult<TownProfile | null>> {
+): Promise<DbResult<TownProfile | null>> {
   try {
     return await towns.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function upsertTownProfile(
   input: TownProfileUpsert,
-): Promise<CollectionResult<TownProfile>> {
+): Promise<DbResult<TownProfile>> {
   try {
     const data = UpsertTownProfileSchema.parse(input);
     const townProfile: TownProfile = { ...data, updated_at: now() };
@@ -50,17 +48,17 @@ export async function upsertTownProfile(
     );
     return townProfile;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function deleteTownProfile(
   id: string,
-): Promise<CollectionResult<boolean>> {
+): Promise<DbResult<boolean>> {
   try {
     const result = await towns.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
+import { handleDbError, type DbResult } from "@/lib/utils";
 import {
   createStatisticsSchema,
   idSchema,
@@ -12,7 +13,6 @@ import {
   upsertStatisticsSchema,
   updateStatisticsSchema,
 } from "./types";
-import { handleCollectionError, type CollectionResult } from "../utils";
 
 const statistics = db.collection<Statistics>("statistics");
 const now = () => Math.floor(Date.now() / 1000);
@@ -20,7 +20,7 @@ const now = () => Math.floor(Date.now() / 1000);
 export async function listStatistics(
   page: number,
   pageSize: number,
-): Promise<CollectionResult<Statistics[]>> {
+): Promise<DbResult<Statistics[]>> {
   try {
     return await statistics
       .find({})
@@ -29,23 +29,23 @@ export async function listStatistics(
       .limit(pageSize)
       .toArray();
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function getStatisticsById(
   id: string,
-): Promise<CollectionResult<Statistics | null>> {
+): Promise<DbResult<Statistics | null>> {
   try {
     return await statistics.findOne({ _id: idSchema.parse(id) });
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function createStatistics(
   input: StatisticsCreate,
-): Promise<CollectionResult<Statistics>> {
+): Promise<DbResult<Statistics>> {
   try {
     const data = createStatisticsSchema.parse(input);
     const document = addUuidAndTime(data);
@@ -53,13 +53,13 @@ export async function createStatistics(
     await statistics.insertOne(document);
     return document;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function upsertStatistics(
   input: StatisticsUpsert,
-): Promise<CollectionResult<Statistics>> {
+): Promise<DbResult<Statistics>> {
   try {
     const data = upsertStatisticsSchema.parse(input);
     const document: Statistics = { ...data, computed_at: now() };
@@ -71,14 +71,14 @@ export async function upsertStatistics(
     );
     return document;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
 export async function updateStatistics(
   id: string,
   input: StatisticsUpdate,
-): Promise<CollectionResult<Statistics | null>> {
+): Promise<DbResult<Statistics | null>> {
   try {
     const data = updateStatisticsSchema.parse(input);
     const parsedId = idSchema.parse(id);
@@ -91,18 +91,16 @@ export async function updateStatistics(
       ? await statistics.findOne({ _id: parsedId })
       : null;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
-export async function deleteStatistics(
-  id: string,
-): Promise<CollectionResult<boolean>> {
+export async function deleteStatistics(id: string): Promise<DbResult<boolean>> {
   try {
     const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }
 
@@ -116,7 +114,7 @@ function addUuidAndTime(data: StatisticsCreate): Statistics {
 
 export async function getStatisticsByMetricAndDimensions(
   input: StatisticsSearch,
-): Promise<CollectionResult<Statistics | null>> {
+): Promise<DbResult<Statistics | null>> {
   try {
     const data = statisticsSearchSchema.parse(input);
     return await statistics.findOne(
@@ -125,6 +123,6 @@ export async function getStatisticsByMetricAndDimensions(
       ),
     );
   } catch (error) {
-    return handleCollectionError(error);
+    return handleDbError(error);
   }
 }

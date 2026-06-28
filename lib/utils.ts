@@ -19,6 +19,8 @@ export type DbError = {
   message: string;
 };
 
+export type DbResult<T> = T | DbError | Error;
+
 function isMariaDbError(error: unknown): error is QueryError {
   return (
     typeof error === "object" &&
