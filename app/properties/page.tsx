@@ -3,51 +3,82 @@ import { DataTable } from "@/components/dashboard/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PropertiesTable } from "./properties-table";
-import { flatTypes, flatModels, properties } from "@/lib/placeholder";
-import { DataTableColumn } from "@/components/dashboard/DataTable";
-import type { propertyType } from "@/lib/placeholder";
+import {
+  flatTypes,
+  flatModels,
+  listPlaceholderProperties,
+} from "@/lib/placeholder";
+import { propertyColumns } from "./property-columns";
 
-export default function PropertiesPage() {
+const pageSize = 2;
+
+type PropertiesPageProps = {
+  searchParams: Promise<{
+    flatModelId?: string;
+    flatTypeId?: string;
+    maxPrice?: string;
+    minPrice?: string;
+    page?: string;
+  }>;
+};
+
+export default function PropertiesPage({ searchParams }: PropertiesPageProps) {
   return (
     <main className="container mx-auto px-5 py-6">
       <Suspense fallback={<PropertiesSkeleton />}>
-        <Properties />
+        <Properties searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-const propertyColumns = [
-  { key: "town", header: "Town", cell: (row) => row.town },
-  { key: "flatType", header: "Flat Type", cell: (row) => row.flatType },
-  { key: "flatModel", header: "Flat Model", cell: (row) => row.flatModel },
-  { key: "block", header: "Block", cell: (row) => row.block },
-  { key: "streetName", header: "Street Name", cell: (row) => row.streetName },
-  {
-    key: "leaseCommenceYear",
-    header: "Lease Commence Year",
-    cell: (row) => row.leaseCommenceYear,
-  },
-  {
-    key: "resalePrice",
-    header: "Resale Price",
-    cell: (row) =>
-      row.resalePrice.toLocaleString("en-SG", {
-        currency: "SGD",
-        style: "currency",
-      }),
-  },
-] satisfies DataTableColumn<propertyType>[];
+async function Properties({
+  searchParams,
+}: {
+  searchParams: PropertiesPageProps["searchParams"];
+}) {
+  const query = await searchParams;
+  const page = getPositiveNumber(query.page) ?? 1;
+  const minPrice = getPositiveNumber(query.minPrice);
+  const maxPrice = getPositiveNumber(query.maxPrice);
+  const filters = {
+    flatModelId: getFilterValue(query.flatModelId),
+    flatTypeId: getFilterValue(query.flatTypeId),
+    maxPrice,
+    minPrice,
+  };
+  // this is a placeholder for fetching data from the database (remember to await)
+  const results = listPlaceholderProperties({
+    ...filters,
+    page,
+    pageSize,
+  });
+  const pageCount = Math.max(1, Math.ceil(results.total / pageSize));
 
-async function Properties() {
-  // database call to fetch metrics data goes here
   return (
     <PropertiesTable
+      currentPage={Math.min(page, pageCount)}
       flatModels={flatModels}
       flatTypes={flatTypes}
-      properties={properties}
+      filters={{
+        flatModelId: filters.flatModelId ?? "all",
+        flatTypeId: filters.flatTypeId ?? "all",
+        maxPrice: maxPrice === undefined ? "" : String(maxPrice),
+        minPrice: minPrice === undefined ? "" : String(minPrice),
+      }}
+      pageCount={pageCount}
+      properties={results.data}
     />
   );
+}
+
+function getFilterValue(value?: string) {
+  return value && value !== "all" ? value : undefined;
+}
+
+function getPositiveNumber(value?: string) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : undefined;
 }
 
 function PropertiesSkeleton() {
