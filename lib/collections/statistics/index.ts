@@ -5,65 +5,91 @@ import {
   createStatisticsSchema,
   type Statistics,
   type StatisticsCreate,
+  type StatisticsSearch,
+  type StatisticsUpsert,
+  statisticsSearchSchema,
   type StatisticsUpdate,
+  upsertStatisticsSchema,
   updateStatisticsSchema,
 } from "@/lib/schema/statistics";
 
 const statistics = db.collection<Statistics>("statistics");
 
-export async function listStatistics(): Promise<Statistics[]> {
-  return statistics.find({}).sort({ computed_at: -1 }).toArray();
+export async function listStatistics(): Promise<Statistics[] | null> {
+  try {
+    return await statistics.find({}).sort({ computed_at: -1 }).toArray();
+  } catch {
+    return null;
+  }
 }
 
 export async function getStatisticsById(
   id: string,
 ): Promise<Statistics | null> {
-  return statistics.findOne({ _id: idSchema.parse(id) });
+  try {
+    return await statistics.findOne({ _id: idSchema.parse(id) });
+  } catch {
+    return null;
+  }
 }
 
 export async function createStatistics(
   input: StatisticsCreate,
-): Promise<Statistics> {
-  const data = createStatisticsSchema.parse(input);
-  const document = addUuidAndTime(data);
+): Promise<Statistics | null> {
+  try {
+    const data = createStatisticsSchema.parse(input);
+    const document = addUuidAndTime(data);
 
-  await statistics.insertOne(document);
-  return document;
+    await statistics.insertOne(document);
+    return document;
+  } catch {
+    return null;
+  }
 }
 
 export async function upsertStatistics(
-  input: StatisticsCreate,
+  input: StatisticsUpsert,
 ): Promise<Statistics | null> {
-  const data = createStatisticsSchema.parse(input);
-  const document = addUuidAndTime(data);
+  try {
+    const data = upsertStatisticsSchema.parse(input);
+    const document: Statistics = { ...data, computed_at: now() };
 
-  const result = await statistics.updateOne(
-    { _id: document._id },
-    { $set: document },
-    { upsert: true },
-  );
-  return result.upsertedCount
-    ? statistics.findOne({ _id: document._id })
-    : null;
+    await statistics.updateOne(
+      { _id: document._id },
+      { $set: document },
+      { upsert: true },
+    );
+    return document;
+  } catch {
+    return null;
+  }
 }
 
 export async function updateStatistics(
   id: string,
   input: StatisticsUpdate,
 ): Promise<Statistics | null> {
-  const data = updateStatisticsSchema.parse(input);
-  const parsedId = idSchema.parse(id);
-  const result = await statistics.updateOne(
-    { _id: parsedId },
-    { $set: { ...data, computed_at: now() } },
-  );
+  try {
+    const data = updateStatisticsSchema.parse(input);
+    const parsedId = idSchema.parse(id);
+    const result = await statistics.updateOne(
+      { _id: parsedId },
+      { $set: { ...data, computed_at: now() } },
+    );
 
-  return result.matchedCount ? statistics.findOne({ _id: parsedId }) : null;
+    return result.matchedCount ? statistics.findOne({ _id: parsedId }) : null;
+  } catch {
+    return null;
+  }
 }
 
-export async function deleteStatistics(id: string): Promise<boolean> {
-  const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
-  return result.deletedCount > 0;
+export async function deleteStatistics(id: string): Promise<boolean | null> {
+  try {
+    const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
+    return result.deletedCount > 0;
+  } catch {
+    return null;
+  }
 }
 
 function addUuidAndTime(data: StatisticsCreate): Statistics {
@@ -72,4 +98,19 @@ function addUuidAndTime(data: StatisticsCreate): Statistics {
     _id: randomUUID(),
     computed_at: now(),
   };
+}
+
+export async function getStatisticsByMetricAndDimensions(
+  input: StatisticsSearch,
+): Promise<Statistics | null> {
+  try {
+    const data = statisticsSearchSchema.parse(input);
+    return await statistics.findOne(
+      Object.fromEntries(
+        Object.entries(data).filter(([, value]) => value !== undefined),
+      ),
+    );
+  } catch {
+    return null;
+  }
 }

@@ -34,6 +34,16 @@ export const statisticsSeriesPointSchema = z
   })
   .strict();
 
+export const statisticsSearchSchema = z
+  .object({
+    metric: metricsSchema.optional(),
+    dimensions: statisticsDimensionsSchema.optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "At least one search field is required",
+  });
+
 export const createStatisticsSchema = z
   .object({
     metric: metricsSchema,
@@ -44,9 +54,13 @@ export const createStatisticsSchema = z
   })
   .strict();
 
+export const upsertStatisticsSchema = createStatisticsSchema.extend({
+  _id: z.uuid(),
+});
+
 export const updateStatisticsSchema = z
   .object({
-    metric: metricsSchema,
+    metric: metricsSchema.optional(),
     granularity: statisticsGranularitySchema.optional(),
     time_range: statisticsTimeRangeSchema.optional(),
     dimensions: statisticsDimensionsSchema.optional(),
@@ -67,5 +81,7 @@ export type StatisticsTimeRange = z.infer<typeof statisticsTimeRangeSchema>;
 export type StatisticsDimensions = z.infer<typeof statisticsDimensionsSchema>;
 export type StatisticsSeriesPoint = z.infer<typeof statisticsSeriesPointSchema>;
 export type StatisticsCreate = z.infer<typeof createStatisticsSchema>;
+export type StatisticsUpsert = z.infer<typeof upsertStatisticsSchema>;
 export type StatisticsUpdate = z.infer<typeof updateStatisticsSchema>;
 export type Statistics = z.infer<typeof statisticsSchema>;
+export type StatisticsSearch = z.infer<typeof statisticsSearchSchema>;

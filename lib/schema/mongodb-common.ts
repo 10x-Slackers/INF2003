@@ -10,7 +10,7 @@ export const numberRangeSchema = z
     message: "min cannot be greater than max",
   });
 
-export const filterShape = z.object({
+export const filterShape = {
   town_id: z.array(z.uuid()).optional(),
   flat_model_id: z.array(z.string()).optional(),
   flat_type_id: z.array(z.string()).optional(),
@@ -18,11 +18,11 @@ export const filterShape = z.object({
   floor_area_sqm: numberRangeSchema.optional(),
   storey: numberRangeSchema.optional(),
   lease_remaining: numberRangeSchema.optional(),
-});
+};
 
 export const filterShapeSchema = z.object(filterShape).strict();
 
 export const now = () => Math.floor(Date.now() / 1000);
 
 export const hasFields = (value: object) => Object.keys(value).length > 0;
-export const idSchema = z.string().min(1);
+export const idSchema = z.uuid();

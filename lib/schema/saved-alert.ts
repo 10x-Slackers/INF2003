@@ -3,6 +3,7 @@ import { filterShape, hasFields } from "@/lib/schema/mongodb-common";
 
 export const savedAlertFiltersSchema = z
   .object(filterShape)
+  .strict()
   .refine(hasFields, { message: "At least one filter is required" });
 
 export const createSavedAlertSchema = z
