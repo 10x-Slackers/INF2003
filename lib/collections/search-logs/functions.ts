@@ -5,8 +5,6 @@ import {
   idSchema,
   type SearchLog,
   type SearchLogCreate,
-  type SearchLogUpdate,
-  updateSearchLogSchema,
 } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 
@@ -46,26 +44,6 @@ export async function createSearchLog(
 
     await searchHistory.insertOne(searchLog);
     return searchLog;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
-export async function updateSearchLog(
-  id: string,
-  input: SearchLogUpdate,
-): Promise<SearchLog | null> {
-  try {
-    const data = updateSearchLogSchema.parse(input);
-    const parsedId = idSchema.parse(id);
-    const result = await searchHistory.updateOne(
-      { _id: parsedId },
-      { $set: { ...data, updated_at: now() } },
-    );
-
-    return result.matchedCount
-      ? await searchHistory.findOne({ _id: parsedId })
-      : null;
   } catch (error) {
     return handleDbError(error);
   }
