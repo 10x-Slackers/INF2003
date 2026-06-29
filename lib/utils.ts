@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { MongoError } from "mongodb";
+import { QueryError } from "mysql2";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -37,26 +38,26 @@ export class ForeignKeyConstraintError extends DbError {
   }
 }
 
-function checkMariaDbError(error: unknown): never {
-  const code = (error as { code?: string }).code;
-  const message = (error as { message?: string }).message;
-  if (code === "ER_DUP_ENTRY") {
-    throw new DuplicateEntryError("Duplicate entry found");
-  }
-  if (code === "ER_ROW_IS_REFERENCED_2" || code === "ER_NO_REFERENCED_ROW_2") {
-    throw new ForeignKeyConstraintError(
-      "Foreign key constraint violation: " + message,
-    );
-  }
-  throw new DbError("Database error: " + message);
-}
-
 export function handleDbError(error: unknown): never {
   if (error instanceof MongoError) {
     throw new DbError(error.message);
   }
   if (typeof (error as { code?: unknown })?.code === "string") {
-    checkMariaDbError(error);
+    const err = error as QueryError;
+    const code = err.code;
+    const message = err.message;
+    if (code === "ER_DUP_ENTRY") {
+      throw new DuplicateEntryError("Duplicate entry found");
+    }
+    if (
+      code === "ER_ROW_IS_REFERENCED_2" ||
+      code === "ER_NO_REFERENCED_ROW_2"
+    ) {
+      throw new ForeignKeyConstraintError(
+        "Foreign key constraint violation: " + message,
+      );
+    }
+    throw new DbError("Database error: " + message);
   }
   throw error;
 }
