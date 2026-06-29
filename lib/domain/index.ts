@@ -19,7 +19,6 @@ export {
 export {
   listProperties,
   getPropertyById,
-  lookupProperty,
   createProperty,
   deleteProperty,
 } from "./properties";

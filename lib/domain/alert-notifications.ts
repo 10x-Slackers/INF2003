@@ -58,16 +58,13 @@ export async function createAlertNotification(
 export async function markAlertNotificationRead(
   id: string,
 ): Promise<AlertNotification | null> {
-  const existing = await fetchRow(id);
-  if (!existing) return null;
-
   // COALESCE keeps the original read time if it was already marked read.
   await execute(
     `UPDATE alert_notifications SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
      WHERE id = ?`,
     [id],
   );
-  return fetchRow(id);
+  return fetchRow(id); // null if the id didn't exist
 }
 
 export async function deleteAlertNotification(id: string): Promise<boolean> {

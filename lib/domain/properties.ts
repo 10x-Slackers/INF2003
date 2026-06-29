@@ -177,36 +177,13 @@ export async function getPropertyById(
   return { ...property, town, amenities };
 }
 
-export async function lookupProperty(criteria: {
-  town_id: string;
-  block: string;
-  street_name: string;
-  lease_commence_year: number;
-}): Promise<{ found: boolean; property_id?: string }> {
-  const rows = await query<{ id: string }>(
-    `SELECT id FROM properties
-     WHERE town_id = ? AND block = ? AND street_name = ? AND lease_commence_year = ?
-     LIMIT 1`,
-    [
-      criteria.town_id,
-      criteria.block,
-      criteria.street_name,
-      criteria.lease_commence_year,
-    ],
-  );
-
-  const property = rows[0];
-  return property
-    ? { found: true, property_id: property.id }
-    : { found: false };
-}
-
 export async function createProperty(
   payload: CreatePropertyPayload,
 ): Promise<Property> {
+  let inserted: { id: string };
   try {
-    await execute(
-      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?)",
+    [inserted] = await query<{ id: string }>(
+      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
       [
         payload.town_id,
         payload.block,
@@ -224,12 +201,7 @@ export async function createProperty(
     throw err;
   }
 
-  const { property_id } = await lookupProperty(payload);
-  const property = property_id ? await getPropertyRowById(property_id) : null;
-  if (!property) {
-    throw new Error("Failed to read back created property");
-  }
-  return property;
+  return { id: inserted.id, ...payload };
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {
