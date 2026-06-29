@@ -103,11 +103,11 @@ export async function markAlertNotificationRead(
 export async function deleteAlertNotification(id: string): Promise<boolean> {
   try {
     const parsedId = idSchema.parse(id);
-    const row = await fetchRow(parsedId);
-    if (!row) return false;
-
-    await execute("DELETE FROM alert_notifications WHERE id = ?", [parsedId]);
-    return true;
+    const result = await execute(
+      "DELETE FROM alert_notifications WHERE id = ?",
+      [parsedId],
+    );
+    return result.affectedRows > 0;
   } catch (error) {
     return handleDbError(error);
   }

@@ -106,6 +106,10 @@ export async function listProperties(
       conditions.push("lt.flat_type_id = ?");
       params.push(data.flat_type_id);
     }
+    if (data.flat_model_id !== undefined) {
+      conditions.push("lt.flat_model_id = ?");
+      params.push(data.flat_model_id);
+    }
     if (data.price_min !== undefined) {
       conditions.push("lt.resale_price >= ?");
       params.push(data.price_min);
@@ -119,6 +123,7 @@ export async function listProperties(
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const countJoin =
       data.flat_type_id !== undefined ||
+      data.flat_model_id !== undefined ||
       data.price_min !== undefined ||
       data.price_max !== undefined
         ? LATEST_TRANSACTION_JOIN
@@ -165,7 +170,7 @@ export async function getPropertyById(
   id: string,
 ): Promise<PropertyDetail | null> {
   try {
-    const property = await getPropertyRowById(idSchema.parse(id));
+    const property = await getPropertyRowById(id);
     if (!property) return null;
 
     const [town, amenities] = await Promise.all([

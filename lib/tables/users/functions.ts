@@ -54,8 +54,6 @@ export async function updateUser(
     if (isEmptyUpdate(input)) return getUserById(parsedId);
 
     const data = updateUserSchema.parse(input);
-    const existing = await getUserById(parsedId);
-    if (!existing) return null;
 
     const fields: string[] = [];
     const params: string[] = [];
@@ -73,10 +71,11 @@ export async function updateUser(
       params.push(data.role);
     }
 
-    await execute(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`, [
-      ...params,
-      parsedId,
-    ]);
+    const result = await execute(
+      `UPDATE users SET ${fields.join(", ")} WHERE id = ?`,
+      [...params, parsedId],
+    );
+    if (result.affectedRows === 0) return null;
     return getUserById(parsedId);
   } catch (error) {
     return handleDbError(error);

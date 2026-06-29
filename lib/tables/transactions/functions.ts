@@ -35,6 +35,10 @@ export async function listTransactions(
       conditions.push("rt.flat_type_id = ?");
       params.push(data.flat_type_id);
     }
+    if (data.flat_model_id !== undefined) {
+      conditions.push("rt.flat_model_id = ?");
+      params.push(data.flat_model_id);
+    }
     if (data.storey_range_id !== undefined) {
       conditions.push("rt.storey_range_id = ?");
       params.push(data.storey_range_id);

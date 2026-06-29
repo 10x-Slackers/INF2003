@@ -1,12 +1,12 @@
 import { query } from "@/lib/db";
-import { handleMariaDBError } from "@/lib/utils";
+import { handleDbError } from "@/lib/utils";
 import type { AmenityType, FlatModel, FlatType, StoreyRange } from "./types";
 
 export async function listFlatTypes(): Promise<FlatType[]> {
   try {
     return query<FlatType>("SELECT id, name FROM flat_types ORDER BY name");
   } catch (error) {
-    return handleMariaDBError(error);
+    return handleDbError(error);
   }
 }
 
@@ -14,7 +14,7 @@ export async function listFlatModels(): Promise<FlatModel[]> {
   try {
     return query<FlatModel>("SELECT id, name FROM flat_models ORDER BY name");
   } catch (error) {
-    return handleMariaDBError(error);
+    return handleDbError(error);
   }
 }
 
@@ -24,7 +24,7 @@ export async function listStoreyRanges(): Promise<StoreyRange[]> {
       "SELECT id, min_storey, max_storey FROM storey_ranges ORDER BY min_storey",
     );
   } catch (error) {
-    return handleMariaDBError(error);
+    return handleDbError(error);
   }
 }
 
@@ -34,6 +34,6 @@ export async function listAmenityTypes(): Promise<AmenityType[]> {
       "SELECT id, name FROM amenity_types ORDER BY name",
     );
   } catch (error) {
-    return handleMariaDBError(error);
+    return handleDbError(error);
   }
 }

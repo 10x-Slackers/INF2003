@@ -28,6 +28,7 @@ export const updateTransactionSchema = z
 export const transactionListQuerySchema = paginationSchema.extend({
   town_id: z.uuid().optional(),
   flat_type_id: z.coerce.number().int().positive().optional(),
+  flat_model_id: z.coerce.number().int().positive().optional(),
   storey_range_id: z.coerce.number().int().positive().optional(),
   price_min: z.coerce.number().nonnegative().optional(),
   price_max: z.coerce.number().nonnegative().optional(),
