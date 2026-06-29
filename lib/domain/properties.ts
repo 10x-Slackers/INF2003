@@ -225,7 +225,7 @@ export async function createProperty(
   }
 
   const { property_id } = await lookupProperty(payload);
-  const property = property_id ? await getPropertyById(property_id) : null;
+  const property = property_id ? await getPropertyRowById(property_id) : null;
   if (!property) {
     throw new Error("Failed to read back created property");
   }
