@@ -9,13 +9,18 @@ import {
 import { handleDbError, now } from "@/lib/utils";
 
 const searchHistory = db.collection<SearchLog>("search_history");
+const DEFAULT_LIMIT = 50;
 
-export async function listSearchLogs(userId?: string): Promise<SearchLog[]> {
+// set limit to 0 to return all search logs
+export async function listSearchLogs(
+  userId?: string,
+  limit?: number,
+): Promise<SearchLog[]> {
   try {
     return await searchHistory
       .find(userId ? { user_id: idSchema.parse(userId) } : {})
       .sort({ searched_at: -1 })
-      .limit(50)
+      .limit(limit ?? DEFAULT_LIMIT)
       .toArray();
   } catch (error) {
     return handleDbError(error);
