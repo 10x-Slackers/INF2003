@@ -1,5 +1,4 @@
 export {
-  deleteTownProfile,
   getTownProfileById,
   listTownProfiles,
   upsertTownProfile,

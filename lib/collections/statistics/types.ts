@@ -45,35 +45,22 @@ export const statisticsSearchSchema = z
     message: "At least one search field is required",
   });
 
-export const createStatisticsSchema = z
-  .object({
-    metric: metricsSchema,
-    granularity: statisticsGranularitySchema,
-    time_range: statisticsTimeRangeSchema,
-    dimensions: statisticsDimensionsSchema,
-    series: z.array(statisticsSeriesPointSchema),
-  })
-  .strict();
-
-export const upsertStatisticsSchema = createStatisticsSchema.extend({
-  _id: z.uuid(),
+export const upsertStatisticsSchema = z.object({
+  _id: z.uuid().optional(),
+  metric: metricsSchema,
+  granularity: statisticsGranularitySchema,
+  time_range: statisticsTimeRangeSchema,
+  dimensions: statisticsDimensionsSchema,
+  series: z.array(statisticsSeriesPointSchema),
 });
 
-export const updateStatisticsSchema = z
-  .object({
-    metric: metricsSchema.optional(),
-    granularity: statisticsGranularitySchema.optional(),
-    time_range: statisticsTimeRangeSchema.optional(),
-    dimensions: statisticsDimensionsSchema.optional(),
-    series: z.array(statisticsSeriesPointSchema).optional(),
-  })
-  .strict()
-  .refine((value) => Object.keys(value).length > 0, {
-    message: "At least one field is required",
-  });
-
-export const statisticsSchema = createStatisticsSchema.extend({
+export const statisticsSchema = z.object({
   _id: z.uuid(),
+  metric: metricsSchema,
+  granularity: statisticsGranularitySchema,
+  time_range: statisticsTimeRangeSchema,
+  dimensions: statisticsDimensionsSchema,
+  series: z.array(statisticsSeriesPointSchema),
   computed_at: z.number().int().min(0),
 });
 
@@ -81,8 +68,6 @@ export type StatisticsGranularity = z.infer<typeof statisticsGranularitySchema>;
 export type StatisticsTimeRange = z.infer<typeof statisticsTimeRangeSchema>;
 export type StatisticsDimensions = z.infer<typeof statisticsDimensionsSchema>;
 export type StatisticsSeriesPoint = z.infer<typeof statisticsSeriesPointSchema>;
-export type StatisticsCreate = z.infer<typeof createStatisticsSchema>;
 export type StatisticsUpsert = z.infer<typeof upsertStatisticsSchema>;
-export type StatisticsUpdate = z.infer<typeof updateStatisticsSchema>;
 export type Statistics = z.infer<typeof statisticsSchema>;
 export type StatisticsSearch = z.infer<typeof statisticsSearchSchema>;

@@ -11,7 +11,7 @@ const towns = db.collection<TownProfile>("towns");
 
 export async function listTownProfiles(): Promise<TownProfile[]> {
   try {
-    return await towns.find({}).sort({ _id: 1 }).toArray();
+    return await towns.find({}).toArray();
   } catch (error) {
     return handleDbError(error);
   }
@@ -27,6 +27,7 @@ export async function getTownProfileById(
   }
 }
 
+// checks if document exist, if it does, update it, if not, create a new one
 export async function upsertTownProfile(
   input: TownProfileUpsert,
 ): Promise<TownProfile> {
@@ -46,15 +47,6 @@ export async function upsertTownProfile(
       { upsert: true },
     );
     return townProfile;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
-export async function deleteTownProfile(id: string): Promise<boolean> {
-  try {
-    const result = await towns.deleteOne({ _id: idSchema.parse(id) });
-    return result.deletedCount > 0;
   } catch (error) {
     return handleDbError(error);
   }

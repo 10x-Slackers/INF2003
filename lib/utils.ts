@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { MongoError } from "mongodb";
-import type { QueryError } from "mysql2";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,23 +17,15 @@ export function requireEnv(name: string): string {
 }
 
 export class DbError extends Error {
-  constructor() {
-    super("Database Error.");
+  constructor(message: string) {
+    super(message);
     this.name = "DbError";
   }
 }
 
-function isMariaDbError(error: unknown): error is QueryError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    ("code" in error || "errno" in error || "sqlMessage" in error)
-  );
-}
-
 export function handleDbError(error: unknown): never {
-  if (error instanceof MongoError || isMariaDbError(error)) {
-    throw new DbError();
+  if (error instanceof MongoError) {
+    throw new DbError(error.message);
   }
   throw error;
 }

@@ -56,13 +56,6 @@ export const createSearchLogSchema = z
   })
   .strict();
 
-export const updateSearchLogSchema = z
-  .object({
-    query: querySearchLogSchema,
-  })
-  .strict();
-
 export type SearchLogQuery = z.infer<typeof querySearchLogSchema>;
 export type SearchLog = z.infer<typeof searchLogSchema>;
 export type SearchLogCreate = z.infer<typeof createSearchLogSchema>;
-export type SearchLogUpdate = z.infer<typeof updateSearchLogSchema>;

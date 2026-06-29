@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --experimental-strip-types --import ./lib/collections/__tests__/register-loader.mjs lib/collections/__tests__/mongodb-collections.test.ts",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write ."
   },
