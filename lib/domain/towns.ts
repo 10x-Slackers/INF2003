@@ -67,6 +67,7 @@ export async function listAmenitiesByTown(
   });
 }
 
+// Unpaginated: every amenity in the town (used to build property detail).
 export async function listAllAmenitiesByTown(
   townId: string,
 ): Promise<Amenity[]> {

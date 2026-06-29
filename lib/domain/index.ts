@@ -20,6 +20,7 @@ export {
   listProperties,
   getPropertyById,
   createProperty,
+  lookupProperty,
   deleteProperty,
 } from "./properties";
 

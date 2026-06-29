@@ -1,12 +1,9 @@
-import {
-  execute,
-  query,
-  isDuplicateKeyError,
-  isMissingReferenceError,
-} from "@/lib/db";
+import { execute, query } from "@/lib/db";
+import { handleMariaDBError } from "@/lib/utils";
 import { getPropertiesWithLatestTransaction } from "@/lib/domain/properties";
 import type { SavedProperty, SavedPropertyDetail } from "@/lib/types";
 
+// Enrich a saved row with its full property detail.
 async function attachProperty(
   row: SavedProperty,
 ): Promise<SavedPropertyDetail> {
@@ -16,6 +13,7 @@ async function attachProperty(
   return { ...row, property: property ?? null };
 }
 
+// Same, batched over many rows to avoid an N+1 query for listSavedProperties.
 async function attachProperties(
   rows: SavedProperty[],
 ): Promise<SavedPropertyDetail[]> {
@@ -72,13 +70,7 @@ export async function createSavedProperty(
       [userId, propertyId],
     );
   } catch (err) {
-    if (isDuplicateKeyError(err)) {
-      throw new Error("Property already saved");
-    }
-    if (isMissingReferenceError(err)) {
-      throw new Error("Invalid property_id");
-    }
-    throw err;
+    handleMariaDBError(err);
   }
 
   const saved = await getSavedPropertyById(inserted.id);

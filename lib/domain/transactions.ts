@@ -1,4 +1,5 @@
-import { execute, query, isMissingReferenceError } from "@/lib/db";
+import { execute, query } from "@/lib/db";
+import { handleMariaDBError } from "@/lib/utils";
 import type {
   CreateTransactionPayload,
   ResaleTransaction,
@@ -112,12 +113,7 @@ export async function createTransaction(
       ],
     );
   } catch (err) {
-    if (isMissingReferenceError(err)) {
-      throw new Error(
-        "Invalid reference: property_id, flat_type_id, flat_model_id, or storey_range_id does not exist",
-      );
-    }
-    throw err;
+    handleMariaDBError(err);
   }
 
   const transaction = await getTransactionById(inserted.id);
@@ -151,10 +147,7 @@ export async function updateTransaction(
       [...params, id],
     );
   } catch (err) {
-    if (isMissingReferenceError(err)) {
-      throw new Error("Invalid reference in update payload");
-    }
-    throw err;
+    handleMariaDBError(err);
   }
 
   return getTransactionById(id);

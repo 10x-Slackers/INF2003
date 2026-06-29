@@ -1,10 +1,5 @@
-import {
-  execute,
-  query,
-  isDuplicateKeyError,
-  isMissingReferenceError,
-  isReferencedByOthersError,
-} from "@/lib/db";
+import { execute, query } from "@/lib/db";
+import { handleMariaDBError } from "@/lib/utils";
 import { getTownById, listAllAmenitiesByTown } from "@/lib/domain/towns";
 import type {
   CreatePropertyPayload,
@@ -74,6 +69,7 @@ function toPropertyWithLatestTransaction(
   };
 }
 
+// Batch-fetch properties by id, each with its latest transaction.
 export async function getPropertiesWithLatestTransaction(
   propertyIds: string[],
 ): Promise<PropertyWithLatestTransaction[]> {
@@ -93,7 +89,7 @@ export async function getPropertiesWithLatestTransaction(
 
 export async function listProperties(filters: {
   town_id?: string;
-  flat_type?: string;
+  flat_type_id?: number;
   price_min?: number;
   price_max?: number;
   page: number;
@@ -107,9 +103,9 @@ export async function listProperties(filters: {
     conditions.push("p.town_id = ?");
     params.push(filters.town_id);
   }
-  if (filters.flat_type !== undefined) {
-    conditions.push("lft.name = ?");
-    params.push(filters.flat_type);
+  if (filters.flat_type_id !== undefined) {
+    conditions.push("lt.flat_type_id = ?");
+    params.push(filters.flat_type_id);
   }
   if (filters.price_min !== undefined) {
     conditions.push("lt.resale_price >= ?");
@@ -127,7 +123,7 @@ export async function listProperties(filters: {
   // its columns (flat_type/price); otherwise the correlated subquery would run
   // per property just to count rows. The data query always needs it for SELECT.
   const countJoin =
-    filters.flat_type !== undefined ||
+    filters.flat_type_id !== undefined ||
     filters.price_min !== undefined ||
     filters.price_max !== undefined
       ? LATEST_TRANSACTION_JOIN
@@ -192,16 +188,28 @@ export async function createProperty(
       ],
     );
   } catch (err) {
-    if (isDuplicateKeyError(err)) {
-      throw new Error("Property already exists");
-    }
-    if (isMissingReferenceError(err)) {
-      throw new Error("Invalid town_id");
-    }
-    throw err;
+    handleMariaDBError(err);
   }
 
   return { id: inserted.id, ...payload };
+}
+
+// Find an existing property by its address.
+export async function lookupProperty(
+  payload: CreatePropertyPayload,
+): Promise<{ found: boolean; property_id?: string }> {
+  const rows = await query<{ id: string }>(
+    `SELECT id FROM properties
+     WHERE town_id = ? AND block = ? AND street_name = ? AND lease_commence_year = ?
+     LIMIT 1`,
+    [
+      payload.town_id,
+      payload.block,
+      payload.street_name,
+      payload.lease_commence_year,
+    ],
+  );
+  return rows[0] ? { found: true, property_id: rows[0].id } : { found: false };
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {
@@ -209,9 +217,6 @@ export async function deleteProperty(id: string): Promise<boolean> {
     const result = await execute("DELETE FROM properties WHERE id = ?", [id]);
     return result.affectedRows > 0;
   } catch (err) {
-    if (isReferencedByOthersError(err)) {
-      throw new Error("Property has resale transactions and cannot be deleted");
-    }
-    throw err;
+    handleMariaDBError(err);
   }
 }

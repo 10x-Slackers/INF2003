@@ -14,7 +14,7 @@ export const propertyLookupQuerySchema = propertyIdentitySchema;
 
 export const propertyListQuerySchema = paginationSchema.extend({
   town_id: z.uuid().optional(),
-  flat_type: z.string().trim().min(1).optional(),
+  flat_type_id: z.coerce.number().int().optional(),
   price_min: z.coerce.number().nonnegative().optional(),
   price_max: z.coerce.number().nonnegative().optional(),
 });

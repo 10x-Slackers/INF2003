@@ -1,4 +1,5 @@
-import { execute, query, isDuplicateKeyError } from "@/lib/db";
+import { execute, query } from "@/lib/db";
+import { handleMariaDBError } from "@/lib/utils";
 import type { PublicUser, UpdateUserPayload } from "@/lib/types";
 
 const PUBLIC_USER_COLUMNS = "id, name, email, role, created_at, updated_at";
@@ -56,10 +57,7 @@ export async function updateUser(
       id,
     ]);
   } catch (err) {
-    if (isDuplicateKeyError(err)) {
-      throw new Error("A user with this email already exists");
-    }
-    throw err;
+    handleMariaDBError(err);
   }
 
   return getUserById(id);
