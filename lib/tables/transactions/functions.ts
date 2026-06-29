@@ -1,0 +1,177 @@
+import { execute, query } from "@/lib/db";
+import { handleDbError } from "@/lib/utils";
+import {
+  createTransactionSchema,
+  type CreateTransaction,
+  type ResaleTransaction,
+  type TransactionListQuery,
+  type UpdateTransaction,
+  transactionListQuerySchema,
+  updateTransactionSchema,
+} from "./types";
+import { idSchema } from "../common";
+
+const TRANSACTION_COLUMNS = `id, uploaded_by_user_id, property_id, flat_type_id,
+            flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`;
+
+const isEmptyUpdate = (input: UpdateTransaction) =>
+  Object.values(input).every((value) => value === undefined);
+
+export async function listTransactions(
+  filters: TransactionListQuery,
+): Promise<{ data: ResaleTransaction[]; total: number }> {
+  try {
+    const data = transactionListQuerySchema.parse(filters);
+    const { page, pageSize } = data;
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    const needsPropertyJoin = data.town_id !== undefined;
+
+    if (data.town_id !== undefined) {
+      conditions.push("p.town_id = ?");
+      params.push(data.town_id);
+    }
+    if (data.flat_type_id !== undefined) {
+      conditions.push("rt.flat_type_id = ?");
+      params.push(data.flat_type_id);
+    }
+    if (data.storey_range_id !== undefined) {
+      conditions.push("rt.storey_range_id = ?");
+      params.push(data.storey_range_id);
+    }
+    if (data.price_min !== undefined) {
+      conditions.push("rt.resale_price >= ?");
+      params.push(data.price_min);
+    }
+    if (data.price_max !== undefined) {
+      conditions.push("rt.resale_price <= ?");
+      params.push(data.price_max);
+    }
+    if (data.year !== undefined) {
+      conditions.push("YEAR(rt.transaction_month) = ?");
+      params.push(data.year);
+    }
+    if (data.property_id !== undefined) {
+      conditions.push("rt.property_id = ?");
+      params.push(data.property_id);
+    }
+
+    const join = needsPropertyJoin
+      ? "JOIN properties p ON p.id = rt.property_id"
+      : "";
+    const where =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const [rows, countRows] = await Promise.all([
+      query<ResaleTransaction>(
+        `SELECT ${TRANSACTION_COLUMNS}
+       FROM resale_transactions rt
+       ${join}
+       ${where}
+       ORDER BY rt.transaction_month DESC
+       LIMIT ? OFFSET ?`,
+        [...params, pageSize, (page - 1) * pageSize],
+      ),
+      query<{ total: number }>(
+        `SELECT COUNT(*) AS total FROM resale_transactions rt ${join} ${where}`,
+        params,
+      ),
+    ]);
+
+    return { data: rows, total: countRows[0].total };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getTransactionById(
+  id: string,
+): Promise<ResaleTransaction | null> {
+  try {
+    const rows = await query<ResaleTransaction>(
+      `SELECT ${TRANSACTION_COLUMNS}
+     FROM resale_transactions WHERE id = ? LIMIT 1`,
+      [idSchema.parse(id)],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function createTransaction(
+  input: CreateTransaction,
+  uploadedByUserId: string,
+): Promise<ResaleTransaction> {
+  try {
+    const data = createTransactionSchema.parse(input);
+    const userId = idSchema.parse(uploadedByUserId);
+    const [inserted] = await query<{ id: string }>(
+      `INSERT INTO resale_transactions
+         (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
+          storey_range_id, floor_area_sqm, transaction_month, resale_price)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+      [
+        userId,
+        data.property_id,
+        data.flat_type_id,
+        data.flat_model_id,
+        data.storey_range_id,
+        data.floor_area_sqm,
+        data.transaction_month,
+        data.resale_price,
+      ],
+    );
+
+    const transaction = await getTransactionById(inserted.id);
+    if (!transaction)
+      throw new Error("Failed to read back created transaction");
+    return transaction;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function updateTransaction(
+  id: string,
+  input: UpdateTransaction,
+): Promise<ResaleTransaction | null> {
+  try {
+    const parsedId = idSchema.parse(id);
+    if (isEmptyUpdate(input)) return getTransactionById(parsedId);
+
+    const data = updateTransactionSchema.parse(input);
+    const existing = await getTransactionById(parsedId);
+    if (!existing) return null;
+
+    const fields: string[] = [];
+    const params: (string | number)[] = [];
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        fields.push(`${key} = ?`);
+        params.push(value);
+      }
+    }
+
+    await execute(
+      `UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`,
+      [...params, parsedId],
+    );
+    return getTransactionById(parsedId);
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function deleteTransaction(id: string): Promise<boolean> {
+  try {
+    const result = await execute(
+      "DELETE FROM resale_transactions WHERE id = ?",
+      [idSchema.parse(id)],
+    );
+    return result.affectedRows > 0;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}

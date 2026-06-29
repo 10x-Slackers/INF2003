@@ -27,10 +27,6 @@ export function handleDbError(error: unknown): never {
   if (error instanceof MongoError) {
     throw new DbError(error.message);
   }
-  throw error;
-}
-
-export function handleMariaDBError(error: unknown): never {
   if (typeof (error as { code?: unknown })?.code === "string") {
     throw new DbError((error as Error).message);
   }
