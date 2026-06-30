@@ -1,28 +1,50 @@
 import Link from "next/link";
 import type { DataTableColumn } from "@/components/dashboard/DataTable";
 import { Button } from "@/components/ui/button";
-import type { propertyType } from "@/lib/placeholder";
+import type { PropertyListItem } from "@/lib/tables/properties";
 import { ROUTES } from "@/lib/routes";
 
 export const propertyColumns = [
-  { key: "town", header: "Town", cell: (row) => row.town },
-  { key: "flatType", header: "Flat Type", cell: (row) => row.flatType },
-  { key: "flatModel", header: "Flat Model", cell: (row) => row.flatModel },
-  { key: "block", header: "Block", cell: (row) => row.block },
-  { key: "streetName", header: "Street Name", cell: (row) => row.streetName },
+  { key: "town", header: "Town", cell: (row) => row.town_name },
   {
-    key: "leaseCommenceYear",
-    header: "Lease Commence Year",
-    cell: (row) => row.leaseCommenceYear,
+    key: "flatType",
+    header: "Flat Type",
+    cell: (row) => row.latest_transaction?.flat_type ?? "-",
+  },
+  {
+    key: "flatModel",
+    header: "Flat Model",
+    cell: (row) => row.latest_transaction?.flat_model ?? "-",
+  },
+  {
+    key: "streetName",
+    header: "Street Name",
+    cell: (row) => row.street_name,
+  },
+  {
+    key: "lastTransactionDate",
+    header: "Last Transaction",
+    cell: (row) =>
+      row.latest_transaction
+        ? new Date(row.latest_transaction.transaction_month).toLocaleDateString(
+            "en-SG",
+            {
+              month: "short",
+              year: "numeric",
+            },
+          )
+        : "-",
   },
   {
     key: "resalePrice",
     header: "Resale Price",
     cell: (row) =>
-      row.resalePrice.toLocaleString("en-SG", {
-        currency: "SGD",
-        style: "currency",
-      }),
+      row.latest_transaction
+        ? row.latest_transaction.resale_price.toLocaleString("en-SG", {
+            currency: "SGD",
+            style: "currency",
+          })
+        : "-",
   },
   {
     key: "details",
@@ -33,4 +55,4 @@ export const propertyColumns = [
       </Button>
     ),
   },
-] satisfies DataTableColumn<propertyType>[];
+] satisfies DataTableColumn<PropertyListItem>[];

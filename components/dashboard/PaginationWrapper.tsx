@@ -2,6 +2,7 @@ import type { MouseEvent } from "react";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -19,7 +20,7 @@ export function PaginationWrapper({
   pageCount,
   onPageChange,
 }: PaginationWrapperProps) {
-  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const pages = paginationItems(currentPage, pageCount);
 
   function changePage(event: MouseEvent<HTMLAnchorElement>, page: number) {
     event.preventDefault();
@@ -41,13 +42,17 @@ export function PaginationWrapper({
 
         {pages.map((page) => (
           <PaginationItem key={page}>
-            <PaginationLink
-              href="#"
-              isActive={page === currentPage}
-              onClick={(event) => changePage(event, page)}
-            >
-              {page}
-            </PaginationLink>
+            {typeof page === "number" ? (
+              <PaginationLink
+                href="#"
+                isActive={page === currentPage}
+                onClick={(event) => changePage(event, page)}
+              >
+                {page}
+              </PaginationLink>
+            ) : (
+              <PaginationEllipsis />
+            )}
           </PaginationItem>
         ))}
 
@@ -63,4 +68,21 @@ export function PaginationWrapper({
       </PaginationContent>
     </Pagination>
   );
+}
+
+function paginationItems(currentPage: number, pageCount: number) {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  const pages: Array<number | string> = [1];
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(pageCount - 1, currentPage + 1);
+
+  if (start > 2) pages.push("start-ellipsis");
+  for (let page = start; page <= end; page += 1) pages.push(page);
+  if (end < pageCount - 1) pages.push("end-ellipsis");
+  pages.push(pageCount);
+
+  return pages;
 }

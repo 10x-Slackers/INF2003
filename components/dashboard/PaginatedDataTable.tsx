@@ -4,6 +4,7 @@ import { PaginationWrapper } from "@/components/dashboard/PaginationWrapper";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -67,7 +68,7 @@ function LinkedPagination({
   getPageHref: (page: number) => string;
   pageCount: number;
 }) {
-  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const pages = paginationItems(currentPage, pageCount);
 
   return (
     <Pagination>
@@ -83,12 +84,16 @@ function LinkedPagination({
 
         {pages.map((page) => (
           <PaginationItem key={page}>
-            <PaginationLink
-              href={getPageHref(page)}
-              isActive={page === currentPage}
-            >
-              {page}
-            </PaginationLink>
+            {typeof page === "number" ? (
+              <PaginationLink
+                href={getPageHref(page)}
+                isActive={page === currentPage}
+              >
+                {page}
+              </PaginationLink>
+            ) : (
+              <PaginationEllipsis />
+            )}
           </PaginationItem>
         ))}
 
@@ -103,4 +108,21 @@ function LinkedPagination({
       </PaginationContent>
     </Pagination>
   );
+}
+
+function paginationItems(currentPage: number, pageCount: number) {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  const pages: Array<number | string> = [1];
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(pageCount - 1, currentPage + 1);
+
+  if (start > 2) pages.push("start-ellipsis");
+  for (let page = start; page <= end; page += 1) pages.push(page);
+  if (end < pageCount - 1) pages.push("end-ellipsis");
+  pages.push(pageCount);
+
+  return pages;
 }
