@@ -8,10 +8,7 @@ export {
 
 export type {
   Statistics,
-  StatisticsDimensions,
-  StatisticsGranularity,
+  StatisticsListQuery,
   StatisticsSearch,
-  StatisticsSeriesPoint,
-  StatisticsTimeRange,
   StatisticsUpsert,
 } from "./types";

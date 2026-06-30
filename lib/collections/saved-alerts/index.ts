@@ -9,6 +9,6 @@ export {
 export type {
   SavedAlert,
   SavedAlertCreate,
-  SavedAlertFilters,
   SavedAlertUpdate,
+  SavedAlertUpdateParams,
 } from "./types";

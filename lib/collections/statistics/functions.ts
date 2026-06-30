@@ -2,26 +2,28 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import {
   idSchema,
-  type Statistics,
-  type StatisticsSearch,
-  type StatisticsUpsert,
+  statisticsListQuerySchema,
   statisticsSearchSchema,
   upsertStatisticsSchema,
+  type Statistics,
+  type StatisticsListQuery,
+  type StatisticsSearch,
+  type StatisticsUpsert,
 } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 
 const statistics = db.collection<Statistics>("statistics");
 
 export async function listStatistics(
-  page: number,
-  pageSize: number,
+  input: StatisticsListQuery,
 ): Promise<Statistics[]> {
   try {
+    const data = statisticsListQuerySchema.parse(input);
     return await statistics
       .find({})
-      .sort({ computed_at: -1 })
-      .skip(page * pageSize)
-      .limit(pageSize)
+      .sort({ computedAt: -1 })
+      .skip(data.page * data.pageSize)
+      .limit(data.pageSize)
       .toArray();
   } catch (error) {
     return handleDbError(error);
@@ -46,7 +48,7 @@ export async function upsertStatistics(
     const data = upsertStatisticsSchema.parse(input);
     const document: Statistics = {
       ...data,
-      computed_at: now(),
+      computedAt: now(),
       _id: data._id ?? randomUUID(),
     };
 

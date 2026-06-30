@@ -5,4 +5,4 @@ export {
   listSearchLogs,
 } from "./functions";
 
-export type { SearchLog, SearchLogCreate, SearchLogQuery } from "./types";
+export type { SearchLog, SearchLogCreate, SearchLogListQuery } from "./types";

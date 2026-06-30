@@ -4,10 +4,10 @@ export const idSchema = z.uuid();
 
 export const TownProfileSummarySchema = z
   .object({
-    total_transaction: z.number().int().min(0),
-    earliest_transaction: z.string().min(1),
-    latest_transaction: z.string().min(1),
-    avg_resale_price_by_flat_type: z.record(z.string(), z.number().min(0)),
+    totalTransaction: z.number().int().min(0),
+    earliestTransaction: z.string().min(1),
+    latestTransaction: z.string().min(1),
+    avgResalePriceByFlatType: z.record(z.string(), z.number().min(0)),
   })
   .strict();
 
@@ -17,16 +17,16 @@ const polygonSchema = z.array(z.array(coordinatePairSchema).min(4)).min(1);
 export const UpsertTownProfileSchema = z
   .object({
     _id: z.uuid(),
-    transaction_summary: TownProfileSummarySchema,
+    transactionSummary: TownProfileSummarySchema,
     coordinates: polygonSchema,
   })
   .strict();
 
 export const TownProfileSchema = z.object({
   _id: z.uuid(),
-  transaction_summary: TownProfileSummarySchema,
+  transactionSummary: TownProfileSummarySchema,
   coordinates: polygonSchema,
-  updated_at: z.number().int().min(0),
+  updatedAt: z.number().int().min(0),
 });
 
 export type TownProfile = z.infer<typeof TownProfileSchema>;

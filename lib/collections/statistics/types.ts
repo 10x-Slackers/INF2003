@@ -4,10 +4,10 @@ export const idSchema = z.uuid();
 
 export const metricsSchema = z.enum([
   "town",
-  "resale_price",
-  "resale_volume",
-  "flat_model",
-  "flat_type",
+  "resalePrice",
+  "resaleVolume",
+  "flatModel",
+  "flatType",
 ]);
 
 export const statisticsGranularitySchema = z.enum(["monthly", "yearly"]);
@@ -21,9 +21,9 @@ export const statisticsTimeRangeSchema = z
 
 export const statisticsDimensionsSchema = z
   .object({
-    town_id: z.uuid().nullable(),
-    flat_type_id: z.string().nullable(),
-    flat_model_id: z.string().nullable(),
+    townId: z.uuid().nullable(),
+    flatTypeId: z.string().nullable(),
+    flatModelId: z.string().nullable(),
   })
   .strict();
 
@@ -31,7 +31,7 @@ export const statisticsSeriesPointSchema = z
   .object({
     period: z.string().min(1),
     value: z.number(),
-    sample_size: z.number().int().min(0),
+    sampleSize: z.number().int().min(0),
   })
   .strict();
 
@@ -44,12 +44,18 @@ export const statisticsSearchSchema = z
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one search field is required",
   });
+export const statisticsListQuerySchema = z
+  .object({
+    page: z.coerce.number().int().min(0),
+    pageSize: z.coerce.number().int().min(1).max(100),
+  })
+  .strict();
 
 export const upsertStatisticsSchema = z.object({
   _id: z.uuid().optional(),
   metric: metricsSchema,
   granularity: statisticsGranularitySchema,
-  time_range: statisticsTimeRangeSchema,
+  timeRange: statisticsTimeRangeSchema,
   dimensions: statisticsDimensionsSchema,
   series: z.array(statisticsSeriesPointSchema),
 });
@@ -58,16 +64,13 @@ export const statisticsSchema = z.object({
   _id: z.uuid(),
   metric: metricsSchema,
   granularity: statisticsGranularitySchema,
-  time_range: statisticsTimeRangeSchema,
+  timeRange: statisticsTimeRangeSchema,
   dimensions: statisticsDimensionsSchema,
   series: z.array(statisticsSeriesPointSchema),
-  computed_at: z.number().int().min(0),
+  computedAt: z.number().int().min(0),
 });
 
-export type StatisticsGranularity = z.infer<typeof statisticsGranularitySchema>;
-export type StatisticsTimeRange = z.infer<typeof statisticsTimeRangeSchema>;
-export type StatisticsDimensions = z.infer<typeof statisticsDimensionsSchema>;
-export type StatisticsSeriesPoint = z.infer<typeof statisticsSeriesPointSchema>;
 export type StatisticsUpsert = z.infer<typeof upsertStatisticsSchema>;
 export type Statistics = z.infer<typeof statisticsSchema>;
+export type StatisticsListQuery = z.infer<typeof statisticsListQuerySchema>;
 export type StatisticsSearch = z.infer<typeof statisticsSearchSchema>;
