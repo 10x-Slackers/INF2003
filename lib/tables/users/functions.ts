@@ -52,6 +52,7 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
 export async function createUser(input: CreateUser): Promise<void> {
   try {
     const data = createUserSchema.parse(input);
+    // creating user do not have to return id, as user are required to sign in after signing up
     await execute(
       "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)",
       [data.name, data.email, data.password_hash, data.role ?? "USER"],

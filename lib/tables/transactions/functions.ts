@@ -14,6 +14,7 @@ import {
   updateTransactionSchema,
 } from "./types";
 import { idSchema } from "../common";
+import { executeReturning } from "@/lib/db/mariadb";
 
 const TRANSACTION_COLUMNS = `rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
             rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
@@ -126,15 +127,15 @@ export async function getTransactionById(
 
 export async function createTransaction(
   input: CreateTransactionParams,
-): Promise<void> {
+): Promise<string> {
   try {
     const params = createTransactionParamsSchema.parse(input);
     const data = createTransactionSchema.parse(params.input);
-    await execute(
+    const result = await executeReturning<{ id: string }>(
       `INSERT INTO resale_transactions
          (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
           storey_range_id, floor_area_sqm, transaction_month, resale_price)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
       [
         params.uploadedByUserId,
         data.property_id,
@@ -146,6 +147,7 @@ export async function createTransaction(
         data.resale_price,
       ],
     );
+    return result[0].id;
   } catch (error) {
     return handleDbError(error);
   }

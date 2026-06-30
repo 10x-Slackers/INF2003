@@ -223,7 +223,7 @@ export async function createProperty(input: CreateProperty): Promise<void> {
   try {
     const data = createPropertySchema.parse(input);
     await execute(
-      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?)",
+      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
       [data.town_id, data.block, data.street_name, data.lease_commence_year],
     );
   } catch (error) {

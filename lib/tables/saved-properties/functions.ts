@@ -14,6 +14,7 @@ import {
   type UpdateSavedPropertyParams,
 } from "./types";
 import { idSchema } from "../common";
+import { executeReturning } from "@/lib/db/mariadb";
 
 async function attachProperty(
   row: SavedProperty,
@@ -77,13 +78,14 @@ export async function getSavedPropertyById(
 
 export async function createSavedProperty(
   input: CreateSavedProperty,
-): Promise<void> {
+): Promise<string> {
   try {
     const data = createSavedPropertySchema.parse(input);
-    await execute(
+    const result = await executeReturning<{ id: string }>(
       "INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?)",
       [data.userId, data.propertyId],
     );
+    return result[0].id;
   } catch (error) {
     return handleDbError(error);
   }

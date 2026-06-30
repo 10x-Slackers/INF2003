@@ -76,3 +76,9 @@ export async function execute(
   const { affectedRows, insertId } = result as ResultSetHeader;
   return { affectedRows, insertId };
 }
+
+export async function executeReturning<
+  T extends Record<string, unknown> = RowDataPacket,
+>(sql: string, params: unknown[] = []): Promise<T[]> {
+  return query<T>(sql, params);
+}
