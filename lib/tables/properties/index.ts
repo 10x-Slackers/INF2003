@@ -1,9 +1,11 @@
 export {
   createProperty,
+  deleteProperty,
   getPropertiesWithLatestTransaction,
   getPropertyById,
   listProperties,
   lookupProperty,
+  updateProperty,
 } from "./functions";
 
 export type {
@@ -12,6 +14,7 @@ export type {
   Property,
   PropertyDetail,
   PropertyListQuery,
-  PropertyLookupQuery,
   PropertyWithLatestTransaction,
+  UpdateProperty,
+  UpdatePropertyParams,
 } from "./types";

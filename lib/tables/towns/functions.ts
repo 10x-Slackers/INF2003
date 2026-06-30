@@ -4,8 +4,10 @@ import { handleDbError } from "@/lib/utils";
 import type { Amenity } from "@/lib/tables/amenities/types";
 import type { Property } from "@/lib/tables/properties/types";
 import {
-  type Region,
   type Town,
+  type TownAmenityListQuery,
+  type TownListQuery,
+  type TownRelationListQuery,
   townAmenityListQuerySchema,
   townListQuerySchema,
   townRelationListQuerySchema,
@@ -13,12 +15,10 @@ import {
 import { idSchema } from "../common";
 
 export async function listTowns(
-  region: Region | undefined,
-  page: number,
-  pageSize: number,
+  input: TownListQuery,
 ): Promise<{ data: Town[]; total: number }> {
   try {
-    const data = townListQuerySchema.parse({ region, page, pageSize });
+    const data = townListQuerySchema.parse(input);
     const where = data.region ? "WHERE region = ?" : "";
     const params = data.region ? [data.region] : [];
 
@@ -52,12 +52,10 @@ export async function getTownById(id: string): Promise<Town | null> {
 }
 
 export async function listPropertiesByTown(
-  townId: string,
-  page: number,
-  pageSize: number,
+  input: TownRelationListQuery,
 ): Promise<{ data: Property[]; total: number }> {
   try {
-    const data = townRelationListQuerySchema.parse({ townId, page, pageSize });
+    const data = townRelationListQuerySchema.parse(input);
     const [rows, countRows] = await Promise.all([
       query<Property>(
         `SELECT id, town_id, block, street_name, lease_commence_year
@@ -78,20 +76,13 @@ export async function listPropertiesByTown(
 }
 
 export async function listAmenitiesByTown(
-  townId: string,
-  amenityTypeId: number | undefined,
-  page: number,
-  pageSize: number,
+  input: TownAmenityListQuery,
 ): Promise<{ data: Amenity[]; total: number }> {
   try {
-    const data = townAmenityListQuerySchema.parse({
-      amenity_type_id: amenityTypeId,
-      page,
-      pageSize,
-    });
+    const data = townAmenityListQuerySchema.parse(input);
     return listAmenities({
-      town_id: idSchema.parse(townId),
-      amenity_type_id: data.amenity_type_id,
+      town_id: data.townId,
+      amenity_type_id: data.amenityTypeId,
       page: data.page,
       pageSize: data.pageSize,
     });

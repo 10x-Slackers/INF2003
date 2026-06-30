@@ -1,4 +1,4 @@
-import { query } from "@/lib/db";
+import { execute, query } from "@/lib/db";
 import {
   getTownById,
   listAllAmenitiesByTown,
@@ -6,12 +6,16 @@ import {
 import { handleDbError } from "@/lib/utils";
 import {
   createPropertySchema,
+  propertyListQuerySchema,
+  updatePropertyParamsSchema,
+  updatePropertySchema,
   type CreateProperty,
   type Property,
   type PropertyDetail,
   type PropertyListQuery,
   type PropertyWithLatestTransaction,
-  propertyListQuerySchema,
+  type UpdateProperty,
+  type UpdatePropertyParams,
 } from "./types";
 import { idSchema } from "../common";
 
@@ -23,19 +27,34 @@ const LATEST_TRANSACTION_JOIN = `
     LIMIT 1
   )
   LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
+  LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
+  LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
 `;
 
 const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
   p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
-  lt.id AS lt_id, lt.flat_type_id AS lt_flat_type_id,
-  lft.name AS lt_flat_type_name, lt.resale_price AS lt_resale_price,
+  lt.id AS lt_id, lt.uploaded_by_user_id AS lt_uploaded_by_user_id,
+  lt.property_id AS lt_property_id, lt.flat_type_id AS lt_flat_type_id,
+  lt.flat_model_id AS lt_flat_model_id, lt.storey_range_id AS lt_storey_range_id,
+  lt.floor_area_sqm AS lt_floor_area_sqm,
+  lft.name AS lt_flat_type_name, lfm.name AS lt_flat_model_name,
+  lsr.min_storey AS lt_min_storey, lsr.max_storey AS lt_max_storey,
+  lt.resale_price AS lt_resale_price,
   lt.transaction_month AS lt_transaction_month
 `;
 
 type PropertyRow = Property & {
   lt_id: string | null;
+  lt_uploaded_by_user_id: string | null;
+  lt_property_id: string | null;
   lt_flat_type_id: number | null;
+  lt_flat_model_id: number | null;
+  lt_storey_range_id: number | null;
+  lt_floor_area_sqm: number | null;
   lt_flat_type_name: string | null;
+  lt_flat_model_name: string | null;
+  lt_min_storey: number | null;
+  lt_max_storey: number | null;
   lt_resale_price: number | null;
   lt_transaction_month: string | null;
 };
@@ -45,8 +64,16 @@ function toPropertyWithLatestTransaction(
 ): PropertyWithLatestTransaction {
   const {
     lt_id,
+    lt_uploaded_by_user_id,
+    lt_property_id,
     lt_flat_type_id,
+    lt_flat_model_id,
+    lt_storey_range_id,
+    lt_floor_area_sqm,
     lt_flat_type_name,
+    lt_flat_model_name,
+    lt_min_storey,
+    lt_max_storey,
     lt_resale_price,
     lt_transaction_month,
     ...property
@@ -58,8 +85,16 @@ function toPropertyWithLatestTransaction(
       lt_id !== null
         ? {
             id: lt_id,
+            uploaded_by_user_id: lt_uploaded_by_user_id,
+            property_id: lt_property_id!,
             flat_type_id: lt_flat_type_id!,
+            flat_model_id: lt_flat_model_id!,
+            storey_range_id: lt_storey_range_id!,
+            floor_area_sqm: lt_floor_area_sqm!,
             flat_type: lt_flat_type_name!,
+            flat_model: lt_flat_model_name!,
+            min_storey: lt_min_storey!,
+            max_storey: lt_max_storey!,
             resale_price: lt_resale_price!,
             transaction_month: lt_transaction_month!,
           }
@@ -193,6 +228,48 @@ export async function createProperty(input: CreateProperty): Promise<Property> {
     );
 
     return { id: inserted.id, ...data };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+const isEmptyUpdate = (input: UpdateProperty) =>
+  Object.values(input).every((value) => value === undefined);
+
+export async function updateProperty(
+  input: UpdatePropertyParams,
+): Promise<Property | null> {
+  try {
+    const parsed = updatePropertyParamsSchema.parse(input);
+    if (isEmptyUpdate(parsed.input)) return getPropertyRowById(parsed.id);
+
+    const data = updatePropertySchema.parse(parsed.input);
+    const fields: string[] = [];
+    const params: (string | number)[] = [];
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        fields.push(`${key} = ?`);
+        params.push(value);
+      }
+    }
+
+    const result = await execute(
+      `UPDATE properties SET ${fields.join(", ")} WHERE id = ?`,
+      [...params, parsed.id],
+    );
+    return result.affectedRows === 0 ? null : getPropertyRowById(parsed.id);
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function deleteProperty(id: string): Promise<boolean> {
+  try {
+    const result = await execute("DELETE FROM properties WHERE id = ?", [
+      idSchema.parse(id),
+    ]);
+    return result.affectedRows > 0;
   } catch (error) {
     return handleDbError(error);
   }

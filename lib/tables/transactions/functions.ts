@@ -2,12 +2,15 @@ import { execute, query } from "@/lib/db";
 import { handleDbError } from "@/lib/utils";
 import {
   createTransactionSchema,
-  type CreateTransaction,
+  type CreateTransactionParams,
   type ResaleTransaction,
   type TransactionListItem,
   type TransactionListQuery,
   type UpdateTransaction,
+  type UpdateTransactionParams,
+  createTransactionParamsSchema,
   transactionListQuerySchema,
+  updateTransactionParamsSchema,
   updateTransactionSchema,
 } from "./types";
 import { idSchema } from "../common";
@@ -122,19 +125,18 @@ export async function getTransactionById(
 }
 
 export async function createTransaction(
-  input: CreateTransaction,
-  uploadedByUserId: string,
+  input: CreateTransactionParams,
 ): Promise<ResaleTransaction> {
   try {
-    const data = createTransactionSchema.parse(input);
-    const userId = idSchema.parse(uploadedByUserId);
+    const params = createTransactionParamsSchema.parse(input);
+    const data = createTransactionSchema.parse(params.input);
     const [inserted] = await query<{ id: string }>(
       `INSERT INTO resale_transactions
          (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
           storey_range_id, floor_area_sqm, transaction_month, resale_price)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
       [
-        userId,
+        params.uploadedByUserId,
         data.property_id,
         data.flat_type_id,
         data.flat_model_id,
@@ -155,15 +157,14 @@ export async function createTransaction(
 }
 
 export async function updateTransaction(
-  id: string,
-  input: UpdateTransaction,
+  input: UpdateTransactionParams,
 ): Promise<ResaleTransaction | null> {
   try {
-    const parsedId = idSchema.parse(id);
-    if (isEmptyUpdate(input)) return getTransactionById(parsedId);
+    const parsed = updateTransactionParamsSchema.parse(input);
+    if (isEmptyUpdate(parsed.input)) return getTransactionById(parsed.id);
 
-    const data = updateTransactionSchema.parse(input);
-    const existing = await getTransactionById(parsedId);
+    const data = updateTransactionSchema.parse(parsed.input);
+    const existing = await getTransactionById(parsed.id);
     if (!existing) return null;
 
     const fields: string[] = [];
@@ -178,9 +179,9 @@ export async function updateTransaction(
 
     await execute(
       `UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`,
-      [...params, parsedId],
+      [...params, parsed.id],
     );
-    return getTransactionById(parsedId);
+    return getTransactionById(parsed.id);
   } catch (error) {
     return handleDbError(error);
   }

@@ -5,10 +5,13 @@ export {
   getUnreadCount,
   listAlertNotifications,
   markAlertNotificationRead,
+  updateAlertNotification,
 } from "./functions";
 
 export type {
   AlertNotification,
-  AlertNotificationListQuery,
   CreateAlertNotification,
+  AlertNotificationListQuery,
+  UpdateAlertNotification,
+  UpdateAlertNotificationParams,
 } from "./types";

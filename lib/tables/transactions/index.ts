@@ -8,8 +8,10 @@ export {
 
 export type {
   CreateTransaction,
+  CreateTransactionParams,
   ResaleTransaction,
   TransactionListItem,
   TransactionListQuery,
   UpdateTransaction,
+  UpdateTransactionParams,
 } from "./types";

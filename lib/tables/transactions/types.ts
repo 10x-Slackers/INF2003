@@ -35,6 +35,14 @@ export const transactionListQuerySchema = paginationSchema.extend({
   year: z.coerce.number().int().min(1960).max(2100).optional(),
   property_id: z.uuid().optional(),
 });
+export const createTransactionParamsSchema = z.object({
+  input: createTransactionSchema,
+  uploadedByUserId: idSchema,
+});
+export const updateTransactionParamsSchema = z.object({
+  id: idSchema,
+  input: updateTransactionSchema.or(z.object({}).strict()),
+});
 
 export type ResaleTransaction = {
   id: string;
@@ -62,5 +70,11 @@ export type TransactionListItem = ResaleTransaction & {
 };
 
 export type CreateTransaction = z.infer<typeof createTransactionSchema>;
+export type CreateTransactionParams = z.infer<
+  typeof createTransactionParamsSchema
+>;
 export type UpdateTransaction = z.infer<typeof updateTransactionSchema>;
+export type UpdateTransactionParams = z.infer<
+  typeof updateTransactionParamsSchema
+>;
 export type TransactionListQuery = z.infer<typeof transactionListQuerySchema>;

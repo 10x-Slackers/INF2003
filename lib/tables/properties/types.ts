@@ -10,7 +10,15 @@ export const propertyIdentitySchema = z.object({
   lease_commence_year: z.coerce.number().int().min(1960).max(2100),
 });
 export const createPropertySchema = propertyIdentitySchema;
-export const propertyLookupQuerySchema = propertyIdentitySchema;
+export const updatePropertySchema = propertyIdentitySchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided.",
+  });
+export const updatePropertyParamsSchema = z.object({
+  id: idSchema,
+  input: updatePropertySchema.or(z.object({}).strict()),
+});
 export const propertyListQuerySchema = paginationSchema.extend({
   town_id: idSchema.optional(),
   flat_type_id: z.coerce.number().int().optional(),
@@ -29,8 +37,16 @@ export type Property = {
 
 export type LatestTransactionSummary = {
   id: string;
+  uploaded_by_user_id: string | null;
+  property_id: string;
   flat_type_id: number;
+  flat_model_id: number;
+  storey_range_id: number;
+  floor_area_sqm: number;
   flat_type: string;
+  flat_model: string;
+  min_storey: number;
+  max_storey: number;
   resale_price: number;
   transaction_month: string;
 };
@@ -45,5 +61,6 @@ export type PropertyDetail = Property & {
 };
 
 export type CreateProperty = z.infer<typeof createPropertySchema>;
+export type UpdateProperty = z.infer<typeof updatePropertySchema>;
+export type UpdatePropertyParams = z.infer<typeof updatePropertyParamsSchema>;
 export type PropertyListQuery = z.infer<typeof propertyListQuerySchema>;
-export type PropertyLookupQuery = z.infer<typeof propertyLookupQuerySchema>;

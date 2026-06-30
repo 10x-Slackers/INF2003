@@ -3,6 +3,11 @@ import { handleDbError } from "@/lib/utils";
 import {
   alertNotificationListQuerySchema,
   createAlertNotificationSchema,
+  updateAlertNotificationParamsSchema,
+  updateAlertNotificationSchema,
+  type UpdateAlertNotification,
+  type UpdateAlertNotificationParams,
+  type AlertNotificationListQuery,
   type AlertNotification,
   type CreateAlertNotification,
 } from "./types";
@@ -20,16 +25,10 @@ async function fetchRow(id: string): Promise<AlertNotification | null> {
 }
 
 export async function listAlertNotifications(
-  userId: string,
-  page: number,
-  pageSize: number,
+  input: AlertNotificationListQuery,
 ): Promise<{ data: AlertNotification[]; total: number }> {
   try {
-    const data = alertNotificationListQuerySchema.parse({
-      userId,
-      page,
-      pageSize,
-    });
+    const data = alertNotificationListQuerySchema.parse(input);
     const [rows, countRows] = await Promise.all([
       query<AlertNotification>(
         `SELECT ${SELECT_COLUMNS} FROM alert_notifications
@@ -75,10 +74,53 @@ export async function createAlertNotification(
   input: CreateAlertNotification,
 ): Promise<AlertNotification> {
   try {
-    createAlertNotificationSchema.parse(input);
-    throw new Error(
-      "createAlertNotification: not implemented (MongoDB pending)",
+    const data = createAlertNotificationSchema.parse(input);
+    const result = await query<{ id: string }>(
+      "INSERT INTO alert_notifications (user_id, alert_uuid, transaction_id) VALUES (?, ?, ?) RETURNING id",
+      [data.userId, data.alert_uuid, data.transaction_id],
     );
+    return fetchRow(result[0].id) as Promise<AlertNotification>;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+const isEmptyUpdate = (input: UpdateAlertNotification) =>
+  Object.values(input).every((value) => value === undefined);
+
+export async function updateAlertNotification(
+  input: UpdateAlertNotificationParams,
+): Promise<AlertNotification | null> {
+  try {
+    const parsed = updateAlertNotificationParamsSchema.parse(input);
+    if (isEmptyUpdate(parsed.input)) return fetchRow(parsed.id);
+
+    const data = updateAlertNotificationSchema.parse(parsed.input);
+    const fields: string[] = [];
+    const params: (string | null)[] = [];
+
+    if (data.userId !== undefined) {
+      fields.push("user_id = ?");
+      params.push(data.userId);
+    }
+    if (data.alert_uuid !== undefined) {
+      fields.push("alert_uuid = ?");
+      params.push(data.alert_uuid);
+    }
+    if (data.transaction_id !== undefined) {
+      fields.push("transaction_id = ?");
+      params.push(data.transaction_id);
+    }
+    if (data.read_at !== undefined) {
+      fields.push("read_at = ?");
+      params.push(data.read_at);
+    }
+
+    const result = await execute(
+      `UPDATE alert_notifications SET ${fields.join(", ")} WHERE id = ?`,
+      [...params, parsed.id],
+    );
+    return result.affectedRows === 0 ? null : fetchRow(parsed.id);
   } catch (error) {
     return handleDbError(error);
   }

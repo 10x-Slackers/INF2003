@@ -1,8 +1,13 @@
 import { execute, query } from "@/lib/db";
 import { handleDbError } from "@/lib/utils";
 import {
+  type CreateUser,
   type PublicUser,
   type UpdateUser,
+  type UpdateUserParams,
+  type UserListQuery,
+  createUserSchema,
+  updateUserParamsSchema,
   updateUserSchema,
   userListQuerySchema,
 } from "./types";
@@ -14,11 +19,10 @@ const isEmptyUpdate = (input: UpdateUser) =>
   Object.values(input).every((value) => value === undefined);
 
 export async function listUsers(
-  page: number,
-  pageSize: number,
+  input: UserListQuery,
 ): Promise<{ data: PublicUser[]; total: number }> {
   try {
-    const data = userListQuerySchema.parse({ page, pageSize });
+    const data = userListQuerySchema.parse(input);
     const [rows, countRows] = await Promise.all([
       query<PublicUser>(
         `SELECT ${PUBLIC_USER_COLUMNS} FROM users ORDER BY created_at LIMIT ? OFFSET ?`,
@@ -45,15 +49,27 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
   }
 }
 
+export async function createUser(input: CreateUser): Promise<PublicUser> {
+  try {
+    const data = createUserSchema.parse(input);
+    const [inserted] = await query<{ id: string }>(
+      "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?) RETURNING id",
+      [data.name, data.email, data.password_hash, data.role ?? "USER"],
+    );
+    return getUserById(inserted.id) as Promise<PublicUser>;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 export async function updateUser(
-  id: string,
-  input: UpdateUser,
+  input: UpdateUserParams,
 ): Promise<PublicUser | null> {
   try {
-    const parsedId = idSchema.parse(id);
-    if (isEmptyUpdate(input)) return getUserById(parsedId);
+    const parsed = updateUserParamsSchema.parse(input);
+    if (isEmptyUpdate(parsed.input)) return getUserById(parsed.id);
 
-    const data = updateUserSchema.parse(input);
+    const data = updateUserSchema.parse(parsed.input);
 
     const fields: string[] = [];
     const params: string[] = [];
@@ -73,10 +89,10 @@ export async function updateUser(
 
     const result = await execute(
       `UPDATE users SET ${fields.join(", ")} WHERE id = ?`,
-      [...params, parsedId],
+      [...params, parsed.id],
     );
     if (result.affectedRows === 0) return null;
-    return getUserById(parsedId);
+    return getUserById(parsed.id);
   } catch (error) {
     return handleDbError(error);
   }

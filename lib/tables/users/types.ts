@@ -1,7 +1,13 @@
 import { z } from "zod";
-import { paginationSchema } from "../common";
+import { idSchema, paginationSchema } from "../common";
 
 export const roleSchema = z.enum(["ADMIN", "AGENT", "USER"]);
+export const createUserSchema = z.object({
+  name: z.string().trim().min(1).max(255),
+  email: z.email().trim().toLowerCase().max(320),
+  password_hash: z.string().min(1).max(255),
+  role: roleSchema.optional(),
+});
 export const updateUserSchema = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
@@ -12,6 +18,10 @@ export const updateUserSchema = z
     message: "At least one field (name, email, role) must be provided.",
   });
 export const userListQuerySchema = paginationSchema;
+export const updateUserParamsSchema = z.object({
+  id: idSchema,
+  input: updateUserSchema.or(z.object({}).strict()),
+});
 
 export type UserRole = z.infer<typeof roleSchema>;
 
@@ -26,4 +36,7 @@ export type User = {
 };
 
 export type PublicUser = Omit<User, "password_hash">;
+export type UserListQuery = z.infer<typeof userListQuerySchema>;
+export type CreateUser = z.infer<typeof createUserSchema>;
 export type UpdateUser = z.infer<typeof updateUserSchema>;
+export type UpdateUserParams = z.infer<typeof updateUserParamsSchema>;
