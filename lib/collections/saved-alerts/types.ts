@@ -55,24 +55,16 @@ export const createSavedAlertSchema = z
 
 export const updateSavedAlertSchema = z
   .object({
+    id: idSchema,
     filters: savedAlertFiltersSchema.optional(),
     isActive: z.boolean().optional(),
   })
   .strict()
   .refine(hasFields, { message: "At least one field is required" });
-export const updateSavedAlertParamsSchema = z
-  .object({
-    id: idSchema,
-    input: updateSavedAlertSchema,
-  })
-  .strict();
 
 type SavedAlertFilters = z.infer<typeof savedAlertFiltersSchema>;
 export type SavedAlertCreate = z.infer<typeof createSavedAlertSchema>;
 export type SavedAlertUpdate = z.infer<typeof updateSavedAlertSchema>;
-export type SavedAlertUpdateParams = z.infer<
-  typeof updateSavedAlertParamsSchema
->;
 export type SavedAlert = {
   _id: string;
   userId: string;

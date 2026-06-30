@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 import {
   createSavedAlertSchema,
   idSchema,
-  updateSavedAlertParamsSchema,
+  updateSavedAlertSchema,
+  type SavedAlertUpdate,
   type SavedAlert,
   type SavedAlertCreate,
-  type SavedAlertUpdateParams,
 } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 
@@ -56,16 +56,18 @@ export async function createSavedAlert(
 }
 
 export async function updateSavedAlert(
-  input: SavedAlertUpdateParams,
+  input: SavedAlertUpdate,
 ): Promise<SavedAlert | null> {
   try {
-    const params = updateSavedAlertParamsSchema.parse(input);
+    const params = updateSavedAlertSchema.parse(input);
     const result = await alerts.findOneAndUpdate(
       { _id: params.id },
       {
         $set: {
           ...Object.fromEntries(
-            Object.entries(params.input).filter(([, v]) => v !== undefined),
+            Object.entries(params).filter(
+              ([key, value]) => key !== "id" && value !== undefined,
+            ),
           ),
           updatedAt: now(),
         },

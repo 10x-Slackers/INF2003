@@ -37,12 +37,12 @@ const nullableStoreyRangeSchema = z
 
 const nullableIntRangeSchema = z
   .object({
-    from: z.number().int().nullable().optional(),
-    to: z.number().int().nullable().optional(),
+    min: z.number().int().nullable().optional(),
+    max: z.number().int().nullable().optional(),
   })
   .strict()
-  .refine(({ from, to }) => from == null || to == null || from <= to, {
-    message: "from cannot be greater than to",
+  .refine(({ min, max }) => min == null || max == null || min <= max, {
+    message: "min cannot be greater than max",
   });
 
 const filterShape = {
@@ -70,6 +70,7 @@ export const createSearchLogSchema = z
     query: querySearchLogSchema,
   })
   .strict();
+
 export const searchLogListQuerySchema = z
   .object({
     userId: idSchema.optional(),

@@ -6,9 +6,19 @@ export {
   upsertStatistics,
 } from "./functions";
 
-export type {
-  Statistics,
-  StatisticsListQuery,
-  StatisticsSearch,
-  StatisticsUpsert,
+export {
+  idSchema,
+  metricsSchema,
+  statisticsDimensionsSchema,
+  statisticsGranularitySchema,
+  statisticsListQuerySchema,
+  statisticsSchema,
+  statisticsSearchSchema,
+  statisticsSeriesPointSchema,
+  statisticsTimeRangeSchema,
+  type Statistics,
+  type StatisticsListQuery,
+  type StatisticsSearch,
+  type StatisticsUpsert,
+  upsertStatisticsSchema,
 } from "./types";

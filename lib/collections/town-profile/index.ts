@@ -4,4 +4,11 @@ export {
   upsertTownProfile,
 } from "./functions";
 
-export type { TownProfile, TownProfileUpsert } from "./types";
+export {
+  idSchema,
+  TownProfileSchema,
+  TownProfileSummarySchema,
+  type TownProfile,
+  type TownProfileUpsert,
+  UpsertTownProfileSchema,
+} from "./types";

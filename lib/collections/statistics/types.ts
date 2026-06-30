@@ -44,6 +44,7 @@ export const statisticsSearchSchema = z
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one search field is required",
   });
+
 export const statisticsListQuerySchema = z
   .object({
     page: z.coerce.number().int().min(0),
@@ -51,24 +52,28 @@ export const statisticsListQuerySchema = z
   })
   .strict();
 
-export const upsertStatisticsSchema = z.object({
-  _id: z.uuid().optional(),
-  metric: metricsSchema,
-  granularity: statisticsGranularitySchema,
-  timeRange: statisticsTimeRangeSchema,
-  dimensions: statisticsDimensionsSchema,
-  series: z.array(statisticsSeriesPointSchema),
-});
+export const upsertStatisticsSchema = z
+  .object({
+    _id: z.uuid().optional(),
+    metric: metricsSchema,
+    granularity: statisticsGranularitySchema,
+    timeRange: statisticsTimeRangeSchema,
+    dimensions: statisticsDimensionsSchema,
+    series: z.array(statisticsSeriesPointSchema),
+  })
+  .strict();
 
-export const statisticsSchema = z.object({
-  _id: z.uuid(),
-  metric: metricsSchema,
-  granularity: statisticsGranularitySchema,
-  timeRange: statisticsTimeRangeSchema,
-  dimensions: statisticsDimensionsSchema,
-  series: z.array(statisticsSeriesPointSchema),
-  computedAt: z.number().int().min(0),
-});
+export const statisticsSchema = z
+  .object({
+    _id: z.uuid(),
+    metric: metricsSchema,
+    granularity: statisticsGranularitySchema,
+    timeRange: statisticsTimeRangeSchema,
+    dimensions: statisticsDimensionsSchema,
+    series: z.array(statisticsSeriesPointSchema),
+    computedAt: z.number().int().min(0),
+  })
+  .strict();
 
 export type StatisticsUpsert = z.infer<typeof upsertStatisticsSchema>;
 export type Statistics = z.infer<typeof statisticsSchema>;

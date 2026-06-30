@@ -22,12 +22,14 @@ export const UpsertTownProfileSchema = z
   })
   .strict();
 
-export const TownProfileSchema = z.object({
-  _id: z.uuid(),
-  transactionSummary: TownProfileSummarySchema,
-  coordinates: polygonSchema,
-  updatedAt: z.number().int().min(0),
-});
+export const TownProfileSchema = z
+  .object({
+    _id: z.uuid(),
+    transactionSummary: TownProfileSummarySchema,
+    coordinates: polygonSchema,
+    updatedAt: z.number().int().min(0),
+  })
+  .strict();
 
 export type TownProfile = z.infer<typeof TownProfileSchema>;
 export type TownProfileUpsert = z.infer<typeof UpsertTownProfileSchema>;
