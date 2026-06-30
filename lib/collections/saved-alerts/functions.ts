@@ -3,10 +3,10 @@ import { db } from "@/lib/db";
 import {
   createSavedAlertSchema,
   idSchema,
+  updateSavedAlertSchema,
+  type SavedAlertUpdate,
   type SavedAlert,
   type SavedAlertCreate,
-  type SavedAlertUpdate,
-  updateSavedAlertSchema,
 } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 
@@ -15,8 +15,8 @@ const alerts = db.collection<SavedAlert>("alerts");
 export async function listSavedAlerts(userId?: string): Promise<SavedAlert[]> {
   try {
     return await alerts
-      .find(userId ? { user_id: idSchema.parse(userId) } : {})
-      .sort({ created_at: -1 })
+      .find(userId ? { userId: idSchema.parse(userId) } : {})
+      .sort({ createdAt: -1 })
       .toArray();
   } catch (error) {
     return handleDbError(error);
@@ -41,11 +41,11 @@ export async function createSavedAlert(
     const timestamp = now();
     const alert: SavedAlert = {
       _id: randomUUID(),
-      user_id: data.user_id,
+      userId: data.userId,
       filters: data.filters,
-      is_active: data.is_active ?? true,
-      created_at: timestamp,
-      updated_at: timestamp,
+      isActive: data.isActive ?? true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
 
     await alerts.insertOne(alert);
@@ -56,20 +56,20 @@ export async function createSavedAlert(
 }
 
 export async function updateSavedAlert(
-  id: string,
   input: SavedAlertUpdate,
 ): Promise<SavedAlert | null> {
   try {
-    const data = updateSavedAlertSchema.parse(input);
-    const parsedId = idSchema.parse(id);
+    const params = updateSavedAlertSchema.parse(input);
     const result = await alerts.findOneAndUpdate(
-      { _id: parsedId },
+      { _id: params.id },
       {
         $set: {
           ...Object.fromEntries(
-            Object.entries(data).filter(([, v]) => v !== undefined),
+            Object.entries(params).filter(
+              ([key, value]) => key !== "id" && value !== undefined,
+            ),
           ),
-          updated_at: now(),
+          updatedAt: now(),
         },
       },
       { returnDocument: "after" },

@@ -3,24 +3,26 @@ import { db } from "@/lib/db";
 import {
   createSearchLogSchema,
   idSchema,
+  searchLogListQuerySchema,
   type SearchLog,
   type SearchLogCreate,
+  type SearchLogListQuery,
 } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 
-const searchHistory = db.collection<SearchLog>("search_history");
+const searchHistory = db.collection<SearchLog>("searchHistory");
 const DEFAULT_LIMIT = 50;
 
 // set limit to 0 to return all search logs
 export async function listSearchLogs(
-  userId?: string,
-  limit?: number,
+  input: SearchLogListQuery = {},
 ): Promise<SearchLog[]> {
   try {
+    const data = searchLogListQuerySchema.parse(input);
     return await searchHistory
-      .find(userId ? { user_id: idSchema.parse(userId) } : {})
-      .sort({ searched_at: -1 })
-      .limit(limit ?? DEFAULT_LIMIT)
+      .find(data.userId ? { userId: data.userId } : {})
+      .sort({ searchedAt: -1 })
+      .limit(data.limit ?? DEFAULT_LIMIT)
       .toArray();
   } catch (error) {
     return handleDbError(error);
@@ -42,9 +44,9 @@ export async function createSearchLog(
     const data = createSearchLogSchema.parse(input);
     const searchLog: SearchLog = {
       _id: randomUUID(),
-      user_id: data.user_id,
+      userId: data.userId,
       query: data.query,
-      searched_at: now(),
+      searchedAt: now(),
     };
 
     await searchHistory.insertOne(searchLog);

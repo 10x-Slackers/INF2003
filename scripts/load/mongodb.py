@@ -34,15 +34,13 @@ class MongoDBLoader:
             town_key = document.pop("town_key")
             document["_id"] = self._get_mariadb_id(town_key, town_ids, "town_key")
 
-            summary = dict(document["transaction_summary"])
-            summary["avg_resale_price_by_flat_type"] = {
+            summary = dict(document["transactionSummary"])
+            summary["avgResalePriceByFlatType"] = {
                 self._get_mariadb_id(ft_key, flat_type_ids, "flat_type_key"): avg_price
-                for ft_key, avg_price in summary[
-                    "avg_resale_price_by_flat_type"
-                ].items()
+                for ft_key, avg_price in summary["avgResalePriceByFlatType"].items()
             }
-            document["transaction_summary"] = summary
-            document["updated_at"] = self._mongo_timestamp(document["updated_at"])
+            document["transactionSummary"] = summary
+            document["updatedAt"] = self._mongo_timestamp(document["updatedAt"])
             documents.append(document)
 
         return documents

@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
 import {
   idSchema,
+  UpsertTownProfileSchema,
   type TownProfile,
   type TownProfileUpsert,
-  UpsertTownProfileSchema,
 } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 
@@ -33,15 +33,15 @@ export async function upsertTownProfile(
 ): Promise<TownProfile> {
   try {
     const data = UpsertTownProfileSchema.parse(input);
-    const townProfile: TownProfile = { ...data, updated_at: now() };
+    const townProfile: TownProfile = { ...data, updatedAt: now() };
 
     await towns.updateOne(
       { _id: townProfile._id },
       {
         $set: {
-          transaction_summary: townProfile.transaction_summary,
+          transactionSummary: townProfile.transactionSummary,
           coordinates: townProfile.coordinates,
-          updated_at: townProfile.updated_at,
+          updatedAt: townProfile.updatedAt,
         },
       },
       { upsert: true },

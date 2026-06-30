@@ -6,9 +6,11 @@ export {
   updateSavedAlert,
 } from "./functions";
 
-export type {
-  SavedAlert,
-  SavedAlertCreate,
-  SavedAlertFilters,
-  SavedAlertUpdate,
+export {
+  createSavedAlertSchema,
+  idSchema,
+  savedAlertFiltersSchema,
+  type SavedAlert,
+  type SavedAlertCreate,
+  type SavedAlertUpdate,
 } from "./types";

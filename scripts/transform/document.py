@@ -42,17 +42,17 @@ class DocumentTransformer:
                 {
                     "_id": town_key,
                     "town_key": town_key,
-                    "transaction_summary": {
-                        "total_transaction": len(group),
-                        "earliest_transaction": str(group_months.min()),
-                        "latest_transaction": str(group_months.max()),
-                        "avg_resale_price_by_flat_type": {
+                    "transactionSummary": {
+                        "totalTransaction": len(group),
+                        "earliestTransaction": str(group_months.min()),
+                        "latestTransaction": str(group_months.max()),
+                        "avgResalePriceByFlatType": {
                             str(flat_type_key): float(value)
                             for flat_type_key, value in avg_prices.items()
                         },
                     },
                     "coordinates": coordinates_by_town.get(town_key, []),
-                    "updated_at": timestamp,
+                    "updatedAt": timestamp,
                 }
             )
 

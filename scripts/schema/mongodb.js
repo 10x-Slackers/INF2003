@@ -6,21 +6,21 @@ db.createCollection("alerts", {
       bsonType: "object",
       required: [
         "_id",
-        "user_id",
+        "userId",
         "filters",
-        "is_active",
-        "created_at",
-        "updated_at",
+        "isActive",
+        "createdAt",
+        "updatedAt",
       ],
       properties: {
         _id: { bsonType: "string" },
-        user_id: { bsonType: "string" },
+        userId: { bsonType: "string" },
         filters: {
           bsonType: "object",
           properties: {
-            town_id: { bsonType: "array", items: { bsonType: "string" } },
-            flat_model_id: { bsonType: "array", items: { bsonType: "string" } },
-            flat_type_id: { bsonType: "array", items: { bsonType: "string" } },
+            townId: { bsonType: "array", items: { bsonType: "string" } },
+            flatModelId: { bsonType: "array", items: { bsonType: "string" } },
+            flatTypeId: { bsonType: "array", items: { bsonType: "string" } },
             price: {
               bsonType: "object",
               properties: {
@@ -29,7 +29,7 @@ db.createCollection("alerts", {
               },
               additionalProperties: false,
             },
-            floor_area_sqm: {
+            floorAreaSqm: {
               bsonType: "object",
               properties: {
                 min: { bsonType: ["int", "long", "double", "decimal"] },
@@ -45,7 +45,7 @@ db.createCollection("alerts", {
               },
               additionalProperties: false,
             },
-            lease_remaining: {
+            leaseRemaining: {
               bsonType: "object",
               properties: {
                 min: { bsonType: ["int", "long", "double", "decimal"] },
@@ -56,10 +56,10 @@ db.createCollection("alerts", {
           },
           additionalProperties: false,
         },
-        is_active: { bsonType: "bool" },
-        created_at: { bsonType: ["int"] },
-        updated_at: { bsonType: ["int"] },
-        last_triggered_at: { bsonType: ["int"] },
+        isActive: { bsonType: "bool" },
+        createdAt: { bsonType: ["int"] },
+        updatedAt: { bsonType: ["int"] },
+        lastTriggeredAt: { bsonType: ["int"] },
       },
       additionalProperties: false,
     },
@@ -76,16 +76,16 @@ db.createCollection("statistics", {
         "_id",
         "metric",
         "granularity",
-        "time_range",
+        "timeRange",
         "dimensions",
         "series",
-        "computed_at",
+        "computedAt",
       ],
       properties: {
         _id: { bsonType: "string" },
         metric: { bsonType: "string" },
         granularity: { enum: ["monthly", "yearly"] },
-        time_range: {
+        timeRange: {
           bsonType: "object",
           required: ["start", "end"],
           properties: {
@@ -96,11 +96,11 @@ db.createCollection("statistics", {
         },
         dimensions: {
           bsonType: "object",
-          required: ["town_id", "flat_type_id", "flat_model_id"],
+          required: ["townId", "flatTypeId", "flatModelId"],
           properties: {
-            town_id: { bsonType: ["null", "string"] },
-            flat_type_id: { bsonType: ["null", "string"] },
-            flat_model_id: { bsonType: ["null", "string"] },
+            townId: { bsonType: ["null", "string"] },
+            flatTypeId: { bsonType: ["null", "string"] },
+            flatModelId: { bsonType: ["null", "string"] },
           },
           additionalProperties: false,
         },
@@ -108,16 +108,16 @@ db.createCollection("statistics", {
           bsonType: "array",
           items: {
             bsonType: "object",
-            required: ["period", "value", "sample_size"],
+            required: ["period", "value", "sampleSize"],
             properties: {
               period: { bsonType: "string" },
               value: { bsonType: ["int", "long", "double", "decimal"] },
-              sample_size: { bsonType: ["int", "long"], minimum: 0 },
+              sampleSize: { bsonType: ["int", "long"], minimum: 0 },
             },
             additionalProperties: false,
           },
         },
-        computed_at: { bsonType: ["int"] },
+        computedAt: { bsonType: ["int"] },
       },
       additionalProperties: false,
     },
@@ -130,22 +130,22 @@ db.createCollection("towns", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "transaction_summary", "coordinates", "updated_at"],
+      required: ["_id", "transactionSummary", "coordinates", "updatedAt"],
       properties: {
         _id: { bsonType: "string" },
-        transaction_summary: {
+        transactionSummary: {
           bsonType: "object",
           required: [
-            "total_transaction",
-            "earliest_transaction",
-            "latest_transaction",
-            "avg_resale_price_by_flat_type",
+            "totalTransaction",
+            "earliestTransaction",
+            "latestTransaction",
+            "avgResalePriceByFlatType",
           ],
           properties: {
-            total_transaction: { bsonType: ["int", "long"], minimum: 0 },
-            earliest_transaction: { bsonType: "string" },
-            latest_transaction: { bsonType: "string" },
-            avg_resale_price_by_flat_type: {
+            totalTransaction: { bsonType: ["int", "long"], minimum: 0 },
+            earliestTransaction: { bsonType: "string" },
+            latestTransaction: { bsonType: "string" },
+            avgResalePriceByFlatType: {
               bsonType: "object",
               additionalProperties: {
                 bsonType: ["int", "long", "double", "decimal"],
@@ -166,28 +166,28 @@ db.createCollection("towns", {
             },
           },
         },
-        updated_at: { bsonType: ["int"] },
+        updatedAt: { bsonType: ["int"] },
       },
       additionalProperties: false,
     },
   },
 });
 
-// Create search_history collection
-db.search_history.drop();
-db.createCollection("search_history", {
+// Create searchHistory collection
+db.searchHistory.drop();
+db.createCollection("searchHistory", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "user_id", "query", "searched_at"],
+      required: ["_id", "userId", "query", "searchedAt"],
       properties: {
         _id: { bsonType: "string" },
-        user_id: { bsonType: "string" },
+        userId: { bsonType: "string" },
         query: {
           bsonType: "object",
           properties: {
-            town_id: { bsonType: "array", items: { bsonType: "string" } },
-            flat_type_id: { bsonType: "array", items: { bsonType: "string" } },
+            townId: { bsonType: "array", items: { bsonType: "string" } },
+            flatTypeId: { bsonType: "array", items: { bsonType: "string" } },
             price: {
               bsonType: "object",
               properties: {
@@ -196,7 +196,7 @@ db.createCollection("search_history", {
               },
               additionalProperties: false,
             },
-            floor_area_sqm: {
+            floorAreaSqm: {
               bsonType: "object",
               properties: {
                 min: { bsonType: ["int", "long", "double", "decimal"] },
@@ -212,7 +212,7 @@ db.createCollection("search_history", {
               },
               additionalProperties: false,
             },
-            lease_remaining: {
+            leaseRemaining: {
               bsonType: "object",
               properties: {
                 min: { bsonType: ["null", "int", "long", "double", "decimal"] },
@@ -220,7 +220,7 @@ db.createCollection("search_history", {
               },
               additionalProperties: false,
             },
-            transaction_year: {
+            transactionYear: {
               bsonType: "object",
               properties: {
                 from: { bsonType: ["null", "int", "long"] },
@@ -231,7 +231,7 @@ db.createCollection("search_history", {
           },
           additionalProperties: false,
         },
-        searched_at: { bsonType: ["int"] },
+        searchedAt: { bsonType: ["int"] },
       },
       additionalProperties: false,
     },

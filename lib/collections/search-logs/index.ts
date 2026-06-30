@@ -5,4 +5,12 @@ export {
   listSearchLogs,
 } from "./functions";
 
-export type { SearchLog, SearchLogCreate, SearchLogQuery } from "./types";
+export {
+  createSearchLogSchema,
+  idSchema,
+  querySearchLogSchema,
+  type SearchLog,
+  type SearchLogCreate,
+  type SearchLogListQuery,
+  searchLogListQuerySchema,
+} from "./types";
