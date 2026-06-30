@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { MongoError } from "mongodb";
-import { QueryError } from "mysql2";
+import type { QueryError } from "mysql2";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
