@@ -48,6 +48,19 @@ export type ResaleTransaction = {
   resale_price: number;
 };
 
+export type TransactionListItem = ResaleTransaction & {
+  town_id: string;
+  town_name: string;
+  block: string;
+  street_name: string;
+  lease_commence_year: number;
+  flat_type_name: string;
+  flat_model_name: string;
+  min_storey: number;
+  max_storey: number;
+  uploaded_by_user_name: string | null;
+};
+
 export type CreateTransaction = z.infer<typeof createTransactionSchema>;
 export type UpdateTransaction = z.infer<typeof updateTransactionSchema>;
 export type TransactionListQuery = z.infer<typeof transactionListQuerySchema>;

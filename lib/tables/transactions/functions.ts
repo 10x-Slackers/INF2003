@@ -4,6 +4,7 @@ import {
   createTransactionSchema,
   type CreateTransaction,
   type ResaleTransaction,
+  type TransactionListItem,
   type TransactionListQuery,
   type UpdateTransaction,
   transactionListQuerySchema,
@@ -11,21 +12,38 @@ import {
 } from "./types";
 import { idSchema } from "../common";
 
-const TRANSACTION_COLUMNS = `id, uploaded_by_user_id, property_id, flat_type_id,
-            flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`;
+const TRANSACTION_COLUMNS = `rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
+            rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
+            rt.flat_model_id AS flat_model_id, rt.storey_range_id AS storey_range_id,
+            rt.floor_area_sqm AS floor_area_sqm, rt.transaction_month AS transaction_month,
+            rt.resale_price AS resale_price`;
+
+const TRANSACTION_LIST_COLUMNS = `${TRANSACTION_COLUMNS},
+            p.town_id AS town_id, t.name AS town_name, p.block AS block,
+            p.street_name AS street_name, p.lease_commence_year AS lease_commence_year,
+            ft.name AS flat_type_name, fm.name AS flat_model_name,
+            sr.min_storey AS min_storey, sr.max_storey AS max_storey,
+            u.name AS uploaded_by_user_name`;
+
+const TRANSACTION_LIST_JOIN = `
+       JOIN properties p ON p.id = rt.property_id
+       JOIN towns t ON t.id = p.town_id
+       JOIN flat_types ft ON ft.id = rt.flat_type_id
+       JOIN flat_models fm ON fm.id = rt.flat_model_id
+       JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+       LEFT JOIN users u ON u.id = rt.uploaded_by_user_id`;
 
 const isEmptyUpdate = (input: UpdateTransaction) =>
   Object.values(input).every((value) => value === undefined);
 
 export async function listTransactions(
   filters: TransactionListQuery,
-): Promise<{ data: ResaleTransaction[]; total: number }> {
+): Promise<{ data: TransactionListItem[]; total: number }> {
   try {
     const data = transactionListQuerySchema.parse(filters);
     const { page, pageSize } = data;
     const conditions: string[] = [];
     const params: unknown[] = [];
-    const needsPropertyJoin = data.town_id !== undefined;
 
     if (data.town_id !== undefined) {
       conditions.push("p.town_id = ?");
@@ -60,24 +78,24 @@ export async function listTransactions(
       params.push(data.property_id);
     }
 
-    const join = needsPropertyJoin
-      ? "JOIN properties p ON p.id = rt.property_id"
-      : "";
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
     const [rows, countRows] = await Promise.all([
-      query<ResaleTransaction>(
-        `SELECT ${TRANSACTION_COLUMNS}
+      query<TransactionListItem>(
+        `SELECT ${TRANSACTION_LIST_COLUMNS}
        FROM resale_transactions rt
-       ${join}
+       ${TRANSACTION_LIST_JOIN}
        ${where}
        ORDER BY rt.transaction_month DESC
        LIMIT ? OFFSET ?`,
         [...params, pageSize, (page - 1) * pageSize],
       ),
       query<{ total: number }>(
-        `SELECT COUNT(*) AS total FROM resale_transactions rt ${join} ${where}`,
+        `SELECT COUNT(*) AS total
+         FROM resale_transactions rt
+         ${TRANSACTION_LIST_JOIN}
+         ${where}`,
         params,
       ),
     ]);
@@ -94,7 +112,7 @@ export async function getTransactionById(
   try {
     const rows = await query<ResaleTransaction>(
       `SELECT ${TRANSACTION_COLUMNS}
-     FROM resale_transactions WHERE id = ? LIMIT 1`,
+     FROM resale_transactions rt WHERE rt.id = ? LIMIT 1`,
       [idSchema.parse(id)],
     );
     return rows[0] ?? null;

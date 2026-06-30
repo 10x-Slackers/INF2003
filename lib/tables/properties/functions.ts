@@ -1,4 +1,4 @@
-import { execute, query } from "@/lib/db";
+import { query } from "@/lib/db";
 import {
   getTownById,
   listAllAmenitiesByTown,
@@ -213,17 +213,6 @@ export async function lookupProperty(
     return rows[0]
       ? { found: true, property_id: rows[0].id }
       : { found: false };
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
-export async function deleteProperty(id: string): Promise<boolean> {
-  try {
-    const result = await execute("DELETE FROM properties WHERE id = ?", [
-      idSchema.parse(id),
-    ]);
-    return result.affectedRows > 0;
   } catch (error) {
     return handleDbError(error);
   }

@@ -9,6 +9,7 @@ export {
 export type {
   CreateTransaction,
   ResaleTransaction,
+  TransactionListItem,
   TransactionListQuery,
   UpdateTransaction,
 } from "./types";

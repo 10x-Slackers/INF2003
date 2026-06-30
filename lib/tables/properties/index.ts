@@ -1,6 +1,5 @@
 export {
   createProperty,
-  deleteProperty,
   getPropertiesWithLatestTransaction,
   getPropertyById,
   listProperties,
