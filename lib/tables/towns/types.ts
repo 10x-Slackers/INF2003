@@ -11,10 +11,6 @@ export const regionSchema = z.enum([
 export const townListQuerySchema = paginationSchema.extend({
   region: regionSchema.optional(),
 });
-export const createTownSchema = z.object({
-  region: regionSchema,
-  name: z.string().trim().min(1).max(100),
-});
 export const townRelationListQuerySchema = paginationSchema.extend({
   townId: idSchema,
 });

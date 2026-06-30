@@ -72,14 +72,13 @@ export async function getUnreadCount(userId: string): Promise<number> {
 
 export async function createAlertNotification(
   input: CreateAlertNotification,
-): Promise<AlertNotification> {
+): Promise<void> {
   try {
     const data = createAlertNotificationSchema.parse(input);
-    const result = await query<{ id: string }>(
-      "INSERT INTO alert_notifications (user_id, alert_uuid, transaction_id) VALUES (?, ?, ?) RETURNING id",
+    await execute(
+      "INSERT INTO alert_notifications (user_id, alert_uuid, transaction_id) VALUES (?, ?, ?)",
       [data.userId, data.alert_uuid, data.transaction_id],
     );
-    return fetchRow(result[0].id) as Promise<AlertNotification>;
   } catch (error) {
     return handleDbError(error);
   }

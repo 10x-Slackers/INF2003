@@ -49,14 +49,13 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
   }
 }
 
-export async function createUser(input: CreateUser): Promise<PublicUser> {
+export async function createUser(input: CreateUser): Promise<void> {
   try {
     const data = createUserSchema.parse(input);
-    const [inserted] = await query<{ id: string }>(
-      "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?) RETURNING id",
+    await execute(
+      "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)",
       [data.name, data.email, data.password_hash, data.role ?? "USER"],
     );
-    return getUserById(inserted.id) as Promise<PublicUser>;
   } catch (error) {
     return handleDbError(error);
   }

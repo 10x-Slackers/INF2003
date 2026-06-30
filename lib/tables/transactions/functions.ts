@@ -126,15 +126,15 @@ export async function getTransactionById(
 
 export async function createTransaction(
   input: CreateTransactionParams,
-): Promise<ResaleTransaction> {
+): Promise<void> {
   try {
     const params = createTransactionParamsSchema.parse(input);
     const data = createTransactionSchema.parse(params.input);
-    const [inserted] = await query<{ id: string }>(
+    await execute(
       `INSERT INTO resale_transactions
          (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
           storey_range_id, floor_area_sqm, transaction_month, resale_price)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         params.uploadedByUserId,
         data.property_id,
@@ -146,11 +146,6 @@ export async function createTransaction(
         data.resale_price,
       ],
     );
-
-    const transaction = await getTransactionById(inserted.id);
-    if (!transaction)
-      throw new Error("Failed to read back created transaction");
-    return transaction;
   } catch (error) {
     return handleDbError(error);
   }

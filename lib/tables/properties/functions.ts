@@ -219,15 +219,13 @@ export async function getPropertyById(
   }
 }
 
-export async function createProperty(input: CreateProperty): Promise<Property> {
+export async function createProperty(input: CreateProperty): Promise<void> {
   try {
     const data = createPropertySchema.parse(input);
-    const [inserted] = await query<{ id: string }>(
-      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
+    await execute(
+      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?)",
       [data.town_id, data.block, data.street_name, data.lease_commence_year],
     );
-
-    return { id: inserted.id, ...data };
   } catch (error) {
     return handleDbError(error);
   }

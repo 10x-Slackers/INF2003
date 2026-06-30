@@ -77,17 +77,13 @@ export async function getSavedPropertyById(
 
 export async function createSavedProperty(
   input: CreateSavedProperty,
-): Promise<SavedPropertyDetail> {
+): Promise<void> {
   try {
     const data = createSavedPropertySchema.parse(input);
-    const [inserted] = await query<{ id: string }>(
-      "INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?) RETURNING id",
+    await execute(
+      "INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?)",
       [data.userId, data.propertyId],
     );
-
-    const saved = await getSavedPropertyById(inserted.id);
-    if (!saved) throw new Error("Failed to read back saved property");
-    return saved;
   } catch (error) {
     return handleDbError(error);
   }
