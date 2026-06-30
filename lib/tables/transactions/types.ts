@@ -1,16 +1,13 @@
 import { z } from "zod";
 import { paginationSchema, idSchema } from "../common";
 
-export const transactionMonthSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 export const createTransactionSchema = z.object({
   property_id: idSchema,
   flat_type_id: z.coerce.number().int().positive(),
   flat_model_id: z.coerce.number().int().positive(),
   storey_range_id: z.coerce.number().int().positive(),
   floor_area_sqm: z.coerce.number().positive(),
-  transaction_month: transactionMonthSchema,
+  transaction_month: z.string(),
   resale_price: z.coerce.number().positive(),
 });
 export const updateTransactionSchema = z
@@ -19,7 +16,7 @@ export const updateTransactionSchema = z
     flat_model_id: z.coerce.number().int().positive().optional(),
     storey_range_id: z.coerce.number().int().positive().optional(),
     floor_area_sqm: z.coerce.number().positive().optional(),
-    transaction_month: transactionMonthSchema.optional(),
+    transaction_month: z.string().optional(),
     resale_price: z.coerce.number().positive().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {

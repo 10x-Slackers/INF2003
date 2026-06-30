@@ -95,7 +95,7 @@ export async function listAllAmenitiesByTown(
   townId: string,
 ): Promise<Amenity[]> {
   try {
-    return query<Amenity>(
+    return await query<Amenity>(
       `SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
      FROM amenities WHERE town_id = ? ORDER BY name`,
       [idSchema.parse(townId)],
