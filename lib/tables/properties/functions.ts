@@ -18,6 +18,7 @@ import {
   type UpdatePropertyParams,
 } from "./types";
 import { idSchema } from "../common";
+import { executeReturning } from "@/lib/db/mariadb";
 
 const LATEST_TRANSACTION_JOIN = `
   LEFT JOIN resale_transactions lt ON lt.id = (
@@ -219,13 +220,14 @@ export async function getPropertyById(
   }
 }
 
-export async function createProperty(input: CreateProperty): Promise<void> {
+export async function createProperty(input: CreateProperty): Promise<string> {
   try {
     const data = createPropertySchema.parse(input);
-    await execute(
+    const result = await executeReturning<{ id: string }>(
       "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
       [data.town_id, data.block, data.street_name, data.lease_commence_year],
     );
+    return result[0].id;
   } catch (error) {
     return handleDbError(error);
   }
