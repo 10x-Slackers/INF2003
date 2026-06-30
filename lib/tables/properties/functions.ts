@@ -1,0 +1,296 @@
+import { execute, query } from "@/lib/db";
+import {
+  getTownById,
+  listAllAmenitiesByTown,
+} from "@/lib/tables/towns/functions";
+import { handleDbError } from "@/lib/utils";
+import {
+  createPropertySchema,
+  propertyListQuerySchema,
+  updatePropertyParamsSchema,
+  updatePropertySchema,
+  type CreateProperty,
+  type Property,
+  type PropertyDetail,
+  type PropertyListQuery,
+  type PropertyWithLatestTransaction,
+  type UpdateProperty,
+  type UpdatePropertyParams,
+} from "./types";
+import { idSchema } from "../common";
+import { executeReturning } from "@/lib/db/mariadb";
+
+const LATEST_TRANSACTION_JOIN = `
+  LEFT JOIN resale_transactions lt ON lt.id = (
+    SELECT rt2.id FROM resale_transactions rt2
+    WHERE rt2.property_id = p.id
+    ORDER BY rt2.transaction_month DESC, rt2.id DESC
+    LIMIT 1
+  )
+  LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
+  LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
+  LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
+`;
+
+const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
+  p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+  lt.id AS lt_id, lt.uploaded_by_user_id AS lt_uploaded_by_user_id,
+  lt.property_id AS lt_property_id, lt.flat_type_id AS lt_flat_type_id,
+  lt.flat_model_id AS lt_flat_model_id, lt.storey_range_id AS lt_storey_range_id,
+  lt.floor_area_sqm AS lt_floor_area_sqm,
+  lft.name AS lt_flat_type_name, lfm.name AS lt_flat_model_name,
+  lsr.min_storey AS lt_min_storey, lsr.max_storey AS lt_max_storey,
+  lt.resale_price AS lt_resale_price,
+  lt.transaction_month AS lt_transaction_month
+`;
+
+type PropertyRow = Property & {
+  lt_id: string | null;
+  lt_uploaded_by_user_id: string | null;
+  lt_property_id: string | null;
+  lt_flat_type_id: number | null;
+  lt_flat_model_id: number | null;
+  lt_storey_range_id: number | null;
+  lt_floor_area_sqm: number | null;
+  lt_flat_type_name: string | null;
+  lt_flat_model_name: string | null;
+  lt_min_storey: number | null;
+  lt_max_storey: number | null;
+  lt_resale_price: number | null;
+  lt_transaction_month: string | null;
+};
+
+function toPropertyWithLatestTransaction(
+  row: PropertyRow,
+): PropertyWithLatestTransaction {
+  const {
+    lt_id,
+    lt_uploaded_by_user_id,
+    lt_property_id,
+    lt_flat_type_id,
+    lt_flat_model_id,
+    lt_storey_range_id,
+    lt_floor_area_sqm,
+    lt_flat_type_name,
+    lt_flat_model_name,
+    lt_min_storey,
+    lt_max_storey,
+    lt_resale_price,
+    lt_transaction_month,
+    ...property
+  } = row;
+
+  return {
+    ...property,
+    latest_transaction:
+      lt_id !== null
+        ? {
+            id: lt_id,
+            uploaded_by_user_id: lt_uploaded_by_user_id,
+            property_id: lt_property_id!,
+            flat_type_id: lt_flat_type_id!,
+            flat_model_id: lt_flat_model_id!,
+            storey_range_id: lt_storey_range_id!,
+            floor_area_sqm: lt_floor_area_sqm!,
+            flat_type: lt_flat_type_name!,
+            flat_model: lt_flat_model_name!,
+            min_storey: lt_min_storey!,
+            max_storey: lt_max_storey!,
+            resale_price: lt_resale_price!,
+            transaction_month: lt_transaction_month!,
+          }
+        : null,
+  };
+}
+
+export async function getPropertiesWithLatestTransaction(
+  propertyIds: string[],
+): Promise<PropertyWithLatestTransaction[]> {
+  try {
+    const ids = idSchema.array().parse(propertyIds);
+    if (ids.length === 0) return [];
+
+    const placeholders = ids.map(() => "?").join(", ");
+    const rows = await query<PropertyRow>(
+      `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
+     FROM properties p
+     ${LATEST_TRANSACTION_JOIN}
+     WHERE p.id IN (${placeholders})`,
+      ids,
+    );
+
+    return rows.map(toPropertyWithLatestTransaction);
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function listProperties(
+  filters: PropertyListQuery,
+): Promise<{ data: PropertyWithLatestTransaction[]; total: number }> {
+  try {
+    const data = propertyListQuerySchema.parse(filters);
+    const { page, pageSize } = data;
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (data.town_id !== undefined) {
+      conditions.push("p.town_id = ?");
+      params.push(data.town_id);
+    }
+    if (data.flat_type_id !== undefined) {
+      conditions.push("lt.flat_type_id = ?");
+      params.push(data.flat_type_id);
+    }
+    if (data.flat_model_id !== undefined) {
+      conditions.push("lt.flat_model_id = ?");
+      params.push(data.flat_model_id);
+    }
+    if (data.price_min !== undefined) {
+      conditions.push("lt.resale_price >= ?");
+      params.push(data.price_min);
+    }
+    if (data.price_max !== undefined) {
+      conditions.push("lt.resale_price <= ?");
+      params.push(data.price_max);
+    }
+
+    const where =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const countJoin =
+      data.flat_type_id !== undefined ||
+      data.flat_model_id !== undefined ||
+      data.price_min !== undefined ||
+      data.price_max !== undefined
+        ? LATEST_TRANSACTION_JOIN
+        : "";
+
+    const [rows, countRows] = await Promise.all([
+      query<PropertyRow>(
+        `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
+       FROM properties p
+       ${LATEST_TRANSACTION_JOIN}
+       ${where}
+       ORDER BY p.block, p.street_name
+       LIMIT ? OFFSET ?`,
+        [...params, pageSize, (page - 1) * pageSize],
+      ),
+      query<{ total: number }>(
+        `SELECT COUNT(*) AS total FROM properties p ${countJoin} ${where}`,
+        params,
+      ),
+    ]);
+
+    return {
+      data: rows.map(toPropertyWithLatestTransaction),
+      total: countRows[0].total,
+    };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+async function getPropertyRowById(id: string): Promise<Property | null> {
+  try {
+    const rows = await query<Property>(
+      "SELECT id, town_id, block, street_name, lease_commence_year FROM properties WHERE id = ? LIMIT 1",
+      [idSchema.parse(id)],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getPropertyById(
+  id: string,
+): Promise<PropertyDetail | null> {
+  try {
+    const property = await getPropertyRowById(id);
+    if (!property) return null;
+
+    const [town, amenities] = await Promise.all([
+      getTownById(property.town_id),
+      listAllAmenitiesByTown(property.town_id),
+    ]);
+
+    return { ...property, town, amenities };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function createProperty(input: CreateProperty): Promise<string> {
+  try {
+    const data = createPropertySchema.parse(input);
+    const result = await executeReturning<{ id: string }>(
+      "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
+      [data.town_id, data.block, data.street_name, data.lease_commence_year],
+    );
+    return result[0].id;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+const isEmptyUpdate = (input: UpdateProperty) =>
+  Object.values(input).every((value) => value === undefined);
+
+export async function updateProperty(
+  input: UpdatePropertyParams,
+): Promise<Property | null> {
+  try {
+    const parsed = updatePropertyParamsSchema.parse(input);
+    if (isEmptyUpdate(parsed.input)) return getPropertyRowById(parsed.id);
+
+    const data = updatePropertySchema.parse(parsed.input);
+    const fields: string[] = [];
+    const params: (string | number)[] = [];
+
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        fields.push(`${key} = ?`);
+        params.push(value);
+      }
+    }
+
+    const result = await execute(
+      `UPDATE properties SET ${fields.join(", ")} WHERE id = ?`,
+      [...params, parsed.id],
+    );
+    return result.affectedRows === 0 ? null : getPropertyRowById(parsed.id);
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function deleteProperty(id: string): Promise<boolean> {
+  try {
+    const result = await execute("DELETE FROM properties WHERE id = ?", [
+      idSchema.parse(id),
+    ]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function lookupProperty(
+  input: CreateProperty,
+): Promise<{ found: boolean; property_id?: string }> {
+  try {
+    const data = createPropertySchema.parse(input);
+    const rows = await query<{ id: string }>(
+      `SELECT id FROM properties
+     WHERE town_id = ? AND block = ? AND street_name = ? AND lease_commence_year = ?
+     LIMIT 1`,
+      [data.town_id, data.block, data.street_name, data.lease_commence_year],
+    );
+
+    return rows[0]
+      ? { found: true, property_id: rows[0].id }
+      : { found: false };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}

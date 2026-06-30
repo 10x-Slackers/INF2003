@@ -1,9 +1,3 @@
-export {
-  pool,
-  query,
-  execute,
-  withTransaction,
-  type QueryResult,
-} from "./mariadb";
+export { pool, query, execute, type QueryResult } from "./mariadb";
 
 export { client, db } from "./mongodb";
