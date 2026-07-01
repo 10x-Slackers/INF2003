@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ROUTES } from "@/lib/routes";
 import { listFlatModels, listFlatTypes } from "@/lib/tables/lookups/functions";
 import { listProperties } from "@/lib/tables/properties/functions";
 import { listTowns } from "@/lib/tables/towns/functions";
@@ -118,7 +119,7 @@ function buildQuery(
   if (next.pageSize !== 20) params.set("pageSize", String(next.pageSize));
 
   const query = params.toString();
-  return query ? `/properties?${query}` : "/properties";
+  return query ? `${ROUTES.PROPERTIES}?${query}` : ROUTES.PROPERTIES;
 }
 
 export default async function PropertiesPage({
@@ -129,13 +130,36 @@ export default async function PropertiesPage({
   const parsedSearchParams = await searchParams;
   const filters = parseFilters(parsedSearchParams);
 
-  const [townsResult, flatTypes, flatModels, propertiesResult] =
-    await Promise.all([
+  let townsResult: Awaited<ReturnType<typeof listTowns>>;
+  let flatTypes: Awaited<ReturnType<typeof listFlatTypes>>;
+  let flatModels: Awaited<ReturnType<typeof listFlatModels>>;
+  let propertiesResult: Awaited<ReturnType<typeof listProperties>>;
+
+  try {
+    [townsResult, flatTypes, flatModels, propertiesResult] = await Promise.all([
       listTowns({ page: 1, pageSize: 100 }),
       listFlatTypes(),
       listFlatModels(),
       listProperties(filters),
     ]);
+  } catch (error) {
+    console.error("Failed to load properties page data:", error);
+
+    return (
+      <main className="container mx-auto px-5 py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Properties</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              We could not load the properties data right now. Please try again.
+            </p>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   const towns = townsResult.data;
   const townNameById = new Map(towns.map((town) => [town.id, town.name]));
@@ -153,7 +177,10 @@ export default async function PropertiesPage({
           <CardTitle>Properties</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <form action="/properties" className="grid gap-4 lg:grid-cols-6">
+          <form
+            action={ROUTES.PROPERTIES}
+            className="grid gap-4 lg:grid-cols-6"
+          >
             <div className="grid min-w-0 gap-2">
               <Label htmlFor="town_id">Town</Label>
               <select
@@ -241,7 +268,7 @@ export default async function PropertiesPage({
                 variant="outline"
                 className="flex-1"
               >
-                <Link href="/properties">Reset</Link>
+                <Link href={ROUTES.PROPERTIES}>Reset</Link>
               </Button>
             </div>
           </form>
@@ -304,34 +331,51 @@ export default async function PropertiesPage({
 
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">
-              Showing {(filters.page - 1) * filters.pageSize + 1}-
-              {Math.min(
-                filters.page * filters.pageSize,
-                propertiesResult.total,
-              )}{" "}
-              of {propertiesResult.total}
+              {propertiesResult.total > 0 ? (
+                <>
+                  Showing {(filters.page - 1) * filters.pageSize + 1}-
+                  {Math.min(
+                    filters.page * filters.pageSize,
+                    propertiesResult.total,
+                  )}{" "}
+                  of {propertiesResult.total}
+                </>
+              ) : (
+                "No results to display."
+              )}
             </p>
             <div className="flex gap-2">
-              <Button asChild variant="outline" disabled={!hasPrev}>
-                <Link
-                  aria-disabled={!hasPrev}
-                  href={buildQuery(filters, {
-                    page: Math.max(1, filters.page - 1),
-                  })}
-                >
+              {hasPrev ? (
+                <Button asChild variant="outline">
+                  <Link
+                    href={buildQuery(filters, {
+                      page: Math.max(1, filters.page - 1),
+                    })}
+                  >
+                    Previous
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
                   Previous
-                </Link>
-              </Button>
-              <Button asChild variant="outline" disabled={!hasNext}>
-                <Link
-                  aria-disabled={!hasNext}
-                  href={buildQuery(filters, {
-                    page: Math.min(totalPages, filters.page + 1),
-                  })}
-                >
+                </Button>
+              )}
+
+              {hasNext ? (
+                <Button asChild variant="outline">
+                  <Link
+                    href={buildQuery(filters, {
+                      page: Math.min(totalPages, filters.page + 1),
+                    })}
+                  >
+                    Next
+                  </Link>
+                </Button>
+              ) : (
+                <Button variant="outline" disabled>
                   Next
-                </Link>
-              </Button>
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
