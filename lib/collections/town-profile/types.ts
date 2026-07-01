@@ -14,15 +14,6 @@ export const TownProfileSummarySchema = z
 const coordinatePairSchema = z.tuple([z.number(), z.number()]);
 const polygonSchema = z.array(z.array(coordinatePairSchema).min(4)).min(1);
 
-export const UpsertTownProfileSchema = z
-  .object({
-    _id: z.uuid(),
-    updatedCount: z.number().int().min(0),
-    transactionSummary: TownProfileSummarySchema,
-    coordinates: polygonSchema,
-  })
-  .strict();
-
 export const TownProfileSchema = z
   .object({
     _id: z.uuid(),
@@ -34,4 +25,3 @@ export const TownProfileSchema = z
   .strict();
 
 export type TownProfile = z.infer<typeof TownProfileSchema>;
-export type TownProfileUpsert = z.infer<typeof UpsertTownProfileSchema>;

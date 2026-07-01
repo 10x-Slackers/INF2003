@@ -1,7 +1,7 @@
 export {
   getTownProfileById,
   listTownProfiles,
-  upsertTownProfile,
+  rollDownTownProfileTransaction,
 } from "./functions";
 
 export {
@@ -9,6 +9,4 @@ export {
   TownProfileSchema,
   TownProfileSummarySchema,
   type TownProfile,
-  type TownProfileUpsert,
-  UpsertTownProfileSchema,
 } from "./types";
