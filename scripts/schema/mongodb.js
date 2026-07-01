@@ -83,8 +83,17 @@ db.createCollection("statistics", {
       ],
       properties: {
         _id: { bsonType: "string" },
-        metric: { bsonType: "string" },
-        granularity: { enum: ["monthly", "yearly"] },
+        metric: {
+          enum: [
+            "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE",
+            "AVG_PRICE_BY_FLAT_TYPE",
+            "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
+            "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
+            "SALES_BY_TOWN",
+            "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
+          ],
+        },
+        granularity: { enum: ["monthly", "yearly", "last 6 months"] },
         timeRange: {
           bsonType: "object",
           required: ["start", "end"],
@@ -96,11 +105,33 @@ db.createCollection("statistics", {
         },
         dimensions: {
           bsonType: "object",
-          required: ["townId", "flatTypeId", "flatModelId"],
+          required: [
+            "townId",
+            "flatTypeId",
+            "propertyId",
+            "leaseRemaining",
+            "storey",
+          ],
           properties: {
             townId: { bsonType: ["null", "string"] },
             flatTypeId: { bsonType: ["null", "string"] },
-            flatModelId: { bsonType: ["null", "string"] },
+            propertyId: { bsonType: ["null", "string"] },
+            leaseRemaining: {
+              bsonType: ["null", "object"],
+              properties: {
+                year: { bsonType: "int" },
+              },
+              additionalProperties: false,
+            },
+            storey: {
+              bsonType: ["null", "object"],
+              properties: {
+                min: { bsonType: ["int"] },
+                max: { bsonType: ["null", "int"] },
+                label: { bsonType: ["string"] },
+              },
+              additionalProperties: false,
+            },
           },
           additionalProperties: false,
         },
@@ -133,19 +164,20 @@ db.createCollection("towns", {
       required: ["_id", "transactionSummary", "coordinates", "updatedAt"],
       properties: {
         _id: { bsonType: "string" },
+        updatedCount: { bsonType: "int", minimum: 0 },
         transactionSummary: {
           bsonType: "object",
           required: [
             "totalTransaction",
             "earliestTransaction",
             "latestTransaction",
-            "avgResalePriceByFlatType",
+            "transactionCountByFlatType",
           ],
           properties: {
             totalTransaction: { bsonType: ["int", "long"], minimum: 0 },
             earliestTransaction: { bsonType: "string" },
             latestTransaction: { bsonType: "string" },
-            avgResalePriceByFlatType: {
+            transactionCountByFlatType: {
               bsonType: "object",
               additionalProperties: {
                 bsonType: ["int", "long", "double", "decimal"],
