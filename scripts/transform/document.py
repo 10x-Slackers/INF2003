@@ -32,12 +32,7 @@ class DocumentTransformer:
         for town_key, group in resale_transactions_df.groupby("town_key", sort=True):
             town_key = str(town_key)
             group_months = month_str.loc[group.index]
-            avg_prices = (
-                group.groupby("flat_type_key", sort=True)["resale_price"]
-                .mean()
-                .round(2)
-                .to_dict()
-            )
+            transaction_counts = group.groupby("flat_type_key", sort=True).size()
             rows.append(
                 {
                     "_id": town_key,
@@ -46,13 +41,14 @@ class DocumentTransformer:
                         "totalTransaction": len(group),
                         "earliestTransaction": str(group_months.min()),
                         "latestTransaction": str(group_months.max()),
-                        "avgResalePriceByFlatType": {
-                            str(flat_type_key): float(value)
-                            for flat_type_key, value in avg_prices.items()
+                        "transactionCountByFlatType": {
+                            str(flat_type_key): int(value)
+                            for flat_type_key, value in transaction_counts.items()
                         },
                     },
                     "coordinates": coordinates_by_town.get(town_key, []),
                     "updatedAt": timestamp,
+                    "updatedCount": 0,
                 }
             )
 

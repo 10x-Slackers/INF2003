@@ -1,15 +1,17 @@
-import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import {
+  bulkUpsertStatisticsSchema,
   idSchema,
   statisticsListQuerySchema,
   statisticsSearchSchema,
   upsertStatisticsSchema,
+  type BulkUpsertStatisticsResult,
   type Statistics,
   type StatisticsListQuery,
   type StatisticsSearch,
   type StatisticsUpsert,
 } from "./types";
+import { toStatisticsBulkOperations, toStatisticsDocument } from "./utils";
 import { handleDbError, now } from "@/lib/utils";
 
 const statistics = db.collection<Statistics>("statistics");
@@ -46,11 +48,7 @@ export async function upsertStatistics(
 ): Promise<Statistics> {
   try {
     const data = upsertStatisticsSchema.parse(input);
-    const document: Statistics = {
-      ...data,
-      computedAt: now(),
-      _id: data._id ?? randomUUID(),
-    };
+    const document = toStatisticsDocument(data, now());
 
     await statistics.updateOne(
       { _id: document._id },
@@ -58,6 +56,25 @@ export async function upsertStatistics(
       { upsert: true },
     );
     return document;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function bulkUpsertStatistics(
+  input: StatisticsUpsert[],
+): Promise<BulkUpsertStatisticsResult> {
+  try {
+    const data = bulkUpsertStatisticsSchema.parse(input);
+    const computedAt = now();
+    const operations = toStatisticsBulkOperations(data, computedAt);
+    const result = await statistics.bulkWrite(operations);
+
+    return {
+      matchedCount: result.matchedCount,
+      modifiedCount: result.modifiedCount,
+      upsertedCount: result.upsertedCount,
+    };
   } catch (error) {
     return handleDbError(error);
   }
