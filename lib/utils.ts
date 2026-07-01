@@ -1,6 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { MongoError } from "mongodb";
 import type { QueryError } from "mysql2";
 
 export function cn(...inputs: ClassValue[]) {
@@ -39,8 +38,16 @@ export class ForeignKeyConstraintError extends DbError {
 }
 
 export function handleDbError(error: unknown): never {
-  if (error instanceof MongoError) {
-    throw new DbError(error.message);
+  // Avoid importing the mongodb package in shared client/server utilities.
+  // Mongo errors are detected by shape so browser bundles don't pull in Node-only modules.
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    "name" in error &&
+    String((error as { name: unknown }).name).includes("Mongo")
+  ) {
+    throw new DbError(String((error as { message: unknown }).message));
   }
   if (typeof (error as { code?: unknown })?.code === "string") {
     const err = error as QueryError;
