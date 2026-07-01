@@ -49,12 +49,9 @@ export async function upsertStatistics(
   try {
     const data = upsertStatisticsSchema.parse(input);
     const document = toStatisticsDocument(data, now());
+    const { _id, ...fields } = document;
 
-    await statistics.updateOne(
-      { _id: document._id },
-      { $set: document },
-      { upsert: true },
-    );
+    await statistics.updateOne({ _id }, { $set: fields }, { upsert: true });
     return document;
   } catch (error) {
     return handleDbError(error);

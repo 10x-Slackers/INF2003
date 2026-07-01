@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS resale_transactions (
         CONSTRAINT fk_resale_transactions_flat_model FOREIGN KEY (flat_model_id) REFERENCES flat_models(id),
         CONSTRAINT fk_resale_transactions_storey_range FOREIGN KEY (storey_range_id) REFERENCES storey_ranges(id),
         INDEX idx_resale_transactions_month (transaction_month),
-        INDEX idx_resale_transactions_property_month (property_id, transaction_month, id),
+        INDEX idx_resale_transactions_property_month (property_id, transaction_month),
         INDEX idx_resale_transactions_flat_type_month (flat_type_id, transaction_month),
         INDEX idx_resale_transactions_storey_month (storey_range_id, transaction_month)
 );

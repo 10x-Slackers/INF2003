@@ -38,11 +38,12 @@ export function toStatisticsBulkOperations(
 ): AnyBulkWriteOperation<Statistics>[] {
   return data.map((item) => {
     const document = toStatisticsDocument(item, computedAt);
+    const { _id, ...fields } = document;
 
     return {
       updateOne: {
-        filter: { _id: document._id },
-        update: { $set: document },
+        filter: { _id },
+        update: { $set: fields },
         upsert: true,
       },
     };

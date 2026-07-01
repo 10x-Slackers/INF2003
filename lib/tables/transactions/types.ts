@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { paginationSchema, idSchema } from "../common.ts";
+import { paginationSchema, idSchema } from "../common";
 
 export const createTransactionSchema = z.object({
   property_id: idSchema,

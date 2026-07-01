@@ -119,16 +119,16 @@ db.createCollection("statistics", {
             leaseRemaining: {
               bsonType: ["null", "object"],
               properties: {
-                year: { bsonType: "int" },
+                year: { bsonType: ["null", "int"] },
               },
               additionalProperties: false,
             },
             storey: {
               bsonType: ["null", "object"],
               properties: {
-                min: { bsonType: ["int"] },
+                min: { bsonType: ["null", "int"] },
                 max: { bsonType: ["null", "int"] },
-                label: { bsonType: ["string"] },
+                label: { bsonType: ["null", "string"] },
               },
               additionalProperties: false,
             },

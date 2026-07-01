@@ -42,6 +42,7 @@ export async function upsertTownProfile(
           transactionSummary: townProfile.transactionSummary,
           coordinates: townProfile.coordinates,
           updatedAt: townProfile.updatedAt,
+          updatedCount: townProfile.updatedCount,
         },
       },
       { upsert: true },
