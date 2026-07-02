@@ -1,5 +1,5 @@
 import { query } from "@/lib/db";
-import { handleDbError } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
 import {
   amenityListQuerySchema,
   type Amenity,

@@ -8,7 +8,8 @@ import {
   type SearchLogCreate,
   type SearchLogListQuery,
 } from "./types";
-import { handleDbError, now } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
+import { now } from "@/lib/utils";
 
 const searchHistory = db.collection<SearchLog>("searchHistory");
 const DEFAULT_LIMIT = 50;

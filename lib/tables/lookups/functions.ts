@@ -1,5 +1,5 @@
 import { query } from "@/lib/db";
-import { handleDbError } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
 import type { AmenityType, FlatModel, FlatType, StoreyRange } from "./types";
 
 export async function listFlatTypes(): Promise<FlatType[]> {

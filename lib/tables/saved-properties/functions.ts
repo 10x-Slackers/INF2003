@@ -1,6 +1,6 @@
 import { execute, query } from "@/lib/db";
 import { getPropertiesWithLatestTransaction } from "@/lib/tables/properties/functions";
-import { handleDbError } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
 import {
   createSavedPropertySchema,
   savedPropertyIdentitySchema,
@@ -139,6 +139,21 @@ export async function isPropertySaved(
       [data.userId, data.propertyId],
     );
     return rows.length > 0;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getSavedPropertyId(
+  input: SavedPropertyIdentity,
+): Promise<string | null> {
+  try {
+    const data = savedPropertyIdentitySchema.parse(input);
+    const rows = await query<{ id: string }>(
+      "SELECT id FROM saved_properties WHERE user_id = ? AND property_id = ? LIMIT 1",
+      [data.userId, data.propertyId],
+    );
+    return rows[0]?.id ?? null;
   } catch (error) {
     return handleDbError(error);
   }

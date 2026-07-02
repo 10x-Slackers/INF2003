@@ -10,7 +10,8 @@ import {
   type StatisticsSearch,
   type StatisticsUpsert,
 } from "./types";
-import { handleDbError, now } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
+import { now } from "@/lib/utils";
 
 const statistics = db.collection<Statistics>("statistics");
 

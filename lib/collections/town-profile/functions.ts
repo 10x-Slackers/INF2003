@@ -5,7 +5,8 @@ import {
   type TownProfile,
   type TownProfileUpsert,
 } from "./types";
-import { handleDbError, now } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
+import { now } from "@/lib/utils";
 
 const towns = db.collection<TownProfile>("towns");
 

@@ -3,7 +3,7 @@ import {
   getTownById,
   listAllAmenitiesByTown,
 } from "@/lib/tables/towns/functions";
-import { handleDbError } from "@/lib/utils";
+import { handleDbError } from "@/lib/db-errors";
 import {
   createPropertySchema,
   propertyListQuerySchema,
@@ -145,6 +145,10 @@ export async function listProperties(
     if (data.flat_model_id !== undefined) {
       conditions.push("lt.flat_model_id = ?");
       params.push(data.flat_model_id);
+    }
+    if (data.lease_commence_year !== undefined) {
+      conditions.push("p.lease_commence_year = ?");
+      params.push(data.lease_commence_year);
     }
     if (data.price_min !== undefined) {
       conditions.push("lt.resale_price >= ?");
