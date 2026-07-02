@@ -1,16 +1,21 @@
 import { z } from "zod";
 
-export const idSchema = z.uuid();
+export const idSchema = z.string().min(1);
 
 export const metricsSchema = z.enum([
-  "town",
-  "resalePrice",
-  "resaleVolume",
-  "flatModel",
-  "flatType",
+  "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE",
+  "AVG_PRICE_BY_FLAT_TYPE",
+  "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
+  "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
+  "SALES_BY_TOWN",
+  "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
 ]);
 
-export const statisticsGranularitySchema = z.enum(["monthly", "yearly"]);
+export const statisticsGranularitySchema = z.enum([
+  "monthly",
+  "yearly",
+  "last 6 months",
+]);
 
 export const statisticsTimeRangeSchema = z
   .object({
@@ -23,7 +28,19 @@ export const statisticsDimensionsSchema = z
   .object({
     townId: z.uuid().nullable(),
     flatTypeId: z.string().nullable(),
-    flatModelId: z.string().nullable(),
+    propertyId: z.string().nullable(),
+    leaseRemaining: z
+      .object({
+        year: z.number().int().nullable(),
+      })
+      .nullable(),
+    storey: z
+      .object({
+        min: z.number().int().nullable(),
+        max: z.number().int().nullable(),
+        label: z.string().nullable(),
+      })
+      .nullable(),
   })
   .strict();
 
@@ -54,7 +71,7 @@ export const statisticsListQuerySchema = z
 
 export const upsertStatisticsSchema = z
   .object({
-    _id: z.uuid().optional(),
+    _id: idSchema.optional(),
     metric: metricsSchema,
     granularity: statisticsGranularitySchema,
     timeRange: statisticsTimeRangeSchema,
@@ -63,9 +80,13 @@ export const upsertStatisticsSchema = z
   })
   .strict();
 
+export const bulkUpsertStatisticsSchema = z
+  .array(upsertStatisticsSchema)
+  .min(1);
+
 export const statisticsSchema = z
   .object({
-    _id: z.uuid(),
+    _id: idSchema,
     metric: metricsSchema,
     granularity: statisticsGranularitySchema,
     timeRange: statisticsTimeRangeSchema,
@@ -79,3 +100,8 @@ export type StatisticsUpsert = z.infer<typeof upsertStatisticsSchema>;
 export type Statistics = z.infer<typeof statisticsSchema>;
 export type StatisticsListQuery = z.infer<typeof statisticsListQuerySchema>;
 export type StatisticsSearch = z.infer<typeof statisticsSearchSchema>;
+export type BulkUpsertStatisticsResult = {
+  matchedCount: number;
+  modifiedCount: number;
+  upsertedCount: number;
+};

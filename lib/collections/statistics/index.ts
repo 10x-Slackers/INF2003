@@ -1,4 +1,5 @@
 export {
+  bulkUpsertStatistics,
   deleteStatistics,
   getStatisticsById,
   getStatisticsByMetricAndDimensions,
@@ -7,6 +8,7 @@ export {
 } from "./functions";
 
 export {
+  bulkUpsertStatisticsSchema,
   idSchema,
   metricsSchema,
   statisticsDimensionsSchema,
@@ -16,6 +18,7 @@ export {
   statisticsSearchSchema,
   statisticsSeriesPointSchema,
   statisticsTimeRangeSchema,
+  type BulkUpsertStatisticsResult,
   type Statistics,
   type StatisticsListQuery,
   type StatisticsSearch,

@@ -32,6 +32,41 @@ export const transactionListQuerySchema = paginationSchema.extend({
   year: z.coerce.number().int().min(1960).max(2100).optional(),
   property_id: z.uuid().optional(),
 });
+export const transactionStatisticsMetricSchema = z.enum([
+  "avg_price",
+  "avg_price_per_sqm",
+  "sales_count",
+]);
+export const transactionStatisticsGranularitySchema = z.enum([
+  "monthly",
+  "yearly",
+  "last 6 months",
+]);
+export const transactionStatisticsGroupSchema = z.enum([
+  "period",
+  "town_id",
+  "flat_type_id",
+  "property_id",
+  "lease_remaining_year",
+  "storey_range_id",
+]);
+export const transactionStatisticsQuerySchema = z
+  .object({
+    metric: transactionStatisticsMetricSchema,
+    granularity: transactionStatisticsGranularitySchema,
+    groupBy: z.array(transactionStatisticsGroupSchema).min(1),
+    date_from: z.coerce.date().optional(),
+    date_to: z.coerce.date().optional(),
+    town_id: z.uuid().optional(),
+    flat_type_id: z.coerce.number().int().positive().optional(),
+    property_id: z.uuid().optional(),
+    storey_range_id: z.coerce.number().int().positive().optional(),
+  })
+  .strict()
+  .refine((data) => new Set(data.groupBy).size === data.groupBy.length, {
+    message: "groupBy values must be unique.",
+    path: ["groupBy"],
+  });
 export const createTransactionParamsSchema = z.object({
   input: createTransactionSchema,
   uploadedByUserId: idSchema,
@@ -66,6 +101,17 @@ export type TransactionListItem = ResaleTransaction & {
   uploaded_by_user_name: string | null;
 };
 
+export type TransactionStatisticRow = {
+  period?: string;
+  town_id?: string;
+  flat_type_id?: number;
+  property_id?: string;
+  lease_remaining_year?: number;
+  storey_range_id?: number;
+  value: number;
+  sample_size: number;
+};
+
 export type CreateTransaction = z.infer<typeof createTransactionSchema>;
 export type CreateTransactionParams = z.infer<
   typeof createTransactionParamsSchema
@@ -75,3 +121,15 @@ export type UpdateTransactionParams = z.infer<
   typeof updateTransactionParamsSchema
 >;
 export type TransactionListQuery = z.infer<typeof transactionListQuerySchema>;
+export type TransactionStatisticsMetric = z.infer<
+  typeof transactionStatisticsMetricSchema
+>;
+export type TransactionStatisticsGranularity = z.infer<
+  typeof transactionStatisticsGranularitySchema
+>;
+export type TransactionStatisticsGroup = z.infer<
+  typeof transactionStatisticsGroupSchema
+>;
+export type TransactionStatisticsQuery = z.infer<
+  typeof transactionStatisticsQuerySchema
+>;

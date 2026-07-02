@@ -4,17 +4,24 @@ import {
   createTransactionSchema,
   type CreateTransactionParams,
   type ResaleTransaction,
+  type TransactionStatisticRow,
+  type TransactionStatisticsGranularity,
+  type TransactionStatisticsGroup,
+  type TransactionStatisticsMetric,
+  type TransactionStatisticsQuery,
   type TransactionListItem,
   type TransactionListQuery,
   type UpdateTransaction,
   type UpdateTransactionParams,
   createTransactionParamsSchema,
+  transactionStatisticsQuerySchema,
   transactionListQuerySchema,
   updateTransactionParamsSchema,
   updateTransactionSchema,
 } from "./types";
 import { idSchema } from "../common";
 import { executeReturning } from "@/lib/db/mariadb";
+import { addCondition } from "./utils";
 
 const TRANSACTION_COLUMNS = `rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
             rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
@@ -37,8 +44,41 @@ const TRANSACTION_LIST_JOIN = `
        JOIN storey_ranges sr ON sr.id = rt.storey_range_id
        LEFT JOIN users u ON u.id = rt.uploaded_by_user_id`;
 
+const STATISTIC_METRICS: Record<TransactionStatisticsMetric, string> = {
+  avg_price: "CAST(AVG(rt.resale_price) AS DOUBLE)",
+  avg_price_per_sqm: "CAST(AVG(rt.resale_price / rt.floor_area_sqm) AS DOUBLE)",
+  sales_count: "COUNT(*)",
+};
+
+const STATISTIC_GROUPS: Record<
+  Exclude<TransactionStatisticsGroup, "period">,
+  string
+> = {
+  town_id: "p.town_id",
+  flat_type_id: "rt.flat_type_id",
+  property_id: "rt.property_id",
+  lease_remaining_year:
+    "99 - (YEAR(rt.transaction_month) - p.lease_commence_year)",
+  storey_range_id: "rt.storey_range_id",
+};
+
 const isEmptyUpdate = (input: UpdateTransaction) =>
   Object.values(input).every((value) => value === undefined);
+
+function periodExpression(granularity: TransactionStatisticsGranularity) {
+  return `DATE_FORMAT(rt.transaction_month, '${
+    granularity === "yearly" ? "%Y" : "%Y-%m"
+  }')`;
+}
+
+function statisticGroupExpression(
+  group: TransactionStatisticsGroup,
+  granularity: TransactionStatisticsGranularity,
+) {
+  return group === "period"
+    ? periodExpression(granularity)
+    : STATISTIC_GROUPS[group];
+}
 
 export async function listTransactions(
   filters: TransactionListQuery,
@@ -49,38 +89,32 @@ export async function listTransactions(
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (data.town_id !== undefined) {
-      conditions.push("p.town_id = ?");
-      params.push(data.town_id);
-    }
-    if (data.flat_type_id !== undefined) {
-      conditions.push("rt.flat_type_id = ?");
-      params.push(data.flat_type_id);
-    }
-    if (data.flat_model_id !== undefined) {
-      conditions.push("rt.flat_model_id = ?");
-      params.push(data.flat_model_id);
-    }
-    if (data.storey_range_id !== undefined) {
-      conditions.push("rt.storey_range_id = ?");
-      params.push(data.storey_range_id);
-    }
-    if (data.price_min !== undefined) {
-      conditions.push("rt.resale_price >= ?");
-      params.push(data.price_min);
-    }
-    if (data.price_max !== undefined) {
-      conditions.push("rt.resale_price <= ?");
-      params.push(data.price_max);
-    }
-    if (data.year !== undefined) {
-      conditions.push("YEAR(rt.transaction_month) = ?");
-      params.push(data.year);
-    }
-    if (data.property_id !== undefined) {
-      conditions.push("rt.property_id = ?");
-      params.push(data.property_id);
-    }
+    addCondition(conditions, params, data.town_id, "p.town_id", "=");
+    addCondition(conditions, params, data.flat_type_id, "rt.flat_type_id", "=");
+    addCondition(
+      conditions,
+      params,
+      data.flat_model_id,
+      "rt.flat_model_id",
+      "=",
+    );
+    addCondition(
+      conditions,
+      params,
+      data.storey_range_id,
+      "rt.storey_range_id",
+      "=",
+    );
+    addCondition(conditions, params, data.price_min, "rt.resale_price", ">=");
+    addCondition(conditions, params, data.price_max, "rt.resale_price", "<=");
+    addCondition(
+      conditions,
+      params,
+      data.year,
+      "YEAR(rt.transaction_month)",
+      "=",
+    );
+    addCondition(conditions, params, data.property_id, "rt.property_id", "=");
 
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -105,6 +139,64 @@ export async function listTransactions(
     ]);
 
     return { data: rows, total: countRows[0].total };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getTransactionStatistics(
+  input: TransactionStatisticsQuery,
+): Promise<TransactionStatisticRow[]> {
+  try {
+    const data = transactionStatisticsQuerySchema.parse(input);
+    const groups = data.groupBy.map((group) => ({
+      name: group,
+      expression: statisticGroupExpression(group, data.granularity),
+    }));
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    addCondition(
+      conditions,
+      params,
+      data.date_from,
+      "rt.transaction_month",
+      ">=",
+    );
+    addCondition(conditions, params, data.date_to, "rt.transaction_month", "<");
+    if (data.granularity === "last 6 months") {
+      conditions.push(
+        "rt.transaction_month >= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)",
+      );
+    }
+    addCondition(conditions, params, data.town_id, "p.town_id", "=");
+    addCondition(conditions, params, data.flat_type_id, "rt.flat_type_id", "=");
+    addCondition(conditions, params, data.property_id, "rt.property_id", "=");
+    addCondition(
+      conditions,
+      params,
+      data.storey_range_id,
+      "rt.storey_range_id",
+      "=",
+    );
+
+    const where =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const selectGroups = groups
+      .map(({ name, expression }) => `${expression} AS ${name}`)
+      .join(", ");
+    const groupBy = groups.map(({ expression }) => expression).join(", ");
+    const orderBy = groups.map(({ name }) => name).join(", ");
+
+    return await query<TransactionStatisticRow>(
+      `SELECT ${selectGroups}, ${STATISTIC_METRICS[data.metric]} AS value,
+              COUNT(*) AS sample_size
+       FROM resale_transactions rt
+       JOIN properties p ON p.id = rt.property_id
+       ${where}
+       GROUP BY ${groupBy}
+       ORDER BY ${orderBy}`,
+      params,
+    );
   } catch (error) {
     return handleDbError(error);
   }

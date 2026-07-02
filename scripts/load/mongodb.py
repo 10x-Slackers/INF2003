@@ -35,9 +35,9 @@ class MongoDBLoader:
             document["_id"] = self._get_mariadb_id(town_key, town_ids, "town_key")
 
             summary = dict(document["transactionSummary"])
-            summary["avgResalePriceByFlatType"] = {
-                self._get_mariadb_id(ft_key, flat_type_ids, "flat_type_key"): avg_price
-                for ft_key, avg_price in summary["avgResalePriceByFlatType"].items()
+            summary["transactionCountByFlatType"] = {
+                self._get_mariadb_id(ft_key, flat_type_ids, "flat_type_key"): count
+                for ft_key, count in summary["transactionCountByFlatType"].items()
             }
             document["transactionSummary"] = summary
             document["updatedAt"] = self._mongo_timestamp(document["updatedAt"])
