@@ -3,19 +3,16 @@ import { DataTable } from "@/components/dashboard/DataTable";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PropertiesTable } from "./properties-table";
-import {
-  flatTypes,
-  flatModels,
-  listPlaceholderProperties,
-} from "@/lib/placeholder";
+import { listProperties } from "@/lib/tables/properties";
+import { listTowns } from "@/lib/tables/towns";
 import { propertyColumns } from "./property-columns";
 
-const pageSize = 2;
+const pageSize = 50;
 
 type PropertiesPageProps = {
   searchParams: Promise<{
-    flatModelId?: string;
-    flatTypeId?: string;
+    townId?: string;
+    leaseCommenceYear?: string;
     maxPrice?: string;
     minPrice?: string;
     page?: string;
@@ -41,33 +38,46 @@ async function Properties({
   const page = getPositiveNumber(query.page) ?? 1;
   const minPrice = getPositiveNumber(query.minPrice);
   const maxPrice = getPositiveNumber(query.maxPrice);
+  const leaseCommenceYear = getPositiveNumber(query.leaseCommenceYear);
   const filters = {
-    flatModelId: getFilterValue(query.flatModelId),
-    flatTypeId: getFilterValue(query.flatTypeId),
+    townId: getFilterValue(query.townId),
+    leaseCommenceYear,
     maxPrice,
     minPrice,
   };
-  // this is a placeholder for fetching data from the database (remember to await)
-  const results = listPlaceholderProperties({
-    ...filters,
-    page,
-    pageSize,
-  });
+
+  const [results, townsResult] = await Promise.all([
+    listProperties({
+      page,
+      pageSize,
+      town_id: filters.townId,
+      lease_commence_year: leaseCommenceYear,
+      price_min: minPrice,
+      price_max: maxPrice,
+    }),
+    listTowns({ page: 1, pageSize: 100 }),
+  ]);
   const pageCount = Math.max(1, Math.ceil(results.total / pageSize));
+  const townNameById = new Map(
+    townsResult.data.map((town) => [town.id, town.name]),
+  );
 
   return (
     <PropertiesTable
       currentPage={Math.min(page, pageCount)}
-      flatModels={flatModels}
-      flatTypes={flatTypes}
+      towns={townsResult.data}
       filters={{
-        flatModelId: filters.flatModelId ?? "all",
-        flatTypeId: filters.flatTypeId ?? "all",
+        townId: filters.townId ?? "all",
+        leaseCommenceYear:
+          leaseCommenceYear === undefined ? "" : String(leaseCommenceYear),
         maxPrice: maxPrice === undefined ? "" : String(maxPrice),
         minPrice: minPrice === undefined ? "" : String(minPrice),
       }}
       pageCount={pageCount}
-      properties={results.data}
+      properties={results.data.map((property) => ({
+        ...property,
+        town_name: townNameById.get(property.town_id) ?? "—",
+      }))}
     />
   );
 }
