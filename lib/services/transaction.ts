@@ -1,6 +1,7 @@
 import { rollDownTownProfileTransaction } from "@/lib/collections/town-profile";
 import {
   createTransaction,
+  getTransactionStatistics,
   type CreateTransactionParams,
 } from "@/lib/tables/transactions";
 
@@ -10,9 +11,7 @@ type AddTransactionInput = {
   flatTypeId: string;
   flatModelId: string;
   propertyId: string;
-  leaseRemaining: number | null;
   storeyRangeId: number;
-  storeyLabel: string | null;
   transactionDate: string;
   resalePrice: number;
   floorAreaSqm: number;
@@ -34,22 +33,24 @@ export async function addTransaction(
     },
   };
   await createTransaction(params);
-  return TownProfileTransaction(
+  const transactionsLast6Months = await countTownTransactionsLast6Months(
+    transaction.townId,
+  );
+
+  return rollDownTownProfileTransaction(
     transaction.townId,
     transaction.flatTypeId,
     transaction.transactionDate,
+    transactionsLast6Months,
   );
 }
 
-async function TownProfileTransaction(
-  townId: string,
-  flatTypeId: string,
-  transactionMonth: string,
-): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
-  const townProfile = await rollDownTownProfileTransaction(
-    townId,
-    flatTypeId,
-    transactionMonth,
-  );
-  return townProfile;
+async function countTownTransactionsLast6Months(townId: string) {
+  const [row] = await getTransactionStatistics({
+    metric: "sales_count",
+    granularity: "last 6 months",
+    groupBy: ["town_id"],
+    town_id: townId,
+  });
+  return row?.value ?? 0;
 }

@@ -25,13 +25,18 @@ class DocumentTransformer:
             for town_key, tg in self.town_transformer.town_geometries.items()
         }
         timestamp = self._iso_timestamp(self.computed_at)
-        month_str = pd.to_datetime(
+        month_periods = pd.to_datetime(
             resale_transactions_df["transaction_month"]
-        ).dt.strftime("%Y-%m")
+        ).dt.to_period("M")
+        month_str = month_periods.dt.strftime("%Y-%m")
+        last_6_months_start = month_periods.max() - 5
 
         for town_key, group in resale_transactions_df.groupby("town_key", sort=True):
             town_key = str(town_key)
             group_months = month_str.loc[group.index]
+            transactions_last_6_months = int(
+                (month_periods.loc[group.index] >= last_6_months_start).sum()
+            )
             transaction_counts = group.groupby("flat_type_key", sort=True).size()
             rows.append(
                 {
@@ -41,6 +46,7 @@ class DocumentTransformer:
                         "totalTransaction": len(group),
                         "earliestTransaction": str(group_months.min()),
                         "latestTransaction": str(group_months.max()),
+                        "transactionsLast6Months": transactions_last_6_months,
                         "transactionCountByFlatType": {
                             str(flat_type_key): int(value)
                             for flat_type_key, value in transaction_counts.items()
