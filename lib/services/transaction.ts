@@ -1,4 +1,7 @@
-import { rollDownTownProfileTransaction } from "@/lib/collections/town-profile";
+import {
+  rollDownTownProfileTransaction,
+  updateTownProfileTransactionsLast6Months,
+} from "@/lib/collections/town-profile";
 import {
   createTransaction,
   getTransactionStatistics,
@@ -41,15 +44,21 @@ export async function addTransaction(
   try {
     // transaction id is not needed for roll down, so we can ignore the return value
     await createTransaction(params);
-    const transactionsLast6Months = await countTownTransactionsLast6Months(
-      transaction.townId,
-    );
-    return rollDownTownProfileTransaction(
+    const town = await rollDownTownProfileTransaction(
       transaction.townId,
       transaction.flatTypeId,
       transaction.transactionDate,
+    );
+    if (!town?.thresholdMet) return town;
+
+    const transactionsLast6Months = await countTownTransactionsLast6Months(
+      transaction.townId,
+    );
+    const updatedTown = await updateTownProfileTransactionsLast6Months(
+      transaction.townId,
       transactionsLast6Months,
     );
+    return updatedTown;
   } catch (error) {
     return handleDbError(error);
   }

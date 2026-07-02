@@ -27,16 +27,10 @@ export async function rollDownTownProfileTransaction(
   townId: string,
   flatTypeId: string,
   transactionMonth: string,
-  transactionsLast6Months: number,
 ): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
   try {
     const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
-    const validatedTransactionsLast6Months = z.coerce
-      .number()
-      .int()
-      .min(0)
-      .parse(transactionsLast6Months);
     const monthschema = z.string().regex(/^\d{4}-\d{2}$/);
     const month = monthschema.parse(transactionMonth.slice(0, 7));
 
@@ -74,8 +68,6 @@ export async function rollDownTownProfileTransaction(
                 "$transactionSummary.latestTransaction",
               ],
             },
-            "transactionSummary.transactionsLast6Months":
-              validatedTransactionsLast6Months,
             updatedAt: now(),
             // Increment updatedCount; reset to 0 when threshold is reached
             // to trigger downstream batch processing
@@ -91,6 +83,40 @@ export async function rollDownTownProfileTransaction(
           },
         },
       ],
+      {
+        projection: { _id: 1, updatedCount: 1 },
+        returnDocument: "after",
+      },
+    );
+    return town
+      ? {
+          id: town._id,
+          updatedCount: town.updatedCount,
+          thresholdMet: town.updatedCount === 0,
+        }
+      : null;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function updateTownProfileTransactionsLast6Months(
+  townId: string,
+  transactionsLast6Months: number,
+): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+  try {
+    const town = await towns.findOneAndUpdate(
+      { _id: idSchema.parse(townId) },
+      {
+        $set: {
+          "transactionSummary.transactionsLast6Months": z.coerce
+            .number()
+            .int()
+            .min(0)
+            .parse(transactionsLast6Months),
+          updatedAt: now(),
+        },
+      },
       {
         projection: { _id: 1, updatedCount: 1 },
         returnDocument: "after",

@@ -90,6 +90,7 @@ db.createCollection("statistics", {
             "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
             "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
             "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
+            "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
           ],
         },
         granularity: { enum: ["monthly", "yearly"] },
@@ -104,8 +105,15 @@ db.createCollection("statistics", {
         },
         dimensions: {
           bsonType: "object",
-          required: ["flatTypeId", "propertyId", "leaseRemaining", "storey"],
+          required: [
+            "townId",
+            "flatTypeId",
+            "propertyId",
+            "leaseRemaining",
+            "storey",
+          ],
           properties: {
+            townId: { bsonType: ["null", "string"] },
             flatTypeId: { bsonType: ["null", "string"] },
             propertyId: { bsonType: ["null", "string"] },
             leaseRemaining: {
