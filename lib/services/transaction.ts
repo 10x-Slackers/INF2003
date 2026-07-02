@@ -5,6 +5,12 @@ import {
   type CreateTransactionParams,
 } from "@/lib/tables/transactions";
 
+import {
+  transactionStatisticsMetricSchema,
+  transactionStatisticsGranularitySchema,
+} from "@/lib/tables/transactions/types";
+import { handleDbError } from "../utils";
+
 type AddTransactionInput = {
   user_id: string;
   townId: string;
@@ -32,25 +38,33 @@ export async function addTransaction(
       resale_price: transaction.resalePrice,
     },
   };
-  await createTransaction(params);
-  const transactionsLast6Months = await countTownTransactionsLast6Months(
-    transaction.townId,
-  );
-
-  return rollDownTownProfileTransaction(
-    transaction.townId,
-    transaction.flatTypeId,
-    transaction.transactionDate,
-    transactionsLast6Months,
-  );
+  try {
+    // transaction id is not needed for roll down, so we can ignore the return value
+    await createTransaction(params);
+    const transactionsLast6Months = await countTownTransactionsLast6Months(
+      transaction.townId,
+    );
+    return rollDownTownProfileTransaction(
+      transaction.townId,
+      transaction.flatTypeId,
+      transaction.transactionDate,
+      transactionsLast6Months,
+    );
+  } catch (error) {
+    return handleDbError(error);
+  }
 }
 
 async function countTownTransactionsLast6Months(townId: string) {
-  const [row] = await getTransactionStatistics({
-    metric: "sales_count",
-    granularity: "last 6 months",
-    groupBy: ["town_id"],
-    town_id: townId,
-  });
-  return row?.value ?? 0;
+  try {
+    const [row] = await getTransactionStatistics({
+      metric: transactionStatisticsMetricSchema.enum.sales_count,
+      granularity: transactionStatisticsGranularitySchema.enum["last 6 months"],
+      groupBy: ["town_id"],
+      town_id: townId,
+    });
+    return row?.value ?? 0;
+  } catch (error) {
+    return handleDbError(error);
+  }
 }
