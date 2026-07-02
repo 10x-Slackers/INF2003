@@ -2,11 +2,9 @@ import { execute, query } from "@/lib/db";
 import { getPropertiesWithLatestTransaction } from "@/lib/tables/properties/functions";
 import { handleDbError } from "@/lib/db-errors";
 import {
-  createSavedPropertySchema,
   savedPropertyIdentitySchema,
   savedPropertyListQuerySchema,
   updateSavedPropertyParamsSchema,
-  type CreateSavedProperty,
   type SavedProperty,
   type SavedPropertyDetail,
   type SavedPropertyIdentity,
@@ -14,7 +12,6 @@ import {
   type UpdateSavedPropertyParams,
 } from "./types";
 import { idSchema } from "../common";
-import { executeReturning } from "@/lib/db/mariadb";
 
 async function attachProperty(
   row: SavedProperty,
@@ -76,21 +73,6 @@ export async function getSavedPropertyById(
   }
 }
 
-export async function createSavedProperty(
-  input: CreateSavedProperty,
-): Promise<string> {
-  try {
-    const data = createSavedPropertySchema.parse(input);
-    const result = await executeReturning<{ id: string }>(
-      "INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?)",
-      [data.userId, data.propertyId],
-    );
-    return result[0].id;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
 export async function updateSavedProperty(
   input: UpdateSavedPropertyParams,
 ): Promise<SavedPropertyDetail | null> {
@@ -118,17 +100,6 @@ export async function updateSavedProperty(
   }
 }
 
-export async function deleteSavedProperty(id: string): Promise<boolean> {
-  try {
-    const result = await execute("DELETE FROM saved_properties WHERE id = ?", [
-      idSchema.parse(id),
-    ]);
-    return result.affectedRows > 0;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
 export async function isPropertySaved(
   input: SavedPropertyIdentity,
 ): Promise<boolean> {
@@ -139,21 +110,6 @@ export async function isPropertySaved(
       [data.userId, data.propertyId],
     );
     return rows.length > 0;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
-export async function getSavedPropertyId(
-  input: SavedPropertyIdentity,
-): Promise<string | null> {
-  try {
-    const data = savedPropertyIdentitySchema.parse(input);
-    const rows = await query<{ id: string }>(
-      "SELECT id FROM saved_properties WHERE user_id = ? AND property_id = ? LIMIT 1",
-      [data.userId, data.propertyId],
-    );
-    return rows[0]?.id ?? null;
   } catch (error) {
     return handleDbError(error);
   }

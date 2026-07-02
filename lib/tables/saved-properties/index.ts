@@ -1,6 +1,4 @@
 export {
-  createSavedProperty,
-  deleteSavedProperty,
   getSavedPropertyById,
   isPropertySaved,
   listSavedProperties,
