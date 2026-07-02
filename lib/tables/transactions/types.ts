@@ -40,6 +40,7 @@ export const transactionStatisticsMetricSchema = z.enum([
 export const transactionStatisticsGranularitySchema = z.enum([
   "monthly",
   "yearly",
+  "last 6 months",
 ]);
 export const transactionStatisticsGroupSchema = z.enum([
   "period",
@@ -54,14 +55,8 @@ export const transactionStatisticsQuerySchema = z
     metric: transactionStatisticsMetricSchema,
     granularity: transactionStatisticsGranularitySchema,
     groupBy: z.array(transactionStatisticsGroupSchema).min(1),
-    date_from: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional(),
-    date_to: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional(),
+    date_from: z.date().optional(),
+    date_to: z.date().optional(),
     town_id: z.uuid().optional(),
     flat_type_id: z.coerce.number().int().positive().optional(),
     property_id: z.uuid().optional(),

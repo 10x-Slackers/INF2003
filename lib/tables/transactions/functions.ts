@@ -21,6 +21,7 @@ import {
 } from "./types";
 import { idSchema } from "../common";
 import { executeReturning } from "@/lib/db/mariadb";
+import { addCondition } from "./utils";
 
 const TRANSACTION_COLUMNS = `rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
             rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
@@ -66,7 +67,7 @@ const isEmptyUpdate = (input: UpdateTransaction) =>
 
 function periodExpression(granularity: TransactionStatisticsGranularity) {
   return `DATE_FORMAT(rt.transaction_month, '${
-    granularity === "monthly" ? "%Y-%m" : "%Y"
+    granularity === "yearly" ? "%Y" : "%Y-%m"
   }')`;
 }
 
@@ -88,38 +89,26 @@ export async function listTransactions(
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (data.town_id !== undefined) {
-      conditions.push("p.town_id = ?");
-      params.push(data.town_id);
-    }
-    if (data.flat_type_id !== undefined) {
-      conditions.push("rt.flat_type_id = ?");
-      params.push(data.flat_type_id);
-    }
-    if (data.flat_model_id !== undefined) {
-      conditions.push("rt.flat_model_id = ?");
-      params.push(data.flat_model_id);
-    }
-    if (data.storey_range_id !== undefined) {
-      conditions.push("rt.storey_range_id = ?");
-      params.push(data.storey_range_id);
-    }
-    if (data.price_min !== undefined) {
-      conditions.push("rt.resale_price >= ?");
-      params.push(data.price_min);
-    }
-    if (data.price_max !== undefined) {
-      conditions.push("rt.resale_price <= ?");
-      params.push(data.price_max);
-    }
-    if (data.year !== undefined) {
-      conditions.push("YEAR(rt.transaction_month) = ?");
-      params.push(data.year);
-    }
-    if (data.property_id !== undefined) {
-      conditions.push("rt.property_id = ?");
-      params.push(data.property_id);
-    }
+    addCondition(conditions, params, data.town_id, "p.town_id", "=");
+    addCondition(conditions, params, data.flat_type_id, "rt.flat_type_id", "=");
+    addCondition(
+      conditions,
+      params,
+      data.flat_model_id,
+      "rt.flat_model_id",
+      "=",
+    );
+    addCondition(
+      conditions,
+      params,
+      data.storey_range_id,
+      "rt.storey_range_id",
+      "=",
+    );
+    addCondition(conditions, params, data.price_min, "rt.resale_price", ">=");
+    addCondition(conditions, params, data.price_max, "rt.resale_price", "<=");
+    addCondition(conditions, params, data.year, "rt.transaction_month", "=");
+    addCondition(conditions, params, data.property_id, "rt.property_id", "=");
 
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -160,31 +149,31 @@ export async function getTransactionStatistics(
     }));
     const conditions: string[] = [];
     const params: unknown[] = [];
-
-    if (data.date_from !== undefined) {
-      conditions.push("rt.transaction_month >= ?");
-      params.push(data.date_from);
-    }
-    if (data.date_to !== undefined) {
-      conditions.push("rt.transaction_month < ?");
-      params.push(data.date_to);
-    }
-    if (data.town_id !== undefined) {
-      conditions.push("p.town_id = ?");
-      params.push(data.town_id);
-    }
-    if (data.flat_type_id !== undefined) {
-      conditions.push("rt.flat_type_id = ?");
-      params.push(data.flat_type_id);
-    }
-    if (data.property_id !== undefined) {
-      conditions.push("rt.property_id = ?");
-      params.push(data.property_id);
-    }
-    if (data.storey_range_id !== undefined) {
-      conditions.push("rt.storey_range_id = ?");
-      params.push(data.storey_range_id);
-    }
+    addCondition(
+      conditions,
+      params,
+      data.date_from,
+      "rt.transaction_month",
+      ">=",
+    );
+    addCondition(conditions, params, data.date_to, "rt.transaction_month", "<");
+    addCondition(
+      conditions,
+      params,
+      data.granularity,
+      "rt.transaction_month",
+      ">= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)",
+    );
+    addCondition(conditions, params, data.town_id, "p.town_id", "=");
+    addCondition(conditions, params, data.flat_type_id, "rt.flat_type_id", "=");
+    addCondition(conditions, params, data.property_id, "rt.property_id", "=");
+    addCondition(
+      conditions,
+      params,
+      data.storey_range_id,
+      "rt.storey_range_id",
+      "=",
+    );
 
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

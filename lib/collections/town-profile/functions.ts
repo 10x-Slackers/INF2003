@@ -29,12 +29,10 @@ export async function rollDownTownProfileTransaction(
   transactionMonth: string,
 ): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
   try {
-    const validatedFlatId = z.number().int().min(1).parse(parseInt(flatTypeId));
+    const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
-    const month = transactionMonth.slice(0, 7);
-    if (!/^\d{4}-\d{2}$/.test(month)) {
-      throw new Error(`Invalid transaction month format: ${month}`);
-    }
+    const monthschema = z.string().regex(/^\d{4}-\d{2}$/);
+    const month = monthschema.parse(transactionMonth.slice(0, 7));
 
     const town = await towns.findOneAndUpdate(
       { _id: validatedTownId },
