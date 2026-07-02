@@ -6,22 +6,30 @@ import { PaginatedDataTable } from "@/components/dashboard/PaginatedDataTable";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { properties, resaleTransactions } from "@/lib/placeholder";
+import { SavePropertyButton } from "@/components/save-property-button";
+import { auth } from "@/lib/auth";
 import { ROUTES } from "@/lib/routes";
+import {
+  getPropertiesWithLatestTransaction,
+  getPropertyById,
+} from "@/lib/tables/properties";
+import { isPropertySaved } from "@/lib/tables/saved-properties";
+import { listTransactions } from "@/lib/tables/transactions";
 import { transactionColumns } from "./transaction-columns";
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ transactionPage?: string }>;
+  searchParams: Promise<{ transactionPage?: string; from?: string }>;
 };
 
-const pageSize = 2;
+const pageSize = 10;
 
 export default async function PropertyPage({
   params,
@@ -29,15 +37,21 @@ export default async function PropertyPage({
 }: PropertyPageProps) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
   const transactionPage = Number(query.transactionPage ?? "1");
+  const from = query.from === "bookmarks" ? "bookmarks" : undefined;
 
   return (
     <main className="container mx-auto flex flex-col gap-4 px-5 py-6">
       <Button asChild className="self-start" variant="outline">
-        <Link href={ROUTES.PROPERTIES}>Back to properties</Link>
+        <Link
+          href={from === "bookmarks" ? ROUTES.BOOKMARKS : ROUTES.PROPERTIES}
+        >
+          Back to {from === "bookmarks" ? "bookmarks" : "properties"}
+        </Link>
       </Button>
       <Suspense fallback={<PropertySkeleton />}>
         <Property
           id={id}
+          from={from}
           transactionPage={
             Number.isFinite(transactionPage) && transactionPage > 0
               ? Math.floor(transactionPage)
@@ -52,51 +66,67 @@ export default async function PropertyPage({
 async function Property({
   id,
   transactionPage,
+  from,
 }: {
   id: string;
   transactionPage: number;
+  from?: "bookmarks";
 }) {
-  // this is a placeholder for fetching data from the database
-  const data = {
-    property: properties.find((property) => property.id === id),
-    transactions: resaleTransactions.filter(
-      (transaction) => transaction.propertyId === id,
-    ),
-  };
+  const [session, property, [propertyWithLatest], transactionsResult] =
+    await Promise.all([
+      auth(),
+      getPropertyById(id),
+      getPropertiesWithLatestTransaction([id]),
+      listTransactions({ property_id: id, page: transactionPage, pageSize }),
+    ]);
 
-  if (!data || !data.property) {
+  if (!property) {
     notFound();
   }
 
-  const pageCount = Math.max(1, Math.ceil(data.transactions.length / pageSize));
+  const saved = session?.user
+    ? await isPropertySaved({ userId: session.user.id, propertyId: id })
+    : false;
+  const latestTransaction = propertyWithLatest?.latest_transaction ?? null;
+  const pageCount = Math.max(1, Math.ceil(transactionsResult.total / pageSize));
   const currentPage = Math.min(transactionPage, pageCount);
-  const transactions = data.transactions.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
 
   return (
     <>
-      <Card>
+      <Card size="sm">
         <CardHeader>
           <CardTitle>
-            Block {data.property.block}, {data.property.streetName}
+            Block {property.block}, {property.street_name}
+            <span className="text-muted-foreground">
+              {" "}
+              · {property.town?.name} · Lease Commence Year{" "}
+              {property.lease_commence_year}
+            </span>
           </CardTitle>
-          <CardDescription>{data.property.town}</CardDescription>
+          <CardAction>
+            <SavePropertyButton initialSaved={saved} propertyId={id} />
+          </CardAction>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
-          <PropertyField label="Flat Type" value={data.property.flatType} />
-          <PropertyField label="Flat Model" value={data.property.flatModel} />
+          <CardTitle className="w-full">Latest Transaction</CardTitle>
           <PropertyField
-            label="Lease Commence Year"
-            value={data.property.leaseCommenceYear}
+            label="Flat Type"
+            value={latestTransaction?.flat_type ?? "—"}
           />
           <PropertyField
-            label="Latest Resale Price"
-            value={data.property.resalePrice.toLocaleString("en-SG", {
-              currency: "SGD",
-              style: "currency",
-            })}
+            label="Flat Model"
+            value={latestTransaction?.flat_model ?? "—"}
+          />
+          <PropertyField
+            label="Resale Price"
+            value={
+              latestTransaction
+                ? latestTransaction.resale_price.toLocaleString("en-SG", {
+                    currency: "SGD",
+                    style: "currency",
+                  })
+                : "—"
+            }
           />
         </CardContent>
       </Card>
@@ -105,17 +135,17 @@ async function Property({
         <CardHeader>
           <CardTitle>Transactions</CardTitle>
           <CardDescription>
-            {data.transactions.length} transactions found
+            {transactionsResult.total} transactions found
           </CardDescription>
         </CardHeader>
         <CardContent>
           <PaginatedDataTable
             columns={transactionColumns}
             currentPage={currentPage}
-            data={transactions}
+            data={transactionsResult.data}
             emptyMessage="No transactions found."
             getPageHref={(page) =>
-              `${ROUTES.PROPERTIES}/${id}?transactionPage=${page}`
+              `${ROUTES.PROPERTIES}/${id}?transactionPage=${page}${from ? `&from=${from}` : ""}`
             }
             getRowKey={(transaction) => transaction.id}
             pageCount={pageCount}

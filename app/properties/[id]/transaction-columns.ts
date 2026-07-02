@@ -1,35 +1,41 @@
 import type { DataTableColumn } from "@/components/dashboard/DataTable";
-import type { resaleTransactionType } from "@/lib/placeholder";
+import type { TransactionListItem } from "@/lib/tables/transactions";
+
+const pad = (value: number) => String(value).padStart(2, "0");
 
 export const transactionColumns = [
   {
     key: "transactionMonth",
     header: "Transaction Month",
     cell: (row) =>
-      new Date(row.transactionMonth).toLocaleDateString("en-SG", {
+      new Date(row.transaction_month).toLocaleDateString("en-SG", {
         month: "short",
         year: "numeric",
       }),
   },
-  { key: "flatType", header: "Flat Type", cell: (row) => row.flatType },
-  { key: "flatModel", header: "Flat Model", cell: (row) => row.flatModel },
+  { key: "flatType", header: "Flat Type", cell: (row) => row.flat_type_name },
+  {
+    key: "flatModel",
+    header: "Flat Model",
+    cell: (row) => row.flat_model_name,
+  },
   {
     key: "storeyRange",
     header: "Storey Range",
-    cell: (row) => row.storeyRange,
+    cell: (row) => `${pad(row.min_storey)} To ${pad(row.max_storey)}`,
   },
   {
     key: "floorAreaSqm",
     header: "Floor Area",
-    cell: (row) => `${row.floorAreaSqm} sqm`,
+    cell: (row) => `${row.floor_area_sqm} sqm`,
   },
   {
     key: "resalePrice",
     header: "Resale Price",
     cell: (row) =>
-      row.resalePrice.toLocaleString("en-SG", {
+      row.resale_price.toLocaleString("en-SG", {
         currency: "SGD",
         style: "currency",
       }),
   },
-] satisfies DataTableColumn<resaleTransactionType>[];
+] satisfies DataTableColumn<TransactionListItem>[];

@@ -11,20 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { propertyType } from "../../lib/placeholder";
-import { propertyColumns } from "./property-columns";
+import { propertyColumns, type PropertyRow } from "./property-columns";
 
 type PropertyFilters = {
-  flatTypeId: string;
-  flatModelId: string;
+  townId: string;
+  leaseCommenceYear: string;
   minPrice: string;
   maxPrice: string;
 };
 
 type PropertiesTableProps = {
-  properties: propertyType[];
-  flatTypes: readonly { id: string; name: string }[];
-  flatModels: readonly { id: string; name: string }[];
+  properties: PropertyRow[];
+  towns: readonly { id: string; name: string }[];
   filters: PropertyFilters;
   currentPage: number;
   pageCount: number;
@@ -32,8 +30,7 @@ type PropertiesTableProps = {
 
 export function PropertiesTable({
   properties,
-  flatTypes,
-  flatModels,
+  towns,
   filters,
   currentPage,
   pageCount,
@@ -46,16 +43,16 @@ export function PropertiesTable({
       <CardContent className="flex flex-col gap-4">
         <form className="flex flex-wrap items-end gap-4" action="/properties">
           <div className="flex min-w-40 flex-1 flex-col gap-2">
-            <Label>Flat Type</Label>
-            <Select defaultValue={filters.flatTypeId} name="flatTypeId">
+            <Label>Town</Label>
+            <Select defaultValue={filters.townId} name="townId">
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All flat types</SelectItem>
-                {flatTypes.map((flatType) => (
-                  <SelectItem key={flatType.id} value={flatType.id}>
-                    {flatType.name}
+                <SelectItem value="all">All towns</SelectItem>
+                {towns.map((town) => (
+                  <SelectItem key={town.id} value={town.id}>
+                    {town.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -63,20 +60,15 @@ export function PropertiesTable({
           </div>
 
           <div className="flex min-w-40 flex-1 flex-col gap-2">
-            <Label>Flat Model</Label>
-            <Select defaultValue={filters.flatModelId} name="flatModelId">
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All flat models</SelectItem>
-                {flatModels.map((flatModel) => (
-                  <SelectItem key={flatModel.id} value={flatModel.id}>
-                    {flatModel.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="lease-commence-year">Lease Commence Year</Label>
+            <Input
+              id="lease-commence-year"
+              max="2100"
+              min="1960"
+              name="leaseCommenceYear"
+              type="number"
+              defaultValue={filters.leaseCommenceYear}
+            />
           </div>
 
           <div className="flex min-w-40 flex-1 flex-col gap-2">
@@ -126,11 +118,11 @@ export function PropertiesTable({
 function getPageHref(page: number, filters: PropertyFilters) {
   const params = new URLSearchParams();
 
-  if (filters.flatTypeId !== "all") {
-    params.set("flatTypeId", filters.flatTypeId);
+  if (filters.townId !== "all") {
+    params.set("townId", filters.townId);
   }
-  if (filters.flatModelId !== "all") {
-    params.set("flatModelId", filters.flatModelId);
+  if (filters.leaseCommenceYear !== "") {
+    params.set("leaseCommenceYear", filters.leaseCommenceYear);
   }
   if (filters.minPrice !== "") {
     params.set("minPrice", filters.minPrice);
