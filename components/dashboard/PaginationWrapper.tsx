@@ -1,7 +1,9 @@
 import type { MouseEvent } from "react";
+import { getPaginationRange } from "@/components/dashboard/pagination-range";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -19,7 +21,7 @@ export function PaginationWrapper({
   pageCount,
   onPageChange,
 }: PaginationWrapperProps) {
-  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const pages = getPaginationRange(currentPage, pageCount);
 
   function changePage(event: MouseEvent<HTMLAnchorElement>, page: number) {
     event.preventDefault();
@@ -39,17 +41,23 @@ export function PaginationWrapper({
           />
         </PaginationItem>
 
-        {pages.map((page) => (
-          <PaginationItem key={page}>
-            <PaginationLink
-              href="#"
-              isActive={page === currentPage}
-              onClick={(event) => changePage(event, page)}
-            >
-              {page}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
+        {pages.map((page, index) =>
+          page === "ellipsis" ? (
+            <PaginationItem key={`ellipsis-${index}`}>
+              <PaginationEllipsis />
+            </PaginationItem>
+          ) : (
+            <PaginationItem key={page}>
+              <PaginationLink
+                href="#"
+                isActive={page === currentPage}
+                onClick={(event) => changePage(event, page)}
+              >
+                {page}
+              </PaginationLink>
+            </PaginationItem>
+          ),
+        )}
 
         <PaginationItem>
           <PaginationNext

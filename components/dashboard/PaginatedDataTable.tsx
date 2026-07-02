@@ -1,9 +1,11 @@
 import type { Key } from "react";
 import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
+import { getPaginationRange } from "@/components/dashboard/pagination-range";
 import { PaginationWrapper } from "@/components/dashboard/PaginationWrapper";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -67,7 +69,7 @@ function LinkedPagination({
   getPageHref: (page: number) => string;
   pageCount: number;
 }) {
-  const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const pages = getPaginationRange(currentPage, pageCount);
 
   return (
     <Pagination>
@@ -81,16 +83,22 @@ function LinkedPagination({
           />
         </PaginationItem>
 
-        {pages.map((page) => (
-          <PaginationItem key={page}>
-            <PaginationLink
-              href={getPageHref(page)}
-              isActive={page === currentPage}
-            >
-              {page}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
+        {pages.map((page, index) =>
+          page === "ellipsis" ? (
+            <PaginationItem key={`ellipsis-${index}`}>
+              <PaginationEllipsis />
+            </PaginationItem>
+          ) : (
+            <PaginationItem key={page}>
+              <PaginationLink
+                href={getPageHref(page)}
+                isActive={page === currentPage}
+              >
+                {page}
+              </PaginationLink>
+            </PaginationItem>
+          ),
+        )}
 
         <PaginationItem>
           <PaginationNext
