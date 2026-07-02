@@ -2,13 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DataTable } from "@/components/dashboard/DataTable";
-import { PaginatedDataTable } from "@/components/dashboard/PaginatedDataTable";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -21,12 +19,26 @@ import {
   getPropertyById,
 } from "@/lib/tables/properties";
 import { isPropertySaved } from "@/lib/tables/saved-properties";
-import { listTransactions } from "@/lib/tables/transactions";
+import {
+  getPropertyFilterOptions,
+  getTransactionPriceStats,
+  listTransactions,
+} from "@/lib/tables/transactions";
 import { transactionColumns } from "./transaction-columns";
+import { PropertyTransactionsTable } from "./transactions-table";
+
+type PropertyPageQuery = {
+  transactionPage?: string;
+  from?: string;
+  flatTypeId?: string;
+  flatModelId?: string;
+  storeyRangeId?: string;
+  year?: string;
+};
 
 type PropertyPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ transactionPage?: string; from?: string }>;
+  searchParams: Promise<PropertyPageQuery>;
 };
 
 const pageSize = 10;
@@ -57,6 +69,7 @@ export default async function PropertyPage({
               ? Math.floor(transactionPage)
               : 1
           }
+          query={query}
         />
       </Suspense>
     </main>
@@ -67,18 +80,47 @@ async function Property({
   id,
   transactionPage,
   from,
+  query,
 }: {
   id: string;
   transactionPage: number;
   from?: "bookmarks";
+  query: PropertyPageQuery;
 }) {
-  const [session, property, [propertyWithLatest], transactionsResult] =
-    await Promise.all([
-      auth(),
-      getPropertyById(id),
-      getPropertiesWithLatestTransaction([id]),
-      listTransactions({ property_id: id, page: transactionPage, pageSize }),
-    ]);
+  const filters = {
+    flatTypeId: getFilterValue(query.flatTypeId),
+    flatModelId: getFilterValue(query.flatModelId),
+    storeyRangeId: getFilterValue(query.storeyRangeId),
+    year: getPositiveNumber(query.year),
+  };
+
+  const [
+    session,
+    property,
+    [propertyWithLatest],
+    transactionsResult,
+    priceStats,
+    filterOptions,
+  ] = await Promise.all([
+    auth(),
+    getPropertyById(id),
+    getPropertiesWithLatestTransaction([id]),
+    listTransactions({
+      property_id: id,
+      page: transactionPage,
+      pageSize,
+      flat_type_id: filters.flatTypeId ? Number(filters.flatTypeId) : undefined,
+      flat_model_id: filters.flatModelId
+        ? Number(filters.flatModelId)
+        : undefined,
+      storey_range_id: filters.storeyRangeId
+        ? Number(filters.storeyRangeId)
+        : undefined,
+      year: filters.year,
+    }),
+    getTransactionPriceStats(id),
+    getPropertyFilterOptions(id),
+  ]);
 
   if (!property) {
     notFound();
@@ -133,27 +175,80 @@ async function Property({
 
       <Card>
         <CardHeader>
-          <CardTitle>Transactions</CardTitle>
-          <CardDescription>
-            {transactionsResult.total} transactions found
-          </CardDescription>
+          <CardTitle>Summary</CardTitle>
         </CardHeader>
-        <CardContent>
-          <PaginatedDataTable
-            columns={transactionColumns}
-            currentPage={currentPage}
-            data={transactionsResult.data}
-            emptyMessage="No transactions found."
-            getPageHref={(page) =>
-              `${ROUTES.PROPERTIES}/${id}?transactionPage=${page}${from ? `&from=${from}` : ""}`
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-wrap gap-4">
+            <PropertyField
+              label="Avg Price/sqm"
+              value={formatPricePerSqm(priceStats?.avg_price_per_sqm)}
+            />
+            <PropertyField
+              label="Lowest Price/sqm"
+              value={formatPricePerSqm(priceStats?.min_price_per_sqm)}
+            />
+            <PropertyField
+              label="Highest Price/sqm"
+              value={formatPricePerSqm(priceStats?.max_price_per_sqm)}
+            />
+          </div>
+          <PropertyField
+            label="Available Flat Types"
+            value={
+              filterOptions.flatTypes
+                .map((flatType) => flatType.name)
+                .join(", ") || "—"
             }
-            getRowKey={(transaction) => transaction.id}
-            pageCount={pageCount}
+          />
+          <PropertyField
+            label="Available Flat Models"
+            value={
+              filterOptions.flatModels
+                .map((flatModel) => flatModel.name)
+                .join(", ") || "—"
+            }
           />
         </CardContent>
       </Card>
+
+      <PropertyTransactionsTable
+        currentPage={currentPage}
+        filters={{
+          flatTypeId: filters.flatTypeId ?? "all",
+          flatModelId: filters.flatModelId ?? "all",
+          storeyRangeId: filters.storeyRangeId ?? "all",
+          year: filters.year === undefined ? "" : String(filters.year),
+        }}
+        flatModels={filterOptions.flatModels}
+        flatTypes={filterOptions.flatTypes}
+        from={from}
+        pageCount={pageCount}
+        propertyId={id}
+        storeyRanges={filterOptions.storeyRanges}
+        total={transactionsResult.total}
+        transactions={transactionsResult.data}
+      />
     </>
   );
+}
+
+function getFilterValue(value?: string) {
+  return value && value !== "all" ? value : undefined;
+}
+
+function getPositiveNumber(value?: string) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : undefined;
+}
+
+function formatPricePerSqm(value: number | undefined) {
+  if (value === undefined) return "—";
+  const price = Math.round(value).toLocaleString("en-SG", {
+    currency: "SGD",
+    style: "currency",
+    maximumFractionDigits: 0,
+  });
+  return `${price}/sqm`;
 }
 
 function PropertyField({

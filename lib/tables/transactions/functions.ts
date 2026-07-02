@@ -110,6 +110,73 @@ export async function listTransactions(
   }
 }
 
+export type TransactionPriceStats = {
+  avg_price_per_sqm: number;
+  min_price_per_sqm: number;
+  max_price_per_sqm: number;
+};
+
+export async function getTransactionPriceStats(
+  propertyId: string,
+): Promise<TransactionPriceStats | null> {
+  try {
+    const rows = await query<TransactionPriceStats>(
+      `SELECT AVG(resale_price / floor_area_sqm) AS avg_price_per_sqm,
+              MIN(resale_price / floor_area_sqm) AS min_price_per_sqm,
+              MAX(resale_price / floor_area_sqm) AS max_price_per_sqm
+       FROM resale_transactions WHERE property_id = ?`,
+      [idSchema.parse(propertyId)],
+    );
+    return rows[0]?.avg_price_per_sqm === null ? null : rows[0];
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export type PropertyFilterOptions = {
+  flatTypes: { id: number; name: string }[];
+  flatModels: { id: number; name: string }[];
+  storeyRanges: { id: number; min_storey: number; max_storey: number }[];
+};
+
+export async function getPropertyFilterOptions(
+  propertyId: string,
+): Promise<PropertyFilterOptions> {
+  try {
+    const id = idSchema.parse(propertyId);
+    const [flatTypes, flatModels, storeyRanges] = await Promise.all([
+      query<{ id: number; name: string }>(
+        `SELECT DISTINCT ft.id AS id, ft.name AS name
+         FROM resale_transactions rt
+         JOIN flat_types ft ON ft.id = rt.flat_type_id
+         WHERE rt.property_id = ?
+         ORDER BY ft.name`,
+        [id],
+      ),
+      query<{ id: number; name: string }>(
+        `SELECT DISTINCT fm.id AS id, fm.name AS name
+         FROM resale_transactions rt
+         JOIN flat_models fm ON fm.id = rt.flat_model_id
+         WHERE rt.property_id = ?
+         ORDER BY fm.name`,
+        [id],
+      ),
+      query<{ id: number; min_storey: number; max_storey: number }>(
+        `SELECT DISTINCT sr.id AS id, sr.min_storey AS min_storey,
+                sr.max_storey AS max_storey
+         FROM resale_transactions rt
+         JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+         WHERE rt.property_id = ?
+         ORDER BY sr.min_storey`,
+        [id],
+      ),
+    ]);
+    return { flatTypes, flatModels, storeyRanges };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 export async function getTransactionById(
   id: string,
 ): Promise<ResaleTransaction | null> {
