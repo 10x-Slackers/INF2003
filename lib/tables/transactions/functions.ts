@@ -107,7 +107,13 @@ export async function listTransactions(
     );
     addCondition(conditions, params, data.price_min, "rt.resale_price", ">=");
     addCondition(conditions, params, data.price_max, "rt.resale_price", "<=");
-    addCondition(conditions, params, data.year, "rt.transaction_month", "=");
+    addCondition(
+      conditions,
+      params,
+      data.year,
+      "YEAR(rt.transaction_month)",
+      "=",
+    );
     addCondition(conditions, params, data.property_id, "rt.property_id", "=");
 
     const where =
@@ -157,13 +163,11 @@ export async function getTransactionStatistics(
       ">=",
     );
     addCondition(conditions, params, data.date_to, "rt.transaction_month", "<");
-    addCondition(
-      conditions,
-      params,
-      data.granularity,
-      "rt.transaction_month",
-      ">= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)",
-    );
+    if (data.granularity === "last 6 months") {
+      conditions.push(
+        "rt.transaction_month >= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)",
+      );
+    }
     addCondition(conditions, params, data.town_id, "p.town_id", "=");
     addCondition(conditions, params, data.flat_type_id, "rt.flat_type_id", "=");
     addCondition(conditions, params, data.property_id, "rt.property_id", "=");
