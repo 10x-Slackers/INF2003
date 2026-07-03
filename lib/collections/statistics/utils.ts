@@ -1,17 +1,9 @@
 import type { AnyBulkWriteOperation } from "mongodb";
-import { Statistics, StatisticsUpsert, metricsSchema } from "./types";
+import { type Statistics, type StatisticsUpsert, metricsSchema } from "./types";
 import { z } from "zod";
+import type { TransactionStatisticRow } from "../../tables/transactions/types";
 
-type StatisticRow = {
-  period?: string;
-  value: number;
-  sample_size: number;
-  town_id?: string;
-  flat_type_id?: number;
-  property_id?: string;
-  lease_remaining_year?: number;
-  storey_range_id?: number | string;
-};
+type StatisticRow = TransactionStatisticRow;
 
 type StatisticsMetrics = z.infer<typeof metricsSchema>;
 
