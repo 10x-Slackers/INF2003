@@ -9,6 +9,12 @@ type StatisticsMetrics = z.infer<typeof metricsSchema>;
 
 export type StatisticGranularity = StatisticsUpsert["granularity"];
 
+const STOREY_RANGES = [
+  { label: "1-10", min: 1, max: 10 },
+  { label: "11-20", min: 11, max: 20 },
+  { label: "20+", min: 21, max: null },
+] as const;
+
 function baseDimensions(): StatisticsUpsert["dimensions"] {
   return {
     townId: null,
@@ -28,9 +34,8 @@ function storeyKey(data: StatisticsUpsert["dimensions"]["storey"]): string {
 function storeyDimension(
   label: number | string | undefined,
 ): StatisticsUpsert["dimensions"]["storey"] {
-  if (label === "1-10") return { min: 1, max: 10, label };
-  if (label === "11-20") return { min: 11, max: 20, label };
-  if (label === "20+") return { min: 21, max: null, label };
+  const range = STOREY_RANGES.find((r) => r.label === label);
+  if (range) return { min: range.min, max: range.max, label: range.label };
   return {
     min: null,
     max: null,
@@ -47,9 +52,9 @@ export function getStatisticsId(data: StatisticsUpsert): string {
   const { townId, flatTypeId, propertyId, leaseRemaining, storey } =
     data.dimensions;
 
-  if (townId) id.push(townId);
-  if (flatTypeId) id.push(flatTypeId);
-  if (propertyId) id.push(propertyId);
+  if (townId) id.push(`town:${townId}`);
+  if (flatTypeId) id.push(`flatType:${flatTypeId}`);
+  if (propertyId) id.push(`property:${propertyId}`);
 
   if (leaseRemaining?.year != null) {
     id.push(String(leaseRemaining.year));
