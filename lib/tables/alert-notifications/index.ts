@@ -3,7 +3,6 @@ export {
   getAlertNotificationById,
   getUnreadCount,
   listAlertNotifications,
-  markAlertNotificationRead,
   updateAlertNotification,
 } from "./functions";
 

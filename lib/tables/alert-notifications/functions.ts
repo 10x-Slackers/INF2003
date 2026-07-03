@@ -132,22 +132,6 @@ export async function updateAlertNotification(
   }
 }
 
-export async function markAlertNotificationRead(
-  id: string,
-): Promise<AlertNotification | null> {
-  try {
-    const parsedId = idSchema.parse(id);
-    await execute(
-      `UPDATE alert_notifications SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
-     WHERE id = ?`,
-      [parsedId],
-    );
-    return fetchRow(parsedId);
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
 export async function deleteAlertNotification(id: string): Promise<boolean> {
   try {
     const parsedId = idSchema.parse(id);
