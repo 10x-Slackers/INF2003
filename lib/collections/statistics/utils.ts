@@ -1,5 +1,6 @@
 import type { AnyBulkWriteOperation } from "mongodb";
-import type { Statistics, StatisticsUpsert } from "./types";
+import { Statistics, StatisticsUpsert, metricsSchema } from "./types";
+import { z } from "zod";
 
 type StatisticRow = {
   period?: string;
@@ -14,7 +15,7 @@ type StatisticRow = {
   storey_range_id?: number;
 };
 
-export type StatisticMetric = StatisticsUpsert["metric"];
+type StatisticsMetrics = z.infer<typeof metricsSchema>;
 
 export type StatisticGranularity = StatisticsUpsert["granularity"];
 
@@ -54,10 +55,6 @@ export function getStatisticsId(data: StatisticsUpsert): string {
   if (storey?.label != null) {
     id.push(storeyKey(storey));
   }
-
-  if (data.timeRange?.start) id.push(data.timeRange.start);
-  if (data.timeRange?.end) id.push(data.timeRange.end);
-
   return id.join("|");
 }
 
@@ -91,7 +88,7 @@ export function toStatisticsBulkOperations(
 }
 
 function dimensionsForRow(
-  metric: StatisticMetric,
+  metric: StatisticsMetrics,
   row: StatisticRow,
 ): StatisticsUpsert["dimensions"] {
   const dimensions = baseDimensions();
@@ -99,16 +96,18 @@ function dimensionsForRow(
   if (row.flat_type_id !== undefined) {
     dimensions.flatTypeId = String(row.flat_type_id);
   }
-  if (metric === "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE") {
+  if (metric === metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE) {
     dimensions.townId = row.town_id ?? null;
   }
-  if (metric === "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE") {
+  if (metric === metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE) {
     dimensions.propertyId = row.property_id ?? null;
   }
-  if (metric === "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE") {
+  if (
+    metric === metricsSchema.enum.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE
+  ) {
     dimensions.leaseRemaining = { year: row.lease_remaining_year ?? null };
   }
-  if (metric === "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE") {
+  if (metric === metricsSchema.enum.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE) {
     dimensions.storey = {
       min: null,
       max: null,
@@ -121,7 +120,7 @@ function dimensionsForRow(
 }
 
 export function prepareStatistics(
-  metric: StatisticMetric,
+  metric: StatisticsMetrics,
   granularity: StatisticGranularity,
   rows: StatisticRow[],
 ): StatisticsUpsert[] {
