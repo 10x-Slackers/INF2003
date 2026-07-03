@@ -109,7 +109,7 @@ export async function updateStatistics() {
           transactionMetric: "avg_price",
           groupBy: ["lease_remaining_year", "flat_type_id"],
         }),
-        await buildStatistics({
+        buildStatistics({
           metric: METRICS.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
           transactionMetric: "avg_price",
           groupBy: ["storey_range_id", "flat_type_id"],
