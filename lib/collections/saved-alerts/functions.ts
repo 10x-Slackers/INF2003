@@ -92,29 +92,68 @@ export async function deleteSavedAlert(id: string): Promise<boolean> {
   }
 }
 
-type RangeFilterValue = { min: number; max: number } | number;
-function addRangeFilter(
+function addFilterClause(
   query: Record<string, unknown>,
-  field: string,
-  value: RangeFilterValue,
+  clause: Record<string, unknown>,
 ) {
   const clauses = (query.$and ??= []) as Record<string, unknown>[];
-  const minBound = typeof value === "number" ? value : value.max;
-  const maxBound = typeof value === "number" ? value : value.min;
-  clauses.push(
-    {
-      $or: [
-        { [`${field}.min`]: { $exists: false } },
-        { [`${field}.min`]: { $lte: minBound } },
-      ],
-    },
-    {
-      $or: [
-        { [`${field}.max`]: { $exists: false } },
-        { [`${field}.max`]: { $gte: maxBound } },
-      ],
-    },
-  );
+  clauses.push(clause);
+}
+
+function addArrayFilter(
+  query: Record<string, unknown>,
+  field: string,
+  value: string,
+) {
+  addFilterClause(query, {
+    $or: [
+      { [field]: value },
+      { [field]: { $exists: false } },
+      { [field]: { $size: 0 } },
+    ],
+  });
+}
+
+function addRangeOverlapFilter(
+  query: Record<string, unknown>,
+  field: string,
+  min: number,
+  max: number,
+) {
+  // The range overlaps if either of the following is true:
+  // alertMin <= transactionMax 1 <= 3 true
+  // alertMax >= transactionMin 2 >= 1 true
+  addFilterClause(query, {
+    $or: [
+      { [`${field}.min`]: { $exists: false } },
+      { [`${field}.min`]: { $lte: max } },
+    ],
+  });
+  addFilterClause(query, {
+    $or: [
+      { [`${field}.max`]: { $exists: false } },
+      { [`${field}.max`]: { $gte: min } },
+    ],
+  });
+}
+
+function addValueInRangeFilter(
+  query: Record<string, unknown>,
+  field: string,
+  value: number,
+) {
+  addFilterClause(query, {
+    $or: [
+      { [`${field}.min`]: { $exists: false } },
+      { [`${field}.min`]: { $lte: value } },
+    ],
+  });
+  addFilterClause(query, {
+    $or: [
+      { [`${field}.max`]: { $exists: false } },
+      { [`${field}.max`]: { $gte: value } },
+    ],
+  });
 }
 
 export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
@@ -122,20 +161,31 @@ export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
     const data = alertTransactionFilterSchema.parse(filters);
     const query: Record<string, unknown> = {};
     query.isActive = true;
-    if (data.townId) query["filters.townId"] = data.townId;
-    if (data.flatTypeId) query["filters.flatTypeId"] = String(data.flatTypeId);
-    if (data.flatModelId) {
-      query["filters.flatModelId"] = String(data.flatModelId);
+    if (data.townId) addArrayFilter(query, "filters.townId", data.townId);
+    if (data.flatTypeId) {
+      addArrayFilter(query, "filters.flatTypeId", String(data.flatTypeId));
     }
-    if (data.price) addRangeFilter(query, "filters.price", data.price);
+    if (data.flatModelId) {
+      addArrayFilter(query, "filters.flatModelId", String(data.flatModelId));
+    }
+    if (data.price) addValueInRangeFilter(query, "filters.price", data.price);
     if (data.floorAreaSqm) {
-      addRangeFilter(query, "filters.floorAreaSqm", data.floorAreaSqm);
+      addValueInRangeFilter(query, "filters.floorAreaSqm", data.floorAreaSqm);
     }
     if (data.storey) {
-      addRangeFilter(query, "filters.storey", data.storey);
+      addRangeOverlapFilter(
+        query,
+        "filters.storey",
+        data.storey.min,
+        data.storey.max,
+      );
     }
     if (data.leaseRemaining) {
-      addRangeFilter(query, "filters.leaseRemaining", data.leaseRemaining);
+      addValueInRangeFilter(
+        query,
+        "filters.leaseRemaining",
+        data.leaseRemaining,
+      );
     }
 
     return (await alerts.find(query).toArray()).map((alert) => ({

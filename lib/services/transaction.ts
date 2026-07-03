@@ -30,7 +30,17 @@ type AddTransactionInput = {
   transactionDate: string;
   resalePrice: number;
   floorAreaSqm: number;
+  leaseCommenceYear: string;
 };
+
+function calculateLeaseRemaining(
+  transactionDate: string,
+  leaseCommenceYear: string,
+) {
+  const yearsUsed =
+    Number(transactionDate.slice(0, 4)) - Number(leaseCommenceYear);
+  return Math.max(0, Math.min(99, 99 - yearsUsed));
+}
 
 export async function addTransaction(
   transaction: AddTransactionInput,
@@ -96,6 +106,10 @@ async function fetchSavedAlerts(transaction: AddTransactionInput) {
       price: transaction.resalePrice,
       floorAreaSqm: transaction.floorAreaSqm,
       storey,
+      leaseRemaining: calculateLeaseRemaining(
+        transaction.transactionDate,
+        transaction.leaseCommenceYear,
+      ),
     });
 
     return alerts;
