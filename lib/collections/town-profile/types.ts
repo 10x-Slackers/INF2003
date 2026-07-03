@@ -7,6 +7,7 @@ export const TownProfileSummarySchema = z
     totalTransaction: z.number().int().min(0),
     earliestTransaction: z.string().min(1),
     latestTransaction: z.string().min(1),
+    transactionsLast6Months: z.number().int().min(0),
     transactionCountByFlatType: z.record(z.string(), z.number().int().min(0)),
   })
   .strict();

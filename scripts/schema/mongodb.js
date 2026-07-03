@@ -89,11 +89,11 @@ db.createCollection("statistics", {
             "AVG_PRICE_BY_FLAT_TYPE",
             "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
             "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
-            "SALES_BY_TOWN",
             "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
+            "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
           ],
         },
-        granularity: { enum: ["monthly", "yearly", "last 6 months"] },
+        granularity: { enum: ["monthly", "yearly"] },
         timeRange: {
           bsonType: "object",
           required: ["start", "end"],
@@ -171,12 +171,14 @@ db.createCollection("towns", {
             "totalTransaction",
             "earliestTransaction",
             "latestTransaction",
+            "transactionsLast6Months",
             "transactionCountByFlatType",
           ],
           properties: {
             totalTransaction: { bsonType: ["int", "long"], minimum: 0 },
             earliestTransaction: { bsonType: "string" },
             latestTransaction: { bsonType: "string" },
+            transactionsLast6Months: { bsonType: ["int", "long"], minimum: 0 },
             transactionCountByFlatType: {
               bsonType: "object",
               additionalProperties: {

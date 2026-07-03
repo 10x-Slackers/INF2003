@@ -99,3 +99,37 @@ export async function rollDownTownProfileTransaction(
     return handleDbError(error);
   }
 }
+
+export async function updateTownProfileTransactionsLast6Months(
+  townId: string,
+  transactionsLast6Months: number,
+): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+  try {
+    const town = await towns.findOneAndUpdate(
+      { _id: idSchema.parse(townId) },
+      {
+        $set: {
+          "transactionSummary.transactionsLast6Months": z.coerce
+            .number()
+            .int()
+            .min(0)
+            .parse(transactionsLast6Months),
+          updatedAt: now(),
+        },
+      },
+      {
+        projection: { _id: 1, updatedCount: 1 },
+        returnDocument: "after",
+      },
+    );
+    return town
+      ? {
+          id: town._id,
+          updatedCount: town.updatedCount,
+          thresholdMet: town.updatedCount === 0,
+        }
+      : null;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
