@@ -1,6 +1,33 @@
 import type { AnyBulkWriteOperation } from "mongodb";
 import type { Statistics, StatisticsUpsert } from "./types";
 
+type StatisticRow = {
+  period?: string;
+  range_start?: string;
+  range_end?: string;
+  value: number;
+  sample_size: number;
+  town_id?: string;
+  flat_type_id?: number;
+  property_id?: string;
+  lease_remaining_year?: number;
+  storey_range_id?: number;
+};
+
+export type StatisticMetric = StatisticsUpsert["metric"];
+
+export type StatisticGranularity = StatisticsUpsert["granularity"];
+
+function baseDimensions(): StatisticsUpsert["dimensions"] {
+  return {
+    townId: null,
+    flatTypeId: null,
+    propertyId: null,
+    leaseRemaining: null,
+    storey: null,
+  };
+}
+
 function storeyKey(data: StatisticsUpsert["dimensions"]["storey"]): string {
   if (!data) return "all";
   if (data.label) return data.label;
@@ -8,17 +35,30 @@ function storeyKey(data: StatisticsUpsert["dimensions"]["storey"]): string {
 }
 
 export function getStatisticsId(data: StatisticsUpsert): string {
-  return [
-    data.metric,
-    data.granularity,
-    data.timeRange.start,
-    data.timeRange.end,
-    `town:${data.dimensions.townId ?? "all"}`,
-    `flatType:${data.dimensions.flatTypeId ?? "all"}`,
-    `property:${data.dimensions.propertyId ?? "all"}`,
-    `lease:${data.dimensions.leaseRemaining?.year ?? "all"}`,
-    `storey:${storeyKey(data.dimensions.storey)}`,
-  ].join(":");
+  const id: string[] = [];
+
+  id.push(data.metric);
+  id.push(data.granularity);
+
+  const { townId, flatTypeId, propertyId, leaseRemaining, storey } =
+    data.dimensions;
+
+  if (townId) id.push(townId);
+  if (flatTypeId) id.push(flatTypeId);
+  if (propertyId) id.push(propertyId);
+
+  if (leaseRemaining?.year != null) {
+    id.push(String(leaseRemaining.year));
+  }
+
+  if (storey?.label != null) {
+    id.push(storeyKey(storey));
+  }
+
+  if (data.timeRange?.start) id.push(data.timeRange.start);
+  if (data.timeRange?.end) id.push(data.timeRange.end);
+
+  return id.join("|");
 }
 
 export function toStatisticsDocument(
@@ -48,4 +88,76 @@ export function toStatisticsBulkOperations(
       },
     };
   });
+}
+
+function dimensionsForRow(
+  metric: StatisticMetric,
+  row: StatisticRow,
+): StatisticsUpsert["dimensions"] {
+  const dimensions = baseDimensions();
+
+  if (row.flat_type_id !== undefined) {
+    dimensions.flatTypeId = String(row.flat_type_id);
+  }
+  if (metric === "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE") {
+    dimensions.townId = row.town_id ?? null;
+  }
+  if (metric === "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE") {
+    dimensions.propertyId = row.property_id ?? null;
+  }
+  if (metric === "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE") {
+    dimensions.leaseRemaining = { year: row.lease_remaining_year ?? null };
+  }
+  if (metric === "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE") {
+    dimensions.storey = {
+      min: null,
+      max: null,
+      label:
+        row.storey_range_id === undefined ? null : String(row.storey_range_id),
+    };
+  }
+
+  return dimensions;
+}
+
+export function prepareStatistics(
+  metric: StatisticMetric,
+  granularity: StatisticGranularity,
+  rows: StatisticRow[],
+): StatisticsUpsert[] {
+  const documents = new Map<string, StatisticsUpsert>();
+
+  for (const row of rows) {
+    if (!row.period) continue;
+
+    const period = row.period;
+    const timeRange = {
+      start: row.range_start ?? period,
+      end: row.range_end ?? period,
+    };
+
+    const dimensions = dimensionsForRow(metric, row);
+    const key = JSON.stringify(dimensions);
+    const document = documents.get(key);
+    const point = {
+      period,
+      value: row.value,
+      sampleSize: row.sample_size,
+    };
+
+    if (document) {
+      document.series.push(point);
+      document.timeRange.end = point.period;
+    } else {
+      documents.set(key, {
+        metric,
+        granularity,
+        timeRange,
+        dimensions,
+        series: [point],
+      });
+    }
+  }
+
+  return [...documents.values()];
 }

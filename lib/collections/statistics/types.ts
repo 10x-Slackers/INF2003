@@ -7,15 +7,11 @@ export const metricsSchema = z.enum([
   "AVG_PRICE_BY_FLAT_TYPE",
   "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
   "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
-  "SALES_BY_TOWN",
   "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
+  "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
 ]);
 
-export const statisticsGranularitySchema = z.enum([
-  "monthly",
-  "yearly",
-  "last 6 months",
-]);
+export const statisticsGranularitySchema = z.enum(["monthly", "yearly"]);
 
 export const statisticsTimeRangeSchema = z
   .object({
