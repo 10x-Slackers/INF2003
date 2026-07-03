@@ -28,6 +28,16 @@ const storeyRangeSchema = z
     },
   );
 
+const transactionStoreyRangeSchema = z
+  .object({
+    min: z.number().int().min(0),
+    max: z.number().int().min(0),
+  })
+  .strict()
+  .refine(({ min, max }) => min <= max, {
+    message: "min cannot be greater than max",
+  });
+
 const filterShape = {
   townId: z.array(z.uuid()).optional(),
   flatModelId: z.array(z.string()).optional(),
@@ -62,6 +72,16 @@ export const updateSavedAlertSchema = z
   .strict()
   .refine(hasFields, { message: "At least one field is required" });
 
+export const getAlertByTransactionFilter = z.object({
+  townId: z.uuid().optional(),
+  flatModelId: z.number().optional(),
+  flatTypeId: z.number().optional(),
+  price: z.number().optional(),
+  floorAreaSqm: z.number().optional(),
+  storey: transactionStoreyRangeSchema.optional(),
+  leaseRemaining: z.number().optional(),
+});
+
 type SavedAlertFilters = z.infer<typeof savedAlertFiltersSchema>;
 export type SavedAlertCreate = z.infer<typeof createSavedAlertSchema>;
 export type SavedAlertUpdate = z.infer<typeof updateSavedAlertSchema>;
@@ -74,3 +94,6 @@ export type SavedAlert = {
   updatedAt: number;
   lastTriggeredAt?: number;
 };
+export type AlertTransactionFilter = z.infer<
+  typeof getAlertByTransactionFilter
+>;

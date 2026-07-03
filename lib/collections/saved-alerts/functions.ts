@@ -2,8 +2,10 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import {
   createSavedAlertSchema,
+  getAlertByTransactionFilter,
   idSchema,
   updateSavedAlertSchema,
+  type AlertTransactionFilter,
   type SavedAlertUpdate,
   type SavedAlert,
   type SavedAlertCreate,
@@ -85,6 +87,92 @@ export async function deleteSavedAlert(id: string): Promise<boolean> {
   try {
     const result = await alerts.deleteOne({ _id: idSchema.parse(id) });
     return result.deletedCount > 0;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+function addRangeFilter(
+  query: Record<string, unknown>,
+  field: string,
+  value: number,
+) {
+  const clauses = (query.$and ??= []) as Record<string, unknown>[];
+  clauses.push(
+    {
+      $or: [
+        { [`${field}.min`]: { $exists: false } },
+        { [`${field}.min`]: { $lte: value } },
+      ],
+    },
+    {
+      $or: [
+        { [`${field}.max`]: { $exists: false } },
+        { [`${field}.max`]: { $gte: value } },
+      ],
+    },
+  );
+}
+
+function addOverlappingRangeFilter(
+  query: Record<string, unknown>,
+  field: string,
+  range: { min: number; max: number },
+) {
+  const clauses = (query.$and ??= []) as Record<string, unknown>[];
+  clauses.push(
+    {
+      $or: [
+        { [`${field}.min`]: { $exists: false } },
+        { [`${field}.min`]: { $lte: range.max } },
+      ],
+    },
+    {
+      $or: [
+        { [`${field}.max`]: { $exists: false } },
+        { [`${field}.max`]: { $gte: range.min } },
+      ],
+    },
+  );
+}
+
+export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
+  try {
+    const data = getAlertByTransactionFilter.parse(filters);
+    const query: Record<string, unknown> = {};
+    query.isActive = true;
+    if (data.townId) query["filters.townId"] = data.townId;
+    if (data.flatTypeId) query["filters.flatTypeId"] = String(data.flatTypeId);
+    if (data.flatModelId) {
+      query["filters.flatModelId"] = String(data.flatModelId);
+    }
+    if (data.price) addRangeFilter(query, "filters.price", data.price);
+    if (data.floorAreaSqm) {
+      addRangeFilter(query, "filters.floorAreaSqm", data.floorAreaSqm);
+    }
+    if (data.storey) {
+      addOverlappingRangeFilter(query, "filters.storey", data.storey);
+    }
+    if (data.leaseRemaining) {
+      addRangeFilter(query, "filters.leaseRemaining", data.leaseRemaining);
+    }
+
+    return (await alerts.find(query).toArray()).map((alert) => ({
+      userId: alert.userId,
+      alertId: alert._id,
+    }));
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function triggerSavedAlerts(alertIds: string[]): Promise<void> {
+  try {
+    const parsedIds = alertIds.map((id) => idSchema.parse(id));
+    await alerts.updateMany(
+      { _id: { $in: parsedIds } },
+      { $set: { lastTriggeredAt: now() } },
+    );
   } catch (error) {
     return handleDbError(error);
   }
