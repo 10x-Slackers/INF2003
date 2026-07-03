@@ -25,3 +25,5 @@ export {
   type StatisticsUpsert,
   upsertStatisticsSchema,
 } from "./types";
+
+export { prepareStatistics } from "./utils";

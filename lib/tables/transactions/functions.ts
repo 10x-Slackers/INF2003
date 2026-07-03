@@ -59,7 +59,8 @@ const STATISTIC_GROUPS: Record<
   property_id: "rt.property_id",
   lease_remaining_year:
     "99 - (YEAR(rt.transaction_month) - p.lease_commence_year)",
-  storey_range_id: "rt.storey_range_id",
+  storey_range_id:
+    "CASE WHEN sr.min_storey <= 10 THEN '1-10' WHEN sr.min_storey <= 20 THEN '11-20' ELSE '20+' END",
 };
 
 const isEmptyUpdate = (input: UpdateTransaction) =>
@@ -192,6 +193,7 @@ export async function getTransactionStatistics(
               COUNT(*) AS sample_size
        FROM resale_transactions rt
        JOIN properties p ON p.id = rt.property_id
+       JOIN storey_ranges sr ON sr.id = rt.storey_range_id
        ${where}
        GROUP BY ${groupBy}
        ORDER BY ${orderBy}`,
