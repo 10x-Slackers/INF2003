@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import {
   createSavedAlertSchema,
-  getAlertByTransactionFilter,
+  alertTransactionFilterSchema,
   idSchema,
   updateSavedAlertSchema,
   type AlertTransactionFilter,
@@ -92,45 +92,26 @@ export async function deleteSavedAlert(id: string): Promise<boolean> {
   }
 }
 
+type RangeFilterValue = { min: number; max: number } | number;
 function addRangeFilter(
   query: Record<string, unknown>,
   field: string,
-  value: number,
+  value: RangeFilterValue,
 ) {
   const clauses = (query.$and ??= []) as Record<string, unknown>[];
+  const minBound = typeof value === "number" ? value : value.max;
+  const maxBound = typeof value === "number" ? value : value.min;
   clauses.push(
     {
       $or: [
         { [`${field}.min`]: { $exists: false } },
-        { [`${field}.min`]: { $lte: value } },
+        { [`${field}.min`]: { $lte: minBound } },
       ],
     },
     {
       $or: [
         { [`${field}.max`]: { $exists: false } },
-        { [`${field}.max`]: { $gte: value } },
-      ],
-    },
-  );
-}
-
-function addOverlappingRangeFilter(
-  query: Record<string, unknown>,
-  field: string,
-  range: { min: number; max: number },
-) {
-  const clauses = (query.$and ??= []) as Record<string, unknown>[];
-  clauses.push(
-    {
-      $or: [
-        { [`${field}.min`]: { $exists: false } },
-        { [`${field}.min`]: { $lte: range.max } },
-      ],
-    },
-    {
-      $or: [
-        { [`${field}.max`]: { $exists: false } },
-        { [`${field}.max`]: { $gte: range.min } },
+        { [`${field}.max`]: { $gte: maxBound } },
       ],
     },
   );
@@ -138,7 +119,7 @@ function addOverlappingRangeFilter(
 
 export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
   try {
-    const data = getAlertByTransactionFilter.parse(filters);
+    const data = alertTransactionFilterSchema.parse(filters);
     const query: Record<string, unknown> = {};
     query.isActive = true;
     if (data.townId) query["filters.townId"] = data.townId;
@@ -151,7 +132,7 @@ export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
       addRangeFilter(query, "filters.floorAreaSqm", data.floorAreaSqm);
     }
     if (data.storey) {
-      addOverlappingRangeFilter(query, "filters.storey", data.storey);
+      addRangeFilter(query, "filters.storey", data.storey);
     }
     if (data.leaseRemaining) {
       addRangeFilter(query, "filters.leaseRemaining", data.leaseRemaining);

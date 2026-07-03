@@ -72,7 +72,7 @@ export const updateSavedAlertSchema = z
   .strict()
   .refine(hasFields, { message: "At least one field is required" });
 
-export const getAlertByTransactionFilter = z.object({
+export const alertTransactionFilterSchema = z.object({
   townId: z.uuid().optional(),
   flatModelId: z.number().optional(),
   flatTypeId: z.number().optional(),
@@ -95,5 +95,5 @@ export type SavedAlert = {
   lastTriggeredAt?: number;
 };
 export type AlertTransactionFilter = z.infer<
-  typeof getAlertByTransactionFilter
+  typeof alertTransactionFilterSchema
 >;

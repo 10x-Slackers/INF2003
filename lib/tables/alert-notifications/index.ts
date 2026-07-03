@@ -1,5 +1,4 @@
 export {
-  createAlertNotification,
   deleteAlertNotification,
   getAlertNotificationById,
   getUnreadCount,

@@ -50,15 +50,8 @@ export async function addTransaction(
   };
   try {
     const transactionId = await createTransaction(params);
-    const alerts = await fetchSavedAlerts(transaction);
-    await bulkCreateAlertNotifications(
-      alerts.map((alert) => ({
-        userId: alert.userId,
-        alert_uuid: alert.alertId,
-        transaction_id: transactionId,
-      })),
-    );
-    await triggerSavedAlerts(alerts.map((alert) => alert.alertId));
+    await createAlerts(transactionId, transaction);
+
     const town = await rollDownTownProfileTransaction(
       transaction.townId,
       transaction.flatTypeId,
@@ -117,4 +110,21 @@ async function getStoreyRange(storeyRangeId: number) {
     [storeyRangeId],
   );
   return { min: range.min_storey, max: range.max_storey };
+}
+
+async function createAlerts(
+  transactionId: string,
+  transaction: AddTransactionInput,
+) {
+  const alerts = await fetchSavedAlerts(transaction);
+  await Promise.all([
+    bulkCreateAlertNotifications(
+      alerts.map((alert) => ({
+        userId: alert.userId,
+        alert_uuid: alert.alertId,
+        transaction_id: transactionId,
+      })),
+    ),
+    triggerSavedAlerts(alerts.map((alert) => alert.alertId)),
+  ]);
 }

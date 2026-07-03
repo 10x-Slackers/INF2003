@@ -11,7 +11,7 @@ export {
   createSavedAlertSchema,
   idSchema,
   savedAlertFiltersSchema,
-  getAlertByTransactionFilter,
+  alertTransactionFilterSchema,
   type SavedAlert,
   type SavedAlertCreate,
   type SavedAlertUpdate,
