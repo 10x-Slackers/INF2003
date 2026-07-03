@@ -4,15 +4,13 @@ import { z } from "zod";
 
 type StatisticRow = {
   period?: string;
-  range_start?: string;
-  range_end?: string;
   value: number;
   sample_size: number;
   town_id?: string;
   flat_type_id?: number;
   property_id?: string;
   lease_remaining_year?: number;
-  storey_range_id?: number;
+  storey_range_id?: number | string;
 };
 
 type StatisticsMetrics = z.infer<typeof metricsSchema>;
@@ -33,6 +31,19 @@ function storeyKey(data: StatisticsUpsert["dimensions"]["storey"]): string {
   if (!data) return "all";
   if (data.label) return data.label;
   return `${data.min ?? "all"}-${data.max ?? "all"}`;
+}
+
+function storeyDimension(
+  label: number | string | undefined,
+): StatisticsUpsert["dimensions"]["storey"] {
+  if (label === "1-10") return { min: 1, max: 10, label };
+  if (label === "11-20") return { min: 11, max: 20, label };
+  if (label === "20+") return { min: 21, max: null, label };
+  return {
+    min: null,
+    max: null,
+    label: label === undefined ? null : String(label),
+  };
 }
 
 export function getStatisticsId(data: StatisticsUpsert): string {
@@ -108,12 +119,7 @@ function dimensionsForRow(
     dimensions.leaseRemaining = { year: row.lease_remaining_year ?? null };
   }
   if (metric === metricsSchema.enum.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE) {
-    dimensions.storey = {
-      min: null,
-      max: null,
-      label:
-        row.storey_range_id === undefined ? null : String(row.storey_range_id),
-    };
+    dimensions.storey = storeyDimension(row.storey_range_id);
   }
 
   return dimensions;
@@ -130,10 +136,7 @@ export function prepareStatistics(
     if (!row.period) continue;
 
     const period = row.period;
-    const timeRange = {
-      start: row.range_start ?? period,
-      end: row.range_end ?? period,
-    };
+    const timeRange = { start: period, end: period };
 
     const dimensions = dimensionsForRow(metric, row);
     const key = JSON.stringify(dimensions);

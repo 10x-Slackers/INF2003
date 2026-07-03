@@ -107,7 +107,7 @@ export type TransactionStatisticRow = {
   flat_type_id?: number;
   property_id?: string;
   lease_remaining_year?: number;
-  storey_range_id?: number;
+  storey_range_id?: number | string;
   value: number;
   sample_size: number;
 };

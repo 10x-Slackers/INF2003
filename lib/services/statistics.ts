@@ -36,18 +36,20 @@ async function buildStatistics({
   filters = {},
 }: StatisticBuild) {
   const groups: TransactionStatisticsGroup[] = ["period", ...groupBy];
-  const monthlyTransactions = await getTransactionStatistics({
-    metric: transactionMetric,
-    groupBy: groups,
-    granularity: "monthly",
-    ...filters,
-  });
-  const yearlyTransactions = await getTransactionStatistics({
-    metric: transactionMetric,
-    groupBy: groups,
-    granularity: "yearly",
-    ...filters,
-  });
+  const [monthlyTransactions, yearlyTransactions] = await Promise.all([
+    getTransactionStatistics({
+      metric: transactionMetric,
+      groupBy: groups,
+      granularity: "monthly",
+      ...filters,
+    }),
+    getTransactionStatistics({
+      metric: transactionMetric,
+      groupBy: groups,
+      granularity: "yearly",
+      ...filters,
+    }),
+  ]);
 
   return [
     ...prepareStatistics(metric, "monthly", monthlyTransactions),
