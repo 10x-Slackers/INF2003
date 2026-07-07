@@ -35,4 +35,4 @@ INSERT INTO users (name, email, password_hash, role) VALUES
 ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), role = VALUES(role);
 "
 
-echo "Seeded 3 users (admin@example.com, agent@example.com, user@example.com) with password '${PASSWORD}'."
+echo "Seeded 3 users (admin@example.com, agent@example.com, user@example.com)."
