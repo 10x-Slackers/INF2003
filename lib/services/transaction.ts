@@ -21,7 +21,7 @@ export async function addTransaction(
   const flatTypeId = parseInt(transaction.flatTypeId, 10);
   const flatModelId = parseInt(transaction.flatModelId, 10);
   const params = {
-    uploadedByUserId: transaction.user_id,
+    uploadedByUserId: transaction.userId,
     input: {
       property_id: transaction.propertyId,
       flat_type_id: flatTypeId,

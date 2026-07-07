@@ -42,10 +42,19 @@ export async function listAmenityTypes(): Promise<AmenityType[]> {
   }
 }
 
-export async function getStoreyRange(storeyRangeId: number) {
-  const [range] = await query<{ min_storey: number; max_storey: number }>(
-    "SELECT min_storey, max_storey FROM storey_ranges WHERE id = ? LIMIT 1",
-    [storeyRangeId],
-  );
-  return { min: range.min_storey, max: range.max_storey };
+export async function getStoreyRange(
+  storeyRangeId: number,
+): Promise<{ min: number; max: number }> {
+  try {
+    const [range] = await query<{ min_storey: number; max_storey: number }>(
+      "SELECT min_storey, max_storey FROM storey_ranges WHERE id = ? LIMIT 1",
+      [storeyRangeId],
+    );
+    if (!range) {
+      throw new Error(`Storey range with id ${storeyRangeId} not found`);
+    }
+    return { min: range.min_storey, max: range.max_storey };
+  } catch (error) {
+    return handleDbError(error);
+  }
 }

@@ -1,5 +1,5 @@
 export type AddTransactionInput = {
-  user_id: string;
+  userId: string;
   townId: string;
   flatTypeId: string;
   flatModelId: string;

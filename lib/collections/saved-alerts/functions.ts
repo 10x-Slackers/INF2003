@@ -120,9 +120,7 @@ function addRangeOverlapFilter(
   min: number,
   max: number,
 ) {
-  // The range overlaps if either of the following is true:
-  // alertMin <= transactionMax 1 <= 3 true
-  // alertMax >= transactionMin 2 >= 1 true
+  // Two ranges overlap if alert.min <= transaction.max AND alert.max >= transaction.min (or either bound is missing, meaning no constraint on that side)
   addFilterClause(query, {
     $or: [
       { [`${field}.min`]: { $exists: false } },
@@ -156,21 +154,23 @@ function addValueInRangeFilter(
   });
 }
 
-export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
+export async function findAlertsByTransaction(
+  filters: AlertTransactionFilter,
+): Promise<{ userId: string; alertId: string }[]> {
   try {
     const data = alertTransactionFilterSchema.parse(filters);
     const query: Record<string, unknown> = {};
     query.isActive = true;
     if (data.townId) addArrayFilter(query, "filters.townId", data.townId);
-    if (data.flatTypeId) {
+    if (data.flatTypeId !== undefined) {
       addArrayFilter(query, "filters.flatTypeId", String(data.flatTypeId));
     }
-    if (data.flatModelId) {
+    if (data.flatModelId !== undefined) {
       addArrayFilter(query, "filters.flatModelId", String(data.flatModelId));
     }
     if (data.price !== undefined)
       addValueInRangeFilter(query, "filters.price", data.price);
-    if (data.floorAreaSqm) {
+    if (data.floorAreaSqm !== undefined) {
       addValueInRangeFilter(query, "filters.floorAreaSqm", data.floorAreaSqm);
     }
     if (data.storey) {
