@@ -84,7 +84,7 @@ export const alertTransactionFilterSchema = z
   })
   .strict();
 
-type SavedAlertFilters = z.infer<typeof savedAlertFiltersSchema>;
+export type SavedAlertFilters = z.infer<typeof savedAlertFiltersSchema>;
 export type SavedAlertCreate = z.infer<typeof createSavedAlertSchema>;
 export type SavedAlertUpdate = z.infer<typeof updateSavedAlertSchema>;
 export type SavedAlert = {

@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
-import NextAuth from "next-auth";
+import NextAuth, { type Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { loginSchema } from "@/lib/auth/schemas";
-import { isAdmin, isAgent } from "@/lib/permissions";
+import { isAdmin, isAgent, isSignedIn } from "@/lib/permissions";
 import { query } from "@/lib/db";
 
 export type UserRole = "ADMIN" | "AGENT" | "USER";
@@ -19,6 +19,14 @@ export async function assertAgent() {
   if (!isAgent(session?.user?.role)) {
     throw new Error("Forbidden");
   }
+}
+
+export async function assertSignedIn(): Promise<Session> {
+  const session = await auth();
+  if (!session || !isSignedIn(session.user.role)) {
+    throw new Error("Forbidden");
+  }
+  return session;
 }
 
 type DbUser = {
