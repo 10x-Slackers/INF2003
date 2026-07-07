@@ -18,7 +18,6 @@ const polygonSchema = z.array(z.array(coordinatePairSchema).min(4)).min(1);
 export const TownProfileSchema = z
   .object({
     _id: z.uuid(),
-    updatedCount: z.number().int().min(0),
     transactionSummary: TownProfileSummarySchema,
     coordinates: polygonSchema,
     updatedAt: z.number().int().min(0),

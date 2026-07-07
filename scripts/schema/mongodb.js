@@ -155,6 +155,26 @@ db.createCollection("statistics", {
   },
 });
 
+// Create statistics trigger collection
+db.statisticsTriggers.drop();
+db.createCollection("statisticsTriggers", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["_id", "dirtyTownIds", "updatedAt"],
+      properties: {
+        _id: { enum: ["statistics"] },
+        dirtyTownIds: {
+          bsonType: "array",
+          items: { bsonType: "string" },
+        },
+        updatedAt: { bsonType: ["int"] },
+      },
+      additionalProperties: false,
+    },
+  },
+});
+
 // Create towns collection
 db.towns.drop();
 db.createCollection("towns", {
@@ -164,7 +184,6 @@ db.createCollection("towns", {
       required: ["_id", "transactionSummary", "coordinates", "updatedAt"],
       properties: {
         _id: { bsonType: "string" },
-        updatedCount: { bsonType: "int", minimum: 0 },
         transactionSummary: {
           bsonType: "object",
           required: [

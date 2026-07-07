@@ -54,7 +54,6 @@ class DocumentTransformer:
                     },
                     "coordinates": coordinates_by_town.get(town_key, []),
                     "updatedAt": timestamp,
-                    "updatedCount": 0,
                 }
             )
 

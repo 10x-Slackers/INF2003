@@ -1,8 +1,8 @@
 export {
+  bulkUpdateTownProfileTransactionsLast6Months,
   getTownProfileById,
   listTownProfiles,
   rollDownTownProfileTransaction,
-  updateTownProfileTransactionsLast6Months,
 } from "./functions";
 
 export {

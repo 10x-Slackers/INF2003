@@ -1,9 +1,14 @@
+import type { AnyBulkWriteOperation } from "mongodb";
 import { db } from "@/lib/db";
 import { idSchema, type TownProfile } from "./types";
 import { handleDbError, now } from "@/lib/utils";
 import { z } from "zod";
 
 const towns = db.collection<TownProfile>("towns");
+const townProfileLast6MonthsUpdateSchema = z.object({
+  townId: idSchema,
+  transactionsLast6Months: z.coerce.number().int().min(0),
+});
 
 export async function listTownProfiles(): Promise<TownProfile[]> {
   try {
@@ -27,108 +32,81 @@ export async function rollDownTownProfileTransaction(
   townId: string,
   flatTypeId: string,
   transactionMonth: string,
-): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+): Promise<void> {
   try {
     const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
     const monthschema = z.string().regex(/^\d{4}-\d{2}$/);
     const month = monthschema.parse(transactionMonth.slice(0, 7));
 
-    const town = await towns.findOneAndUpdate(
-      { _id: validatedTownId },
-      [
-        {
-          $set: {
-            "transactionSummary.totalTransaction": {
-              $add: ["$transactionSummary.totalTransaction", 1],
-            },
-            [`transactionSummary.transactionCountByFlatType.${validatedFlatId}`]:
-              {
-                $add: [
-                  {
-                    $ifNull: [
-                      `$transactionSummary.transactionCountByFlatType.${validatedFlatId}`,
-                      0,
-                    ],
-                  },
-                  1,
-                ],
-              },
-            "transactionSummary.earliestTransaction": {
-              $cond: [
-                { $lt: [month, "$transactionSummary.earliestTransaction"] },
-                month,
-                "$transactionSummary.earliestTransaction",
-              ],
-            },
-            "transactionSummary.latestTransaction": {
-              $cond: [
-                { $gt: [month, "$transactionSummary.latestTransaction"] },
-                month,
-                "$transactionSummary.latestTransaction",
-              ],
-            },
-            updatedAt: now(),
-            // Increment updatedCount; reset to 0 when threshold is reached
-            // to trigger downstream batch processing
-            updatedCount: {
-              $cond: [
-                {
-                  $gte: [{ $add: [{ $ifNull: ["$updatedCount", 0] }, 1] }, 100],
-                },
-                0,
-                { $add: [{ $ifNull: ["$updatedCount", 0] }, 1] },
-              ],
-            },
-          },
-        },
-      ],
+    await towns.findOneAndUpdate({ _id: validatedTownId }, [
       {
-        projection: { _id: 1, updatedCount: 1 },
-        returnDocument: "after",
+        $set: {
+          "transactionSummary.totalTransaction": {
+            $add: ["$transactionSummary.totalTransaction", 1],
+          },
+          [`transactionSummary.transactionCountByFlatType.${validatedFlatId}`]:
+            {
+              $add: [
+                {
+                  $ifNull: [
+                    `$transactionSummary.transactionCountByFlatType.${validatedFlatId}`,
+                    0,
+                  ],
+                },
+                1,
+              ],
+            },
+          "transactionSummary.earliestTransaction": {
+            $cond: [
+              { $lt: [month, "$transactionSummary.earliestTransaction"] },
+              month,
+              "$transactionSummary.earliestTransaction",
+            ],
+          },
+          "transactionSummary.latestTransaction": {
+            $cond: [
+              { $gt: [month, "$transactionSummary.latestTransaction"] },
+              month,
+              "$transactionSummary.latestTransaction",
+            ],
+          },
+          updatedAt: now(),
+        },
       },
-    );
-    return town
-      ? {
-          id: town._id,
-          updatedCount: town.updatedCount,
-          thresholdMet: town.updatedCount === 0,
-        }
-      : null;
+    ]);
   } catch (error) {
     return handleDbError(error);
   }
 }
 
-export async function updateTownProfileTransactionsLast6Months(
-  townId: string,
-  transactionsLast6Months: number,
-): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+export async function bulkUpdateTownProfileTransactionsLast6Months(
+  input: { townId: string; transactionsLast6Months: number }[],
+): Promise<void> {
   try {
-    const town = await towns.findOneAndUpdate(
-      { _id: idSchema.parse(townId) },
-      {
-        $set: {
-          "transactionSummary.transactionsLast6Months": z.coerce
-            .number()
-            .int()
-            .min(0)
-            .parse(transactionsLast6Months),
-          updatedAt: now(),
-        },
-      },
-      {
-        projection: { _id: 1, updatedCount: 1 },
-        returnDocument: "after",
+    const timestamp = now();
+    const operations: AnyBulkWriteOperation<TownProfile>[] = input.map(
+      (item) => {
+        const data = townProfileLast6MonthsUpdateSchema.parse(item);
+
+        return {
+          updateOne: {
+            filter: { _id: data.townId },
+            update: {
+              $set: {
+                "transactionSummary.transactionsLast6Months":
+                  data.transactionsLast6Months,
+                updatedAt: timestamp,
+              },
+            },
+          },
+        };
       },
     );
-    return town
-      ? {
-          id: town._id,
-          updatedCount: town.updatedCount,
-          thresholdMet: town.updatedCount === 0,
-        }
-      : null;
+
+    if (operations.length > 0) {
+      await towns.bulkWrite(operations);
+    }
   } catch (error) {
     return handleDbError(error);
   }
