@@ -135,13 +135,13 @@ export async function listProperties(
       conditions.push("p.town_id = ?");
       params.push(data.town_id);
     }
-    if (data.flat_type_id !== undefined) {
-      conditions.push("lt.flat_type_id = ?");
-      params.push(data.flat_type_id);
+    if (data.lease_commence_year !== undefined) {
+      conditions.push("p.lease_commence_year = ?");
+      params.push(data.lease_commence_year);
     }
-    if (data.flat_model_id !== undefined) {
-      conditions.push("lt.flat_model_id = ?");
-      params.push(data.flat_model_id);
+    if (data.street_name !== undefined) {
+      conditions.push("p.street_name LIKE ?");
+      params.push(`%${data.street_name}%`);
     }
     if (data.price_min !== undefined) {
       conditions.push("lt.resale_price >= ?");
@@ -155,10 +155,7 @@ export async function listProperties(
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const countJoin =
-      data.flat_type_id !== undefined ||
-      data.flat_model_id !== undefined ||
-      data.price_min !== undefined ||
-      data.price_max !== undefined
+      data.price_min !== undefined || data.price_max !== undefined
         ? LATEST_TRANSACTION_JOIN
         : "";
 
