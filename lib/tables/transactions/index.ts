@@ -1,7 +1,9 @@
 export {
   createTransaction,
   deleteTransaction,
+  getPropertyFilterOptions,
   getTransactionById,
+  getTransactionPriceStats,
   getTransactionStatistics,
   getTownSalesCounts6Months,
   listTransactions,
@@ -16,7 +18,9 @@ export {
 export type {
   CreateTransaction,
   CreateTransactionParams,
+  PropertyFilterOptions,
   ResaleTransaction,
+  TransactionPriceStats,
   TransactionStatisticRow,
   TransactionStatisticsGranularity,
   TransactionStatisticsGroup,

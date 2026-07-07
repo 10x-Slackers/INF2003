@@ -3,7 +3,9 @@ import { handleDbError } from "@/lib/utils";
 import {
   createTransactionSchema,
   type CreateTransactionParams,
+  type PropertyFilterOptions,
   type ResaleTransaction,
+  type TransactionPriceStats,
   type TransactionStatisticRow,
   type TransactionStatisticsGranularity,
   type TransactionStatisticsGroup,
@@ -212,6 +214,65 @@ export async function getTownSalesCounts6Months(): Promise<
     granularity: "last 6 months",
     groupBy: ["town_id"],
   });
+}
+
+export async function getTransactionPriceStats(
+  propertyId: string,
+): Promise<TransactionPriceStats> {
+  try {
+    const [stats] = await query<{
+      avg_price_per_sqm: number | null;
+      min_price_per_sqm: number | null;
+      max_price_per_sqm: number | null;
+    }>(
+      `SELECT
+         CAST(AVG(resale_price / floor_area_sqm) AS DOUBLE) AS avg_price_per_sqm,
+         CAST(MIN(resale_price / floor_area_sqm) AS DOUBLE) AS min_price_per_sqm,
+         CAST(MAX(resale_price / floor_area_sqm) AS DOUBLE) AS max_price_per_sqm
+       FROM resale_transactions WHERE property_id = ?`,
+      [idSchema.parse(propertyId)],
+    );
+
+    return {
+      avg_price_per_sqm: stats.avg_price_per_sqm ?? undefined,
+      min_price_per_sqm: stats.min_price_per_sqm ?? undefined,
+      max_price_per_sqm: stats.max_price_per_sqm ?? undefined,
+    };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function getPropertyFilterOptions(
+  propertyId: string,
+): Promise<PropertyFilterOptions> {
+  try {
+    const id = idSchema.parse(propertyId);
+    const [flatTypes, flatModels, storeyRanges] = await Promise.all([
+      query<{ id: number; name: string }>(
+        `SELECT DISTINCT ft.id, ft.name FROM resale_transactions rt
+         JOIN flat_types ft ON ft.id = rt.flat_type_id
+         WHERE rt.property_id = ? ORDER BY ft.name`,
+        [id],
+      ),
+      query<{ id: number; name: string }>(
+        `SELECT DISTINCT fm.id, fm.name FROM resale_transactions rt
+         JOIN flat_models fm ON fm.id = rt.flat_model_id
+         WHERE rt.property_id = ? ORDER BY fm.name`,
+        [id],
+      ),
+      query<{ id: number; min_storey: number; max_storey: number }>(
+        `SELECT DISTINCT sr.id, sr.min_storey, sr.max_storey FROM resale_transactions rt
+         JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+         WHERE rt.property_id = ? ORDER BY sr.min_storey`,
+        [id],
+      ),
+    ]);
+
+    return { flatTypes, flatModels, storeyRanges };
+  } catch (error) {
+    return handleDbError(error);
+  }
 }
 
 export async function getTransactionById(

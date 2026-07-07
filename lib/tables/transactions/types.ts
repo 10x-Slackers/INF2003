@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { FlatModel, FlatType, StoreyRange } from "../lookups/types";
 import { paginationSchema, idSchema } from "../common";
 
 export const createTransactionSchema = z.object({
@@ -99,6 +100,18 @@ export type TransactionListItem = ResaleTransaction & {
   min_storey: number;
   max_storey: number;
   uploaded_by_user_name: string | null;
+};
+
+export type TransactionPriceStats = {
+  avg_price_per_sqm?: number;
+  min_price_per_sqm?: number;
+  max_price_per_sqm?: number;
+};
+
+export type PropertyFilterOptions = {
+  flatTypes: FlatType[];
+  flatModels: FlatModel[];
+  storeyRanges: StoreyRange[];
 };
 
 export type TransactionStatisticRow = {
