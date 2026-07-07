@@ -10,6 +10,10 @@ import {
   prepareStatistics,
   type StatisticsUpsert,
 } from "@/lib/collections/statistics";
+import {
+  flushStatisticsTrigger,
+  getStatisticsTrigger,
+} from "@/lib/collections/statistics-trigger";
 
 export const METRICS = {
   AVG_PRICE_BY_FLAT_TYPE: "AVG_PRICE_BY_FLAT_TYPE",
@@ -125,6 +129,20 @@ export async function updateStatistics() {
     ];
 
     await upsertPreparedStatistics(stats);
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function runStatisticsTrigger() {
+  try {
+    const { dirtyTownIds } = await getStatisticsTrigger();
+
+    await updateStatistics();
+    await Promise.all(
+      dirtyTownIds.map((townId) => updateTownStatistic(townId)),
+    );
+    await flushStatisticsTrigger();
   } catch (error) {
     return handleDbError(error);
   }

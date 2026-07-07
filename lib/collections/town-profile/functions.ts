@@ -27,7 +27,7 @@ export async function rollDownTownProfileTransaction(
   townId: string,
   flatTypeId: string,
   transactionMonth: string,
-): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+): Promise<{ id: string } | null> {
   try {
     const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
@@ -69,32 +69,15 @@ export async function rollDownTownProfileTransaction(
               ],
             },
             updatedAt: now(),
-            // Increment updatedCount; reset to 0 when threshold is reached
-            // to trigger downstream batch processing
-            updatedCount: {
-              $cond: [
-                {
-                  $gte: [{ $add: [{ $ifNull: ["$updatedCount", 0] }, 1] }, 100],
-                },
-                0,
-                { $add: [{ $ifNull: ["$updatedCount", 0] }, 1] },
-              ],
-            },
           },
         },
       ],
       {
-        projection: { _id: 1, updatedCount: 1 },
+        projection: { _id: 1 },
         returnDocument: "after",
       },
     );
-    return town
-      ? {
-          id: town._id,
-          updatedCount: town.updatedCount,
-          thresholdMet: town.updatedCount === 0,
-        }
-      : null;
+    return town ? { id: town._id } : null;
   } catch (error) {
     return handleDbError(error);
   }
@@ -103,7 +86,7 @@ export async function rollDownTownProfileTransaction(
 export async function updateTownProfileTransactionsLast6Months(
   townId: string,
   transactionsLast6Months: number,
-): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+): Promise<{ id: string } | null> {
   try {
     const town = await towns.findOneAndUpdate(
       { _id: idSchema.parse(townId) },
@@ -118,17 +101,11 @@ export async function updateTownProfileTransactionsLast6Months(
         },
       },
       {
-        projection: { _id: 1, updatedCount: 1 },
+        projection: { _id: 1 },
         returnDocument: "after",
       },
     );
-    return town
-      ? {
-          id: town._id,
-          updatedCount: town.updatedCount,
-          thresholdMet: town.updatedCount === 0,
-        }
-      : null;
+    return town ? { id: town._id } : null;
   } catch (error) {
     return handleDbError(error);
   }

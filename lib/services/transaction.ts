@@ -1,23 +1,18 @@
 import {
-  rollDownTownProfileTransaction,
-  updateTownProfileTransactionsLast6Months,
-} from "@/lib/collections/town-profile";
-import {
-  createTransaction,
-  getTransactionStatistics,
-} from "@/lib/tables/transactions";
+  isStatisticsTriggerDue,
+  markStatisticsTownDirty,
+} from "@/lib/collections/statistics-trigger";
+import { rollDownTownProfileTransaction } from "@/lib/collections/town-profile";
+import { createTransaction } from "@/lib/tables/transactions";
 
-import {
-  transactionStatisticsMetricSchema,
-  transactionStatisticsGranularitySchema,
-} from "@/lib/tables/transactions";
 import { handleDbError } from "../utils";
 import { createAlerts } from "./alerts";
+import { runStatisticsTrigger, updatePropertyStatistic } from "./statistics";
 import { AddTransactionInput } from "./types";
 
 export async function addTransaction(
   transaction: AddTransactionInput,
-): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
+): Promise<{ id: string } | null> {
   const flatTypeId = parseInt(transaction.flatTypeId, 10);
   const flatModelId = parseInt(transaction.flatModelId, 10);
   const params = {
@@ -36,37 +31,21 @@ export async function addTransaction(
     // Create the transaction and get the transaction ID
     const transactionId = await createTransaction(params);
 
-    // Roll down town profile transaction and update transactions last 6 months
+    // Roll down town profile transaction
     const town = await rollDownTownProfileTransaction(
       transaction.townId,
       transaction.flatTypeId,
       transaction.transactionDate,
     );
-    if (!town?.thresholdMet) return town;
-    const transactionsLast6Months = await countTownTransactionsLast6Months(
-      transaction.townId,
-    );
-    const updatedTown = await updateTownProfileTransactionsLast6Months(
-      transaction.townId,
-      transactionsLast6Months,
-    );
-    // create alerts for transaction
-    await createAlerts(transactionId, transaction);
-    return updatedTown;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
 
-async function countTownTransactionsLast6Months(townId: string) {
-  try {
-    const [row] = await getTransactionStatistics({
-      metric: transactionStatisticsMetricSchema.enum.sales_count,
-      granularity: transactionStatisticsGranularitySchema.enum["last 6 months"],
-      groupBy: ["town_id"],
-      town_id: townId,
-    });
-    return row?.value ?? 0;
+    await markStatisticsTownDirty(transaction.townId);
+    await updatePropertyStatistic(transaction.propertyId);
+    if (await isStatisticsTriggerDue()) {
+      await runStatisticsTrigger();
+    }
+    await createAlerts(transactionId, transaction);
+
+    return town;
   } catch (error) {
     return handleDbError(error);
   }
