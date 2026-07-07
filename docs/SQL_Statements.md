@@ -333,7 +333,7 @@ INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?);
 UPDATE saved_properties SET user_id = ?, property_id = ? WHERE id = ?;
 ```
 
-Optional params: `userId`, `propertyId`. At least one update field is required.
+Optional params: `userId`, `propertyId`.
 
 ### `deleteSavedProperty(id)`
 
