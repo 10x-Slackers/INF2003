@@ -81,6 +81,14 @@ async function buildPropertyStatistics(propertyId: string) {
   });
 }
 
+async function buildAllPropertyStatistics() {
+  return buildStatistics({
+    metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
+    transactionMetric: "avg_price",
+    groupBy: ["property_id", "flat_type_id"],
+  });
+}
+
 async function buildGlobalStatistics() {
   const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
     await Promise.all([
@@ -153,6 +161,24 @@ export async function forceGenerateStatisticsExceptProperties() {
     await flushStatisticsTrigger();
 
     return { statistics: stats.length, towns: townIds.length };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function forceGeneratePropertyStatistics() {
+  try {
+    const stats = await buildAllPropertyStatistics();
+    const propertyIds = new Set<string>();
+
+    for (const stat of stats) {
+      if (stat.dimensions.propertyId)
+        propertyIds.add(stat.dimensions.propertyId);
+    }
+
+    await upsertPreparedStatistics(stats);
+
+    return { statistics: stats.length, properties: propertyIds.size };
   } catch (error) {
     return handleDbError(error);
   }
