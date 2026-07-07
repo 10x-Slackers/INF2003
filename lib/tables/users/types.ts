@@ -17,7 +17,9 @@ export const updateUserSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field (name, email, role) must be provided.",
   });
-export const userListQuerySchema = paginationSchema;
+export const userListQuerySchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
 export const updateUserParamsSchema = z.object({
   id: idSchema,
   input: updateUserSchema.or(z.object({}).strict()),

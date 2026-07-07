@@ -23,12 +23,22 @@ export async function listUsers(
 ): Promise<{ data: PublicUser[]; total: number }> {
   try {
     const data = userListQuerySchema.parse(input);
+    const whereClause = data.search
+      ? "WHERE (name LIKE ? OR email LIKE ?)"
+      : "";
+    const whereParams = data.search
+      ? [`%${data.search}%`, `%${data.search}%`]
+      : [];
+
     const [rows, countRows] = await Promise.all([
       query<PublicUser>(
-        `SELECT ${PUBLIC_USER_COLUMNS} FROM users ORDER BY created_at LIMIT ? OFFSET ?`,
-        [data.pageSize, (data.page - 1) * data.pageSize],
+        `SELECT ${PUBLIC_USER_COLUMNS} FROM users ${whereClause} ORDER BY created_at LIMIT ? OFFSET ?`,
+        [...whereParams, data.pageSize, (data.page - 1) * data.pageSize],
       ),
-      query<{ total: number }>("SELECT COUNT(*) AS total FROM users"),
+      query<{ total: number }>(
+        `SELECT COUNT(*) AS total FROM users ${whereClause}`,
+        whereParams,
+      ),
     ]);
 
     return { data: rows, total: countRows[0].total };
