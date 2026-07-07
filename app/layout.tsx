@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
 import { AuthProvider } from "@/components/auth-provider";
+import { auth } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -13,15 +14,16 @@ export const metadata: Metadata = {
     "A web application for tracking HDB resale prices and analytics.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
   return (
     <html lang="en" className={cn("h-full", "antialiased", inter.variable)}>
       <body className="min-h-full flex flex-col">
-        <AuthProvider>
+        <AuthProvider session={session}>
           <Navbar />
           <div className="flex-1">{children}</div>
         </AuthProvider>

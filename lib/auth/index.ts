@@ -2,9 +2,17 @@ import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { loginSchema } from "@/lib/auth/schemas";
+import { isAdmin } from "@/lib/permissions";
 import { query } from "@/lib/db";
 
 export type UserRole = "ADMIN" | "AGENT" | "USER";
+
+export async function assertAdmin() {
+  const session = await auth();
+  if (!isAdmin(session?.user?.role)) {
+    throw new Error("Forbidden");
+  }
+}
 
 type DbUser = {
   id: string;

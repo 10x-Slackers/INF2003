@@ -2,6 +2,7 @@ import { z } from "zod";
 import { idSchema, paginationSchema } from "../common";
 
 export const roleSchema = z.enum(["ADMIN", "AGENT", "USER"]);
+export const ROLES = roleSchema.options;
 export const createUserSchema = z.object({
   name: z.string().trim().min(1).max(255),
   email: z.email().trim().toLowerCase().max(320),
@@ -17,7 +18,9 @@ export const updateUserSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field (name, email, role) must be provided.",
   });
-export const userListQuerySchema = paginationSchema;
+export const userListQuerySchema = paginationSchema.extend({
+  search: z.string().trim().optional(),
+});
 export const updateUserParamsSchema = z.object({
   id: idSchema,
   input: updateUserSchema.or(z.object({}).strict()),
