@@ -8,6 +8,6 @@ import { ROUTES } from "@/lib/routes";
 
 export async function createAlertAction(filters: SavedAlertFilters) {
   const session = await assertSignedIn();
-  await createSavedAlert({ userId: session!.user!.id, filters });
+  await createSavedAlert({ userId: session.user.id, filters });
   revalidatePath(ROUTES.ALERTS);
 }

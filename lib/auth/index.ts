@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import NextAuth from "next-auth";
+import NextAuth, { type Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { loginSchema } from "@/lib/auth/schemas";
 import { isAdmin, isAgent, isSignedIn } from "@/lib/permissions";
@@ -21,9 +21,9 @@ export async function assertAgent() {
   }
 }
 
-export async function assertSignedIn() {
+export async function assertSignedIn(): Promise<Session> {
   const session = await auth();
-  if (!isSignedIn(session?.user?.role)) {
+  if (!session || !isSignedIn(session.user.role)) {
     throw new Error("Forbidden");
   }
   return session;
