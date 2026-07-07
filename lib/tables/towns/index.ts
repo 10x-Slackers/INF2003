@@ -6,6 +6,8 @@ export {
   listTowns,
 } from "./functions";
 
+export { regionSchema } from "./types";
+
 export type {
   Region,
   Town,

@@ -29,8 +29,8 @@ import {
 import { createAlertAction } from "@/app/alerts/actions";
 import { savedAlertFiltersSchema } from "@/lib/collections/saved-alerts/types";
 import { ROUTES } from "@/lib/routes";
-import type { Town } from "@/lib/tables/towns/types";
-import type { FlatType, FlatModel } from "@/lib/tables/lookups/types";
+import type { Town } from "@/lib/tables/towns";
+import type { FlatType, FlatModel } from "@/lib/tables/lookups";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 
 export function AlertForm({

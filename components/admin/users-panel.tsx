@@ -6,7 +6,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchUsers } from "@/app/admin/actions";
-import type { PublicUser } from "@/lib/tables/users/types";
+import type { PublicUser } from "@/lib/tables/users";
 import { UsersTable } from "./users/users-table";
 import { Pagination } from "@/components/ui/pagination";
 import { CreateUserDialog } from "./users/create-user-dialog";

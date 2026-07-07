@@ -7,8 +7,9 @@ import {
   deleteUser,
   listUsers,
   updateUser,
-} from "@/lib/tables/users/functions";
-import type { PublicUser, UserRole } from "@/lib/tables/users/types";
+  type PublicUser,
+  type UserRole,
+} from "@/lib/tables/users";
 
 export async function fetchUsers(input: {
   page: number;

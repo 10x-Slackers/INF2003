@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { isAgent } from "@/lib/permissions";
-import { listTowns } from "@/lib/tables/towns/functions";
+import { listTowns } from "@/lib/tables/towns";
 import { PropertyForm } from "@/components/properties/property-form";
 import { ROUTES } from "@/lib/routes";
 

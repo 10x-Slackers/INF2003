@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { Amenity } from "@/lib/tables/amenities/types";
-import type { Town } from "@/lib/tables/towns/types";
+import type { Amenity } from "@/lib/tables/amenities";
+import type { Town } from "@/lib/tables/towns";
 import { paginationSchema, idSchema } from "../common";
 
 export const propertyIdentitySchema = z.object({

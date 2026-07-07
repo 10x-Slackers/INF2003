@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { deleteUserAction } from "@/app/admin/actions";
-import type { PublicUser } from "@/lib/tables/users/types";
+import type { PublicUser } from "@/lib/tables/users";
 
 export function DeleteUserDialog({
   user,

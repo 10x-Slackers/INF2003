@@ -1,5 +1,5 @@
 import { execute, query } from "@/lib/db";
-import { getPropertiesWithLatestTransaction } from "@/lib/tables/properties/functions";
+import { getPropertiesWithLatestTransaction } from "@/lib/tables/properties";
 import { handleDbError } from "@/lib/utils";
 import {
   createSavedPropertySchema,

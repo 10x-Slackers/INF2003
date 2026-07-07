@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { isSignedIn } from "@/lib/permissions";
-import { listTowns } from "@/lib/tables/towns/functions";
-import { listFlatTypes, listFlatModels } from "@/lib/tables/lookups/functions";
+import { listTowns } from "@/lib/tables/towns";
+import { listFlatTypes, listFlatModels } from "@/lib/tables/lookups";
 import { AlertForm } from "@/components/alerts/alert-form";
 import { ROUTES } from "@/lib/routes";
 

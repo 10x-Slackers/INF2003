@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { createUserAction } from "@/app/admin/actions";
-import type { UserRole } from "@/lib/tables/users/types";
+import type { UserRole } from "@/lib/tables/users";
 import { UserFormFields } from "./user-form-fields";
 
 export function CreateUserDialog({

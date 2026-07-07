@@ -7,6 +7,11 @@ export {
   updateTransaction,
 } from "./functions";
 
+export {
+  transactionStatisticsMetricSchema,
+  transactionStatisticsGranularitySchema,
+} from "./types";
+
 export type {
   CreateTransaction,
   CreateTransactionParams,
