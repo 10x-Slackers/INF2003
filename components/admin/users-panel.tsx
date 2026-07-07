@@ -28,31 +28,36 @@ export function UsersPanel() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  async function load(currentPage: number, currentSearch: string) {
+  async function load(
+    currentPage: number,
+    currentSearch: string,
+    cancelled: { current: boolean } = { current: false },
+  ) {
     try {
       const { data, total } = await fetchUsers({
         page: currentPage,
         pageSize: PAGE_SIZE,
         search: currentSearch || undefined,
       });
+      if (cancelled.current) return;
       setUsers(data);
       setTotal(total);
     } catch {
+      if (cancelled.current) return;
       setUsers([]);
       setTotal(0);
     } finally {
-      setLoading(false);
+      if (!cancelled.current) setLoading(false);
     }
   }
 
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = { current: false };
     (async () => {
-      await load(page, search);
-      if (cancelled) return;
+      await load(page, search, cancelled);
     })();
     return () => {
-      cancelled = true;
+      cancelled.current = true;
     };
   }, [page, search]);
 

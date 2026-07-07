@@ -7,9 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { UserRole } from "@/lib/tables/users/types";
-
-const roles: UserRole[] = ["ADMIN", "AGENT", "USER"];
+import { ROLES, type UserRole } from "@/lib/tables/users/types";
 
 export function UserFormFields({
   withPassword,
@@ -53,7 +51,7 @@ export function UserFormFields({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {roles.map((r) => (
+            {ROLES.map((r) => (
               <SelectItem key={r} value={r}>
                 {r}
               </SelectItem>
