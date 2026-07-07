@@ -96,7 +96,10 @@ function addFilterClause(
   query: Record<string, unknown>,
   clause: Record<string, unknown>,
 ) {
-  const clauses = (query.$and ??= []) as Record<string, unknown>[];
+  const clauses = (query.$and ?? (query.$and = [])) as Record<
+    string,
+    unknown
+  >[];
   clauses.push(clause);
 }
 

@@ -1,4 +1,5 @@
 export {
+  bulkCreateAlertNotifications,
   deleteAlertNotification,
   getAlertNotificationById,
   getUnreadCount,
