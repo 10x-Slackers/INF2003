@@ -93,7 +93,7 @@ db.createCollection("statistics", {
             "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
           ],
         },
-        granularity: { enum: ["monthly", "yearly", "last 6 months"] },
+        granularity: { enum: ["monthly", "yearly"] },
         timeRange: {
           bsonType: "object",
           required: ["start", "end"],

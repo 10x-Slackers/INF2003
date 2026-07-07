@@ -1,7 +1,9 @@
+import { bulkUpdateTownProfileTransactionsLast6Months } from "../collections/town-profile";
 import {
   getTransactionStatistics,
+  transactionStatisticsGranularitySchema,
+  transactionStatisticsMetricSchema,
   type TransactionStatisticsGroup,
-  type TransactionStatisticsGranularity,
   type TransactionStatisticsMetric,
   type TransactionStatisticsQuery,
 } from "../tables/transactions";
@@ -15,24 +17,13 @@ import {
   flushStatisticsTrigger,
   getStatisticsTrigger,
 } from "@/lib/collections/statistics-trigger";
-
-export const METRICS = {
-  AVG_PRICE_BY_FLAT_TYPE: "AVG_PRICE_BY_FLAT_TYPE",
-  AVG_PRICE_PER_SQM_BY_FLAT_TYPE: "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
-  AVG_PRICE_BY_TOWN_AND_FLAT_TYPE: "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
-  AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE: "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
-  AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE:
-    "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE",
-  AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE:
-    "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
-} as const;
+import { metricsSchema } from "@/lib/collections/statistics";
 
 type StatisticBuild = {
   metric: StatisticsUpsert["metric"];
   transactionMetric: TransactionStatisticsMetric;
   groupBy: TransactionStatisticsGroup[];
   filters?: Pick<TransactionStatisticsQuery, "town_id" | "property_id">;
-  granularities?: TransactionStatisticsGranularity[];
 };
 
 async function buildStatistics({
@@ -40,39 +31,41 @@ async function buildStatistics({
   transactionMetric,
   groupBy,
   filters = {},
-  granularities = ["monthly", "yearly"],
 }: StatisticBuild) {
   const groups: TransactionStatisticsGroup[] = ["period", ...groupBy];
-  const rows = await Promise.all(
-    granularities.map(async (granularity) => ({
-      granularity,
-      rows: await getTransactionStatistics({
-        metric: transactionMetric,
-        groupBy: groups,
-        granularity,
-        ...filters,
-      }),
-    })),
-  );
+  const [monthlyTransactions, yearlyTransactions] = await Promise.all([
+    getTransactionStatistics({
+      metric: transactionMetric,
+      groupBy: groups,
+      granularity: "monthly",
+      ...filters,
+    }),
+    getTransactionStatistics({
+      metric: transactionMetric,
+      groupBy: groups,
+      granularity: "yearly",
+      ...filters,
+    }),
+  ]);
 
-  return rows.flatMap(({ granularity, rows }) =>
-    prepareStatistics(metric, granularity, rows),
-  );
+  return [
+    ...prepareStatistics(metric, "monthly", monthlyTransactions),
+    ...prepareStatistics(metric, "yearly", yearlyTransactions),
+  ];
 }
 
 async function buildTownStatistics(townId: string) {
   return buildStatistics({
-    metric: METRICS.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
+    metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
     groupBy: ["town_id", "flat_type_id"],
     filters: { town_id: townId },
-    granularities: ["monthly", "yearly", "last 6 months"],
   });
 }
 
 async function buildPropertyStatistics(propertyId: string) {
   return buildStatistics({
-    metric: METRICS.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
+    metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
     groupBy: ["property_id", "flat_type_id"],
     filters: { property_id: propertyId },
@@ -83,22 +76,22 @@ async function buildGlobalStatistics() {
   const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
     await Promise.all([
       buildStatistics({
-        metric: METRICS.AVG_PRICE_BY_FLAT_TYPE,
+        metric: metricsSchema.enum.AVG_PRICE_BY_FLAT_TYPE,
         transactionMetric: "avg_price",
         groupBy: ["flat_type_id"],
       }),
       buildStatistics({
-        metric: METRICS.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
+        metric: metricsSchema.enum.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
         transactionMetric: "avg_price_per_sqm",
         groupBy: ["flat_type_id"],
       }),
       buildStatistics({
-        metric: METRICS.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE,
+        metric: metricsSchema.enum.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE,
         transactionMetric: "avg_price",
         groupBy: ["lease_remaining_year", "flat_type_id"],
       }),
       buildStatistics({
-        metric: METRICS.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
+        metric: metricsSchema.enum.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
         transactionMetric: "avg_price",
         groupBy: ["storey_range_id", "flat_type_id"],
       }),
@@ -112,7 +105,7 @@ async function upsertPreparedStatistics(stats: StatisticsUpsert[]) {
   await bulkUpsertStatistics(stats);
 }
 
-export async function updateTownStatistic(townId: string) {
+async function updateTownStatistic(townId: string) {
   try {
     await upsertPreparedStatistics(await buildTownStatistics(townId));
   } catch (error) {
@@ -128,7 +121,7 @@ export async function updatePropertyStatistic(propertyId: string) {
   }
 }
 
-export async function updateStatistics() {
+async function updateStatistics() {
   try {
     await upsertPreparedStatistics(await buildGlobalStatistics());
   } catch (error) {
@@ -139,12 +132,37 @@ export async function updateStatistics() {
 export async function runStatisticsTrigger() {
   try {
     const { dirtyTownIds } = await getStatisticsTrigger();
-
     await updateStatistics();
-    await Promise.all(
-      dirtyTownIds.map((townId) => updateTownStatistic(townId)),
-    );
+
+    if (dirtyTownIds.length > 0) {
+      await bulkUpdateTownProfileTransactionsLast6Months(
+        await buildTownLast6MonthsUpdates(dirtyTownIds),
+      );
+      await Promise.all(
+        dirtyTownIds.map((townId) => updateTownStatistic(townId)),
+      );
+    }
     await flushStatisticsTrigger();
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+async function buildTownLast6MonthsUpdates(townIds: string[]) {
+  try {
+    const rows = await getTransactionStatistics({
+      metric: transactionStatisticsMetricSchema.enum.sales_count,
+      granularity: transactionStatisticsGranularitySchema.enum["last 6 months"],
+      groupBy: ["town_id"],
+    });
+    const countByTown = new Map(
+      rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
+    );
+
+    return townIds.map((townId) => ({
+      townId,
+      transactionsLast6Months: countByTown.get(townId) ?? 0,
+    }));
   } catch (error) {
     return handleDbError(error);
   }

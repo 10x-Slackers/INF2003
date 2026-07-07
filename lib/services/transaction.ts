@@ -12,7 +12,7 @@ import { AddTransactionInput } from "./types";
 
 export async function addTransaction(
   transaction: AddTransactionInput,
-): Promise<{ id: string } | null> {
+): Promise<void> {
   const flatTypeId = parseInt(transaction.flatTypeId, 10);
   const flatModelId = parseInt(transaction.flatModelId, 10);
   const params = {
@@ -31,8 +31,7 @@ export async function addTransaction(
     // Create the transaction and get the transaction ID
     const transactionId = await createTransaction(params);
 
-    // Roll down town profile transaction
-    const town = await rollDownTownProfileTransaction(
+    await rollDownTownProfileTransaction(
       transaction.townId,
       transaction.flatTypeId,
       transaction.transactionDate,
@@ -45,7 +44,6 @@ export async function addTransaction(
       await runStatisticsTrigger();
     }
     await createAlerts(transactionId, transaction);
-    return town;
   } catch (error) {
     return handleDbError(error);
   }
