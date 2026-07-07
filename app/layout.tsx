@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/navbar";
 import { AuthProvider } from "@/components/auth-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { auth } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -26,6 +27,7 @@ export default async function RootLayout({
         <AuthProvider session={session}>
           <Navbar />
           <div className="flex-1">{children}</div>
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
