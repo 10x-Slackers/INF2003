@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import type { UserRole } from "@/lib/auth";
-import { isAdmin, isSignedIn } from "@/lib/permissions";
+import { isAdmin, isAgent, isSignedIn } from "@/lib/permissions";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "./ui/dropdown-menu";
-import { Bookmark, Bell, ShieldUser } from "lucide-react";
+import { Bookmark, Bell, Plus, ShieldUser } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
 import { useMemo } from "react";
 
@@ -42,11 +42,31 @@ const actionLinks: ActionLink[] = [
   { href: ROUTES.ADMIN, label: "Admin", canView: isAdmin, icon: ShieldUser },
 ];
 
+type CreateLink = {
+  href: string;
+  label: string;
+  canView: (role?: UserRole) => boolean;
+};
+
+const createLinks: CreateLink[] = [
+  { href: ROUTES.PROPERTIES_NEW, label: "New property", canView: isAgent },
+  {
+    href: ROUTES.TRANSACTIONS_NEW,
+    label: "New transaction",
+    canView: isAgent,
+  },
+  { href: ROUTES.ALERT_NEW, label: "New alert", canView: isSignedIn },
+];
+
 export function Navbar() {
   const { data: session } = useSession();
   const role = session?.user.role;
   const visibleActions = useMemo(
     () => actionLinks.filter((link) => link.canView(role)),
+    [role],
+  );
+  const visibleCreate = useMemo(
+    () => createLinks.filter((link) => link.canView(role)),
     [role],
   );
 
@@ -76,6 +96,22 @@ export function Navbar() {
                 </Link>
               </Button>
             ))}
+            {visibleCreate.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Create">
+                    <Plus className="size-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {visibleCreate.map(({ href, label }) => (
+                    <DropdownMenuItem key={href} asChild>
+                      <Link href={href}>{label}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost">
