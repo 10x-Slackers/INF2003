@@ -39,7 +39,10 @@ export function PropertyForm({ towns }: { towns: Town[] }) {
 
     const parsed = createPropertySchema.safeParse(values);
     if (!parsed.success) {
-      setError("Please fill in all fields correctly.");
+      setError(
+        parsed.error.issues[0]?.message ??
+          "Please fill in all fields correctly.",
+      );
       return;
     }
 

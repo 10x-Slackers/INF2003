@@ -9,7 +9,7 @@ import { ROUTES } from "@/lib/routes";
 export default async function NewPropertyPage() {
   const session = await auth();
   if (!isAgent(session?.user?.role)) {
-    redirect("/login");
+    redirect(ROUTES.LOGIN);
   }
 
   const towns = await listTowns();
