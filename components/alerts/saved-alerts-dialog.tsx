@@ -30,13 +30,14 @@ function formatRange(
   label: string,
   range: { min?: number; max?: number } | undefined,
   suffix = "",
+  prefix = "",
 ): string | null {
   if (!range) return null;
   const { min, max } = range;
   if (min !== undefined && max !== undefined)
-    return `${label} $${min} – $${max}${suffix}`;
-  if (min !== undefined) return `${label} $${min}+${suffix}`;
-  if (max !== undefined) return `${label} Up to $${max}${suffix}`;
+    return `${label} ${prefix}${min} - ${prefix}${max}${suffix}`;
+  if (min !== undefined) return `${label} ${prefix}${min}+${suffix}`;
+  if (max !== undefined) return `${label} Up to ${prefix}${max}${suffix}`;
   return null;
 }
 
@@ -71,7 +72,7 @@ function FilterSummary({
     .join(", ");
   if (models) parts.push(models);
 
-  const price = formatRange("Price", filters.price);
+  const price = formatRange("Price", filters.price, "", "$");
   if (price) parts.push(price);
 
   const area = formatRange("Area", filters.floorAreaSqm, " sqm");

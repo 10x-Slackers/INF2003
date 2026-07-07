@@ -45,44 +45,58 @@ export function AlertNotifications({
       setNotifications(data);
       setTotal(total);
       setPage(currentPage);
+    } catch {
+      toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleMarkRead(id: string) {
-    const result = await markNotificationReadAction(id);
-    if (result.ok) {
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
-        ),
-      );
-    } else {
+    try {
+      const result = await markNotificationReadAction(id);
+      if (result.ok) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
+          ),
+        );
+      } else {
+        toast.error("Could not mark as read");
+      }
+    } catch {
       toast.error("Could not mark as read");
     }
   }
 
   async function handleDelete(id: string) {
-    const result = await deleteNotificationAction(id);
-    if (result.ok) {
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-      setTotal((prev) => prev - 1);
-      toast.success("Notification deleted");
-    } else {
+    try {
+      const result = await deleteNotificationAction(id);
+      if (result.ok) {
+        setNotifications((prev) => prev.filter((n) => n.id !== id));
+        setTotal((prev) => prev - 1);
+        toast.success("Notification deleted");
+      } else {
+        toast.error("Could not delete");
+      }
+    } catch {
       toast.error("Could not delete");
     }
   }
 
   async function handleMarkAllRead() {
-    const result = await markAllNotificationsReadAction();
-    if (result.ok) {
-      const now = new Date().toISOString();
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read_at: n.read_at ?? now })),
-      );
-      toast.success("All notifications marked as read");
-    } else {
+    try {
+      const result = await markAllNotificationsReadAction();
+      if (result.ok) {
+        const now = new Date().toISOString();
+        setNotifications((prev) =>
+          prev.map((n) => ({ ...n, read_at: n.read_at ?? now })),
+        );
+        toast.success("All notifications marked as read");
+      } else {
+        toast.error("Could not mark all as read");
+      }
+    } catch {
       toast.error("Could not mark all as read");
     }
   }

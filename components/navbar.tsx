@@ -74,9 +74,15 @@ export function Navbar() {
 
   useEffect(() => {
     if (!session?.user) return;
-    getUnreadCountAction()
-      .then(setUnreadCount)
-      .catch(() => {});
+    const fetchUnreadCount = async () => {
+      try {
+        const count = await getUnreadCountAction();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error("Failed to fetch unread count:", error);
+      }
+    };
+    fetchUnreadCount();
   }, [session?.user]);
 
   return (

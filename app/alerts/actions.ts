@@ -21,6 +21,11 @@ import { listFlatTypes, listFlatModels } from "@/lib/tables/lookups";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
 
+async function getOwnedNotification(id: string, userId: string) {
+  const n = await getAlertNotificationById(id);
+  return n && n.user_id === userId ? n : null;
+}
+
 export async function createAlertAction(filters: SavedAlertFilters) {
   const session = await assertSignedIn();
   await createSavedAlert({ userId: session.user.id, filters });
@@ -43,8 +48,8 @@ export async function markNotificationReadAction(
   id: string,
 ): Promise<{ ok: boolean }> {
   const session = await assertSignedIn();
-  const n = await getAlertNotificationById(id);
-  if (!n || n.user_id !== session.user.id) return { ok: false };
+  const n = await getOwnedNotification(id, session.user.id);
+  if (!n) return { ok: false };
   await updateAlertNotification({
     id,
     input: { read_at: new Date().toISOString().slice(0, 19).replace("T", " ") },
@@ -66,8 +71,8 @@ export async function deleteNotificationAction(
   id: string,
 ): Promise<{ ok: boolean }> {
   const session = await assertSignedIn();
-  const n = await getAlertNotificationById(id);
-  if (!n || n.user_id !== session.user.id) return { ok: false };
+  const n = await getOwnedNotification(id, session.user.id);
+  if (!n) return { ok: false };
   await deleteAlertNotification(id);
   revalidatePath(ROUTES.ALERTS);
   return { ok: true };
