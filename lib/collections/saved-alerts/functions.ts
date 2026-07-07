@@ -4,9 +4,7 @@ import {
   createSavedAlertSchema,
   alertTransactionFilterSchema,
   idSchema,
-  updateSavedAlertSchema,
   type AlertTransactionFilter,
-  type SavedAlertUpdate,
   type SavedAlert,
   type SavedAlertCreate,
 } from "./types";
@@ -52,32 +50,6 @@ export async function createSavedAlert(
 
     await alerts.insertOne(alert);
     return alert;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
-export async function updateSavedAlert(
-  input: SavedAlertUpdate,
-): Promise<SavedAlert | null> {
-  try {
-    const params = updateSavedAlertSchema.parse(input);
-    const result = await alerts.findOneAndUpdate(
-      { _id: params.id },
-      {
-        $set: {
-          ...Object.fromEntries(
-            Object.entries(params).filter(
-              ([key, value]) => key !== "id" && value !== undefined,
-            ),
-          ),
-          updatedAt: now(),
-        },
-      },
-      { returnDocument: "after" },
-    );
-
-    return result;
   } catch (error) {
     return handleDbError(error);
   }

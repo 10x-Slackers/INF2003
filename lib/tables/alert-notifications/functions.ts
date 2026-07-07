@@ -9,6 +9,7 @@ import {
   type UpdateAlertNotificationParams,
   type AlertNotificationListQuery,
   type AlertNotification,
+  type AlertNotificationWithDetails,
   type CreateAlertNotification,
 } from "./types";
 import { idSchema } from "../common";
@@ -132,6 +133,42 @@ export async function updateAlertNotification(
   }
 }
 
+export async function listAlertNotificationsWithDetails(
+  input: AlertNotificationListQuery,
+): Promise<{ data: AlertNotificationWithDetails[]; total: number }> {
+  try {
+    const data = alertNotificationListQuerySchema.parse(input);
+    const [rows, countRows] = await Promise.all([
+      query<AlertNotificationWithDetails>(
+        `SELECT n.id, n.user_id, n.alert_uuid, n.transaction_id, n.read_at, n.created_at,
+                rt.resale_price, rt.floor_area_sqm, rt.transaction_month,
+                p.town_id, t.name AS town_name, p.block, p.street_name,
+                ft.name AS flat_type_name, fm.name AS flat_model_name,
+                sr.min_storey, sr.max_storey
+         FROM alert_notifications n
+         JOIN resale_transactions rt ON rt.id = n.transaction_id
+         JOIN properties p ON p.id = rt.property_id
+         JOIN towns t ON t.id = p.town_id
+         JOIN flat_types ft ON ft.id = rt.flat_type_id
+         JOIN flat_models fm ON fm.id = rt.flat_model_id
+         JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+         WHERE n.user_id = ?
+         ORDER BY n.created_at DESC
+         LIMIT ? OFFSET ?`,
+        [data.userId, data.pageSize, (data.page - 1) * data.pageSize],
+      ),
+      query<{ total: number }>(
+        "SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?",
+        [data.userId],
+      ),
+    ]);
+
+    return { data: rows, total: countRows[0].total };
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 export async function deleteAlertNotification(id: string): Promise<boolean> {
   try {
     const parsedId = idSchema.parse(id);
@@ -140,6 +177,17 @@ export async function deleteAlertNotification(id: string): Promise<boolean> {
       [parsedId],
     );
     return result.affectedRows > 0;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function markAllNotificationsRead(userId: string): Promise<void> {
+  try {
+    await execute(
+      "UPDATE alert_notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL",
+      [idSchema.parse(userId)],
+    );
   } catch (error) {
     return handleDbError(error);
   }

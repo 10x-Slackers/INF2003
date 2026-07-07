@@ -1,6 +1,9 @@
 export {
   createSavedAlert,
+  deleteSavedAlert,
   findAlertsByTransaction,
+  getSavedAlertById,
+  listSavedAlerts,
   triggerSavedAlerts,
 } from "./functions";
 

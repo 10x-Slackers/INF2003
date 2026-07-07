@@ -12,7 +12,8 @@ import {
 } from "./ui/dropdown-menu";
 import { Bookmark, Bell, Plus, ShieldUser } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getUnreadCountAction } from "@/app/alerts/actions";
 
 type NavLink = {
   href: string;
@@ -61,6 +62,7 @@ const createLinks: CreateLink[] = [
 export function Navbar() {
   const { data: session } = useSession();
   const role = session?.user.role;
+  const [unreadCount, setUnreadCount] = useState(0);
   const visibleActions = useMemo(
     () => actionLinks.filter((link) => link.canView(role)),
     [role],
@@ -69,6 +71,13 @@ export function Navbar() {
     () => createLinks.filter((link) => link.canView(role)),
     [role],
   );
+
+  useEffect(() => {
+    if (!session?.user) return;
+    getUnreadCountAction()
+      .then(setUnreadCount)
+      .catch(() => {});
+  }, [session?.user]);
 
   return (
     <div className="container mx-auto flex h-16 items-center px-4">
@@ -91,8 +100,13 @@ export function Navbar() {
           <>
             {visibleActions.map(({ href, label, icon: Icon }) => (
               <Button key={href} asChild variant="ghost" size="icon">
-                <Link href={href} aria-label={label}>
+                <Link href={href} aria-label={label} className="relative">
                   <Icon className="size-5" />
+                  {label === "Alerts" && unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </Link>
               </Button>
             ))}
