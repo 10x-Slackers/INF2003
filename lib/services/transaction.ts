@@ -35,8 +35,6 @@ export async function addTransaction(
   try {
     // Create the transaction and get the transaction ID
     const transactionId = await createTransaction(params);
-    // create alerts for transaction
-    await createAlerts(transactionId, transaction);
 
     // Roll down town profile transaction and update transactions last 6 months
     const town = await rollDownTownProfileTransaction(
@@ -52,6 +50,8 @@ export async function addTransaction(
       transaction.townId,
       transactionsLast6Months,
     );
+    // create alerts for transaction
+    await createAlerts(transactionId, transaction);
     return updatedTown;
   } catch (error) {
     return handleDbError(error);
