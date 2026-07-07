@@ -53,7 +53,11 @@ export function Navbar() {
           <span className="text-sm text-muted-foreground">Loading...</span>
         ) : session?.user ? (
           <>
-            <Link href={ROUTES.PROFILE}>{session.user.name ?? "Profile"}</Link>
+            <Button asChild variant="ghost">
+              <Link href={ROUTES.PROFILE}>
+                {session.user.name ?? "Profile"}
+              </Link>
+            </Button>
             <Button
               variant="ghost"
               onClick={() => signOut({ redirectTo: ROUTES.HOME })}
