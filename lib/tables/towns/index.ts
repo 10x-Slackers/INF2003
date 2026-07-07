@@ -10,6 +10,5 @@ export type {
   Region,
   Town,
   TownAmenityListQuery,
-  TownListQuery,
   TownRelationListQuery,
 } from "./types";

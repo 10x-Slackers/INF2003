@@ -6,34 +6,17 @@ import type { Property } from "@/lib/tables/properties/types";
 import {
   type Town,
   type TownAmenityListQuery,
-  type TownListQuery,
   type TownRelationListQuery,
   townAmenityListQuerySchema,
-  townListQuerySchema,
   townRelationListQuerySchema,
 } from "./types";
 import { idSchema } from "../common";
 
-export async function listTowns(
-  input: TownListQuery,
-): Promise<{ data: Town[]; total: number }> {
+export async function listTowns(): Promise<Town[]> {
   try {
-    const data = townListQuerySchema.parse(input);
-    const where = data.region ? "WHERE region = ?" : "";
-    const params = data.region ? [data.region] : [];
-
-    const [rows, countRows] = await Promise.all([
-      query<Town>(
-        `SELECT id, region, name FROM towns ${where} ORDER BY name LIMIT ? OFFSET ?`,
-        [...params, data.pageSize, (data.page - 1) * data.pageSize],
-      ),
-      query<{ total: number }>(
-        `SELECT COUNT(*) AS total FROM towns ${where}`,
-        params,
-      ),
-    ]);
-
-    return { data: rows, total: countRows[0].total };
+    return await query<Town>(
+      "SELECT id, region, name FROM towns ORDER BY name",
+    );
   } catch (error) {
     return handleDbError(error);
   }
