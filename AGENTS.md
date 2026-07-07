@@ -37,3 +37,13 @@ The focus is functionality, not a polished UI. Keep styling minimal and consiste
 - **Minimise style classes.** Don't pile on arbitrary utility classes for fine-grained visual tweaks. Reach for shadcn variants/props first; only add a utility class when a component genuinely lacks the needed knob.
 - **Prefer theme colours.** Use the semantic tokens defined in `app/globals.css` rather than hardcoded colours like `bg-white` or `text-gray-500`.
 - When doing HTML/UI design, reference: https://ui.shadcn.com/llms.txt
+
+## Test users
+
+| Email             | Role  | Password |
+| ----------------- | ----- | -------- |
+| admin@example.com | ADMIN | P@ssw0rd |
+| agent@example.com | AGENT | P@ssw0rd |
+| user@example.com  | USER  | P@ssw0rd |
+
+Run the user seeding script if the credentials do not work: `USER_PASSWORD=P@ssw0rd pnpm seed:users`.
