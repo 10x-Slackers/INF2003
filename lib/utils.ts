@@ -1,7 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { MongoError } from "mongodb";
-import type { QueryError } from "mysql2";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -39,11 +37,11 @@ export class ForeignKeyConstraintError extends DbError {
 }
 
 export function handleDbError(error: unknown): never {
-  if (error instanceof MongoError) {
+  if (error instanceof Error && error.name === "MongoError") {
     throw new DbError(error.message);
   }
   if (typeof (error as { code?: unknown })?.code === "string") {
-    const err = error as QueryError;
+    const err = error as { code: string; message: string };
     const code = err.code;
     const message = err.message;
     if (code === "ER_DUP_ENTRY") {
