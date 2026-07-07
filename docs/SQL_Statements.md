@@ -52,7 +52,7 @@ Optional params: `role`; defaults to `USER` before the query runs.
 UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?;
 ```
 
-Optional params: `name`, `email`, `role`. At least one update field is required; empty input returns the current row instead of running this query.
+Optional params: `name`, `email`, `role`.
 
 ### `deleteUser(id)`
 
@@ -126,7 +126,7 @@ ORDER BY name
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `amenity_type_id`, `page`, `pageSize`. If only one filter is supplied, only that condition is included.
+Optional params: `town_id`, `amenity_type_id`, `page`, `pageSize`.
 
 ```sql
 SELECT COUNT(*) AS total
@@ -134,7 +134,7 @@ FROM amenities
 WHERE town_id = ? AND amenity_type_id = ?;
 ```
 
-Optional params: `town_id`, `amenity_type_id`. If only one filter is supplied, only that condition is included.
+Optional params: `town_id`, `amenity_type_id`.
 
 ### `getAmenityById(id)`
 
@@ -232,7 +232,7 @@ ORDER BY p.block, p.street_name
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`, `page`, `pageSize`. Only supplied filters are included.
+Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`, `page`, `pageSize`.
 
 ```sql
 SELECT COUNT(*) AS total
@@ -251,7 +251,7 @@ WHERE p.town_id = ? AND lt.flat_type_id = ? AND lt.flat_model_id = ?
   AND lt.resale_price >= ? AND lt.resale_price <= ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`. The joins are included only when filtering by transaction fields.
+Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
 
 ### `getPropertyRowById(id)`
 
@@ -278,7 +278,7 @@ SET town_id = ?, block = ?, street_name = ?, lease_commence_year = ?
 WHERE id = ?;
 ```
 
-Optional params: `town_id`, `block`, `street_name`, `lease_commence_year`. At least one update field is required; empty input returns the current row instead of running this query.
+Optional params: `town_id`, `block`, `street_name`, `lease_commence_year`.
 
 ### `deleteProperty(id)`
 
@@ -402,7 +402,7 @@ SET user_id = ?, alert_uuid = ?, transaction_id = ?, read_at = ?
 WHERE id = ?;
 ```
 
-Optional params: `userId`, `alert_uuid`, `transaction_id`, `read_at`. At least one update field is required; empty input returns the current row instead of running this query.
+Optional params: `userId`, `alert_uuid`, `transaction_id`, `read_at`.
 
 ### `markAlertNotificationRead(id)`
 
@@ -449,7 +449,7 @@ ORDER BY rt.transaction_month DESC
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`, `page`, `pageSize`. Only supplied filters are included.
+Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`, `page`, `pageSize`.
 
 ```sql
 SELECT COUNT(*) AS total
@@ -485,7 +485,7 @@ GROUP BY YEAR(rt.transaction_month), MONTH(rt.transaction_month)
 ORDER BY transaction_year, transaction_month;
 ```
 
-Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`, `storey_range_id`. The 6-month filter limits the result to the latest 6 transaction months in the database.
+Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`, `storey_range_id`.
 
 ### `getTransactionById(id)`
 
@@ -519,7 +519,7 @@ SET flat_type_id = ?, flat_model_id = ?, storey_range_id = ?,
 WHERE id = ?;
 ```
 
-Optional params: `flat_type_id`, `flat_model_id`, `storey_range_id`, `floor_area_sqm`, `transaction_month`, `resale_price`. At least one update field is required; empty input returns the current row instead of running this query.
+Optional params: `flat_type_id`, `flat_model_id`, `storey_range_id`, `floor_area_sqm`, `transaction_month`, `resale_price`.
 
 ### `deleteTransaction(id)`
 
