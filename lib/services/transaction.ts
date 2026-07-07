@@ -10,7 +10,7 @@ import {
 import {
   transactionStatisticsMetricSchema,
   transactionStatisticsGranularitySchema,
-} from "@/lib/tables/transactions/types";
+} from "@/lib/tables/transactions";
 import { handleDbError } from "../utils";
 import { createAlerts } from "./alerts";
 import { AddTransactionInput } from "./types";

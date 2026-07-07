@@ -1,19 +1,13 @@
 export {
   createSavedAlert,
-  deleteSavedAlert,
-  getSavedAlertById,
-  listSavedAlerts,
-  updateSavedAlert,
   findAlertsByTransaction,
+  triggerSavedAlerts,
 } from "./functions";
 
 export {
   createSavedAlertSchema,
-  idSchema,
   savedAlertFiltersSchema,
-  alertTransactionFilterSchema,
   type SavedAlert,
   type SavedAlertCreate,
-  type SavedAlertUpdate,
-  type AlertTransactionFilter,
+  type SavedAlertFilters,
 } from "./types";

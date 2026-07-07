@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { updateUserAction } from "@/app/admin/actions";
-import type { PublicUser, UserRole } from "@/lib/tables/users/types";
+import type { PublicUser, UserRole } from "@/lib/tables/users";
 import { UserFormFields } from "./user-form-fields";
 
 export function EditUserDialog({

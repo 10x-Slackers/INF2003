@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PropertyWithLatestTransaction } from "@/lib/tables/properties/types";
+import type { PropertyWithLatestTransaction } from "@/lib/tables/properties";
 import { paginationSchema, idSchema } from "../common";
 
 export const createSavedPropertySchema = z.object({

@@ -17,7 +17,7 @@ import { createPropertyAction } from "@/app/properties/actions";
 import { createPropertySchema } from "@/lib/tables/properties/types";
 import { ROUTES } from "@/lib/routes";
 import { TownCombobox } from "@/components/properties/town-combobox";
-import type { Town } from "@/lib/tables/towns/types";
+import type { Town } from "@/lib/tables/towns";
 
 export function PropertyForm({ towns }: { towns: Town[] }) {
   const router = useRouter();

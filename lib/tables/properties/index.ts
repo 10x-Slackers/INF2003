@@ -8,6 +8,8 @@ export {
   updateProperty,
 } from "./functions";
 
+export { createPropertySchema } from "./types";
+
 export type {
   CreateProperty,
   LatestTransactionSummary,

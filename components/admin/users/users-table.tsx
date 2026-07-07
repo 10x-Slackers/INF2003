@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { PublicUser, UserRole } from "@/lib/tables/users/types";
+import type { PublicUser, UserRole } from "@/lib/tables/users";
 
 const roleVariants: Record<UserRole, "destructive" | "default" | "secondary"> =
   {

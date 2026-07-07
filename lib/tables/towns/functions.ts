@@ -1,8 +1,7 @@
 import { query } from "@/lib/db";
-import { listAmenities } from "@/lib/tables/amenities/functions";
+import { listAmenities, type Amenity } from "@/lib/tables/amenities";
 import { handleDbError } from "@/lib/utils";
-import type { Amenity } from "@/lib/tables/amenities/types";
-import type { Property } from "@/lib/tables/properties/types";
+import type { Property } from "@/lib/tables/properties";
 import {
   type Town,
   type TownAmenityListQuery,

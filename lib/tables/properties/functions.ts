@@ -1,8 +1,5 @@
 import { execute, query } from "@/lib/db";
-import {
-  getTownById,
-  listAllAmenitiesByTown,
-} from "@/lib/tables/towns/functions";
+import { getTownById, listAllAmenitiesByTown } from "@/lib/tables/towns";
 import { handleDbError } from "@/lib/utils";
 import {
   createPropertySchema,

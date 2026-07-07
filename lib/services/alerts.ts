@@ -1,8 +1,8 @@
 import {
   findAlertsByTransaction,
   triggerSavedAlerts,
-} from "../collections/saved-alerts/functions";
-import { bulkCreateAlertNotifications } from "../tables/alert-notifications/functions";
+} from "../collections/saved-alerts";
+import { bulkCreateAlertNotifications } from "../tables/alert-notifications";
 import { getStoreyRange } from "../tables/lookups";
 import { AddTransactionInput } from "./types";
 
