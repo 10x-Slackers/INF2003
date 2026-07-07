@@ -168,7 +168,8 @@ export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
     if (data.flatModelId) {
       addArrayFilter(query, "filters.flatModelId", String(data.flatModelId));
     }
-    if (data.price) addValueInRangeFilter(query, "filters.price", data.price);
+    if (data.price !== undefined)
+      addValueInRangeFilter(query, "filters.price", data.price);
     if (data.floorAreaSqm) {
       addValueInRangeFilter(query, "filters.floorAreaSqm", data.floorAreaSqm);
     }
@@ -180,7 +181,7 @@ export async function findAlertsByTransaction(filters: AlertTransactionFilter) {
         data.storey.max,
       );
     }
-    if (data.leaseRemaining) {
+    if (data.leaseRemaining !== undefined) {
       addValueInRangeFilter(
         query,
         "filters.leaseRemaining",

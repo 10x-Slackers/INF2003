@@ -18,13 +18,14 @@ import { AddTransactionInput } from "./types";
 export async function addTransaction(
   transaction: AddTransactionInput,
 ): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
-  const flatTypeId = parseInt(transaction.flatTypeId);
+  const flatTypeId = parseInt(transaction.flatTypeId, 10);
+  const flatModelId = parseInt(transaction.flatModelId, 10);
   const params = {
     uploadedByUserId: transaction.user_id,
     input: {
       property_id: transaction.propertyId,
       flat_type_id: flatTypeId,
-      flat_model_id: parseInt(transaction.flatModelId),
+      flat_model_id: flatModelId,
       storey_range_id: transaction.storeyRangeId,
       floor_area_sqm: transaction.floorAreaSqm,
       transaction_month: transaction.transactionDate,

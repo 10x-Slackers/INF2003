@@ -4,8 +4,9 @@ import {
 } from "../collections/saved-alerts/functions";
 import { bulkCreateAlertNotifications } from "../tables/alert-notifications/functions";
 import { getStoreyRange } from "../tables/lookups";
-import { handleDbError } from "../utils";
 import { AddTransactionInput } from "./types";
+
+const MAX_LEASE_YEARS = 99;
 
 export async function createAlerts(
   transactionId: string,
@@ -25,25 +26,20 @@ export async function createAlerts(
 }
 
 async function fetchSavedAlerts(transaction: AddTransactionInput) {
-  try {
-    const storey = await getStoreyRange(transaction.storeyRangeId);
-    const alerts = await findAlertsByTransaction({
-      townId: transaction.townId,
-      flatTypeId: parseInt(transaction.flatTypeId),
-      flatModelId: parseInt(transaction.flatModelId),
-      price: transaction.resalePrice,
-      floorAreaSqm: transaction.floorAreaSqm,
-      storey,
-      leaseRemaining: calculateLeaseRemaining(
-        transaction.transactionDate,
-        transaction.leaseCommenceYear,
-      ),
-    });
-
-    return alerts;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  const storey = await getStoreyRange(transaction.storeyRangeId);
+  const alerts = await findAlertsByTransaction({
+    townId: transaction.townId,
+    flatTypeId: parseInt(transaction.flatTypeId, 10),
+    flatModelId: parseInt(transaction.flatModelId, 10),
+    price: transaction.resalePrice,
+    floorAreaSqm: transaction.floorAreaSqm,
+    storey,
+    leaseRemaining: calculateLeaseRemaining(
+      transaction.transactionDate,
+      transaction.leaseCommenceYear,
+    ),
+  });
+  return alerts;
 }
 
 function calculateLeaseRemaining(
@@ -52,5 +48,5 @@ function calculateLeaseRemaining(
 ) {
   const yearsUsed =
     Number(transactionDate.slice(0, 4)) - Number(leaseCommenceYear);
-  return Math.max(0, Math.min(99, 99 - yearsUsed));
+  return Math.max(0, Math.min(MAX_LEASE_YEARS, MAX_LEASE_YEARS - yearsUsed));
 }
