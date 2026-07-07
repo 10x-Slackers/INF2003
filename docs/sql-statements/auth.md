@@ -8,8 +8,6 @@ Sources: `lib/auth/signup.ts`, `lib/auth/index.ts`
 INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?);
 ```
 
-Returned columns: none.
-
 ## `authorize(credentials)`
 
 ```sql

@@ -112,12 +112,8 @@ WHERE id = ?;
 
 Optional params: `flat_type_id`, `flat_model_id`, `storey_range_id`, `floor_area_sqm`, `transaction_month`, `resale_price`.
 
-Returned columns: none.
-
 ## `deleteTransaction(id)`
 
 ```sql
 DELETE FROM resale_transactions WHERE id = ?;
 ```
-
-Returned columns: none.

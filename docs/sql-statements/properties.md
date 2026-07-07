@@ -116,15 +116,11 @@ WHERE id = ?;
 
 Optional params: `town_id`, `block`, `street_name`, `lease_commence_year`.
 
-Returned columns: none.
-
 ## `deleteProperty(id)`
 
 ```sql
 DELETE FROM properties WHERE id = ?;
 ```
-
-Returned columns: none.
 
 ## `lookupProperty(input)`
 

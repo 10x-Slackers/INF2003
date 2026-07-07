@@ -36,8 +36,6 @@ Returned columns: `id, user_id, property_id, created_at`
 INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?);
 ```
 
-Returned columns: none.
-
 ## `updateSavedProperty(input)`
 
 ```sql
@@ -46,15 +44,11 @@ UPDATE saved_properties SET user_id = ?, property_id = ? WHERE id = ?;
 
 Optional params: `userId`, `propertyId`.
 
-Returned columns: none.
-
 ## `deleteSavedProperty(id)`
 
 ```sql
 DELETE FROM saved_properties WHERE id = ?;
 ```
-
-Returned columns: none.
 
 ## `isPropertySaved(input)`
 

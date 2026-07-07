@@ -34,8 +34,6 @@ INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?);
 
 Optional params: `role`; defaults to `USER` before the query runs.
 
-Returned columns: none.
-
 ## `updateUser(input)`
 
 ```sql
@@ -44,12 +42,8 @@ UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?;
 
 Optional params: `name`, `email`, `role`.
 
-Returned columns: none.
-
 ## `deleteUser(id)`
 
 ```sql
 DELETE FROM users WHERE id = ?;
 ```
-
-Returned columns: none.

@@ -65,8 +65,6 @@ WHERE id = ?;
 
 Optional params: `userId`, `alert_uuid`, `transaction_id`, `read_at`.
 
-Returned columns: none.
-
 ## `markAlertNotificationRead(id)`
 
 ```sql
@@ -75,12 +73,8 @@ SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
 WHERE id = ?;
 ```
 
-Returned columns: none.
-
 ## `deleteAlertNotification(id)`
 
 ```sql
 DELETE FROM alert_notifications WHERE id = ?;
 ```
-
-Returned columns: none.
