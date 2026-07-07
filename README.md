@@ -29,7 +29,7 @@ HDB Resale Analytics and Tracker Web Application
 Applies the relational schema to MariaDB and the document schema/validation to MongoDB. Run once before the first ETL run.
 
 ```sh
-./scripts/init_schema.sh
+pnpm init:schema
 ```
 
 Connection defaults match dev-container services, override via the `MARIADB_*` / `MONGO_*` environment variables.
@@ -45,6 +45,22 @@ DATAGOV_API_KEY=<your_key> uv run scripts/etl.py
 - `DATAGOV_API_KEY` (optional)
   - [data.gov.sg API key](https://guide.data.gov.sg/developer-guide/api-overview/how-to-request-an-api-key) for the extract stage
 - Optional overrides: `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_DATABASE`, `MONGO_USER`, `MONGO_PASSWORD`
+
+### Seed test users
+
+Inserts one user per role (`ADMIN`, `AGENT`, `USER`) into MariaDB for testing. `USER_PASSWORD` is required.
+
+```sh
+USER_PASSWORD=P@ssw0rd pnpm seed:users
+```
+
+| Email             | Role  |
+| ----------------- | ----- |
+| admin@example.com | ADMIN |
+| agent@example.com | AGENT |
+| user@example.com  | USER  |
+
+Override the DB connection with the `MARIADB_*` environment variables.
 
 ## Getting Started
 
