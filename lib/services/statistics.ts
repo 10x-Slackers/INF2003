@@ -18,6 +18,7 @@ import {
   getStatisticsTrigger,
 } from "@/lib/collections/statistics-trigger";
 import { metricsSchema } from "@/lib/collections/statistics";
+import { listTowns } from "@/lib/tables/towns";
 
 type StatisticBuild = {
   metric: StatisticsUpsert["metric"];
@@ -60,6 +61,14 @@ async function buildTownStatistics(townId: string) {
     transactionMetric: "avg_price",
     groupBy: ["town_id", "flat_type_id"],
     filters: { town_id: townId },
+  });
+}
+
+async function buildAllTownStatistics() {
+  return buildStatistics({
+    metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
+    transactionMetric: "avg_price",
+    groupBy: ["town_id", "flat_type_id"],
   });
 }
 
@@ -124,6 +133,26 @@ export async function updatePropertyStatistic(propertyId: string) {
 async function updateStatistics() {
   try {
     await upsertPreparedStatistics(await buildGlobalStatistics());
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
+export async function forceGenerateStatisticsExceptProperties() {
+  try {
+    const townIds = (await listTowns()).map((town) => town.id);
+    const [globalStats, townStats, townUpdates] = await Promise.all([
+      buildGlobalStatistics(),
+      buildAllTownStatistics(),
+      buildTownLast6MonthsUpdates(townIds),
+    ]);
+    const stats = [...globalStats, ...townStats];
+
+    await upsertPreparedStatistics(stats);
+    await bulkUpdateTownProfileTransactionsLast6Months(townUpdates);
+    await flushStatisticsTrigger();
+
+    return { statistics: stats.length, towns: townIds.length };
   } catch (error) {
     return handleDbError(error);
   }

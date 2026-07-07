@@ -1,6 +1,7 @@
 "use server";
 
 import { assertAdmin, hashPassword } from "@/lib/auth";
+import { forceGenerateStatisticsExceptProperties } from "@/lib/services/statistics";
 import {
   createUser,
   deleteUser,
@@ -51,4 +52,12 @@ export async function updateUserAction(input: {
 export async function deleteUserAction(id: string): Promise<void> {
   await assertAdmin();
   await deleteUser(id);
+}
+
+export async function forceGenerateStatisticsAction(): Promise<{
+  statistics: number;
+  towns: number;
+}> {
+  await assertAdmin();
+  return forceGenerateStatisticsExceptProperties();
 }
