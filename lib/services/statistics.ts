@@ -1,6 +1,7 @@
 import {
   getTransactionStatistics,
   type TransactionStatisticsGroup,
+  type TransactionStatisticsGranularity,
   type TransactionStatisticsMetric,
   type TransactionStatisticsQuery,
 } from "../tables/transactions";
@@ -31,6 +32,7 @@ type StatisticBuild = {
   transactionMetric: TransactionStatisticsMetric;
   groupBy: TransactionStatisticsGroup[];
   filters?: Pick<TransactionStatisticsQuery, "town_id" | "property_id">;
+  granularities?: TransactionStatisticsGranularity[];
 };
 
 async function buildStatistics({
@@ -38,27 +40,71 @@ async function buildStatistics({
   transactionMetric,
   groupBy,
   filters = {},
+  granularities = ["monthly", "yearly"],
 }: StatisticBuild) {
   const groups: TransactionStatisticsGroup[] = ["period", ...groupBy];
-  const [monthlyTransactions, yearlyTransactions] = await Promise.all([
-    getTransactionStatistics({
-      metric: transactionMetric,
-      groupBy: groups,
-      granularity: "monthly",
-      ...filters,
-    }),
-    getTransactionStatistics({
-      metric: transactionMetric,
-      groupBy: groups,
-      granularity: "yearly",
-      ...filters,
-    }),
-  ]);
+  const rows = await Promise.all(
+    granularities.map(async (granularity) => ({
+      granularity,
+      rows: await getTransactionStatistics({
+        metric: transactionMetric,
+        groupBy: groups,
+        granularity,
+        ...filters,
+      }),
+    })),
+  );
 
-  return [
-    ...prepareStatistics(metric, "monthly", monthlyTransactions),
-    ...prepareStatistics(metric, "yearly", yearlyTransactions),
-  ];
+  return rows.flatMap(({ granularity, rows }) =>
+    prepareStatistics(metric, granularity, rows),
+  );
+}
+
+async function buildTownStatistics(townId: string) {
+  return buildStatistics({
+    metric: METRICS.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
+    transactionMetric: "avg_price",
+    groupBy: ["town_id", "flat_type_id"],
+    filters: { town_id: townId },
+    granularities: ["monthly", "yearly", "last 6 months"],
+  });
+}
+
+async function buildPropertyStatistics(propertyId: string) {
+  return buildStatistics({
+    metric: METRICS.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
+    transactionMetric: "avg_price",
+    groupBy: ["property_id", "flat_type_id"],
+    filters: { property_id: propertyId },
+  });
+}
+
+async function buildGlobalStatistics() {
+  const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
+    await Promise.all([
+      buildStatistics({
+        metric: METRICS.AVG_PRICE_BY_FLAT_TYPE,
+        transactionMetric: "avg_price",
+        groupBy: ["flat_type_id"],
+      }),
+      buildStatistics({
+        metric: METRICS.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
+        transactionMetric: "avg_price_per_sqm",
+        groupBy: ["flat_type_id"],
+      }),
+      buildStatistics({
+        metric: METRICS.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE,
+        transactionMetric: "avg_price",
+        groupBy: ["lease_remaining_year", "flat_type_id"],
+      }),
+      buildStatistics({
+        metric: METRICS.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
+        transactionMetric: "avg_price",
+        groupBy: ["storey_range_id", "flat_type_id"],
+      }),
+    ]);
+
+  return [...flatTypeStats, ...perSqmStats, ...leaseStats, ...storeyStats];
 }
 
 async function upsertPreparedStatistics(stats: StatisticsUpsert[]) {
@@ -68,14 +114,7 @@ async function upsertPreparedStatistics(stats: StatisticsUpsert[]) {
 
 export async function updateTownStatistic(townId: string) {
   try {
-    const stats = await buildStatistics({
-      metric: METRICS.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
-      transactionMetric: "avg_price",
-      groupBy: ["town_id", "flat_type_id"],
-      filters: { town_id: townId },
-    });
-
-    await upsertPreparedStatistics(stats);
+    await upsertPreparedStatistics(await buildTownStatistics(townId));
   } catch (error) {
     return handleDbError(error);
   }
@@ -83,14 +122,7 @@ export async function updateTownStatistic(townId: string) {
 
 export async function updatePropertyStatistic(propertyId: string) {
   try {
-    const stats = await buildStatistics({
-      metric: METRICS.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
-      transactionMetric: "avg_price",
-      groupBy: ["property_id", "flat_type_id"],
-      filters: { property_id: propertyId },
-    });
-
-    await upsertPreparedStatistics(stats);
+    await upsertPreparedStatistics(await buildPropertyStatistics(propertyId));
   } catch (error) {
     return handleDbError(error);
   }
@@ -98,37 +130,7 @@ export async function updatePropertyStatistic(propertyId: string) {
 
 export async function updateStatistics() {
   try {
-    const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
-      await Promise.all([
-        buildStatistics({
-          metric: METRICS.AVG_PRICE_BY_FLAT_TYPE,
-          transactionMetric: "avg_price",
-          groupBy: ["flat_type_id"],
-        }),
-        buildStatistics({
-          metric: METRICS.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
-          transactionMetric: "avg_price_per_sqm",
-          groupBy: ["flat_type_id"],
-        }),
-        buildStatistics({
-          metric: METRICS.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE,
-          transactionMetric: "avg_price",
-          groupBy: ["lease_remaining_year", "flat_type_id"],
-        }),
-        buildStatistics({
-          metric: METRICS.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
-          transactionMetric: "avg_price",
-          groupBy: ["storey_range_id", "flat_type_id"],
-        }),
-      ]);
-    const stats = [
-      ...flatTypeStats,
-      ...perSqmStats,
-      ...leaseStats,
-      ...storeyStats,
-    ];
-
-    await upsertPreparedStatistics(stats);
+    await upsertPreparedStatistics(await buildGlobalStatistics());
   } catch (error) {
     return handleDbError(error);
   }

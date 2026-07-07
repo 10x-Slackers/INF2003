@@ -93,7 +93,7 @@ db.createCollection("statistics", {
             "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
           ],
         },
-        granularity: { enum: ["monthly", "yearly"] },
+        granularity: { enum: ["monthly", "yearly", "last 6 months"] },
         timeRange: {
           bsonType: "object",
           required: ["start", "end"],
@@ -184,7 +184,6 @@ db.createCollection("towns", {
       required: ["_id", "transactionSummary", "coordinates", "updatedAt"],
       properties: {
         _id: { bsonType: "string" },
-        updatedCount: { bsonType: "int", minimum: 0 },
         transactionSummary: {
           bsonType: "object",
           required: [

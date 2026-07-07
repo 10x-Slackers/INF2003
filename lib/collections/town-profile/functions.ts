@@ -82,31 +82,3 @@ export async function rollDownTownProfileTransaction(
     return handleDbError(error);
   }
 }
-
-export async function updateTownProfileTransactionsLast6Months(
-  townId: string,
-  transactionsLast6Months: number,
-): Promise<{ id: string } | null> {
-  try {
-    const town = await towns.findOneAndUpdate(
-      { _id: idSchema.parse(townId) },
-      {
-        $set: {
-          "transactionSummary.transactionsLast6Months": z.coerce
-            .number()
-            .int()
-            .min(0)
-            .parse(transactionsLast6Months),
-          updatedAt: now(),
-        },
-      },
-      {
-        projection: { _id: 1 },
-        returnDocument: "after",
-      },
-    );
-    return town ? { id: town._id } : null;
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
