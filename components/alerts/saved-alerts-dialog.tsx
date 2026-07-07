@@ -133,12 +133,16 @@ export function SavedAlertsDialog({
   const flatModelMap = new Map(flatModels.map((f) => [String(f.id), f.name]));
 
   async function handleDelete(id: string) {
-    const result = await deleteSavedAlertAction(id);
-    if (result.ok) {
-      setAlerts((prev) => prev.filter((a) => a._id !== id));
-      toast.success("Alert deleted");
-    } else {
-      toast.error("Could not delete alert");
+    try {
+      const result = await deleteSavedAlertAction(id);
+      if (result.ok) {
+        setAlerts((prev) => prev.filter((a) => a._id !== id));
+        toast.success("Alert deleted");
+      } else {
+        toast.error("Could not delete alert");
+      }
+    } catch {
+      toast.error("Failed to delete alert");
     }
   }
 
