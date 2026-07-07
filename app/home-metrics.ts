@@ -1,5 +1,5 @@
-import { getTransactionStatistics } from "@/lib/tables/transactions";
-import { handleDbError } from "@/lib/utils";
+import { getStatisticsById } from "@/lib/collections/statistics";
+import { listFlatTypes } from "@/lib/tables/lookups";
 
 export type HomeMetrics = {
   averagePrice: number;
@@ -9,28 +9,26 @@ export type HomeMetrics = {
 };
 
 export async function getHomeMetrics(): Promise<HomeMetrics | null> {
-  try {
-    const rows = await getTransactionStatistics({
-      metric: "avg_price",
-      groupBy: ["period"],
-      granularity: "monthly",
-    });
-    if (rows.length === 0) return null;
+  const flatTypes = await listFlatTypes();
+  const fourRoom = flatTypes.find((t) => t.name === "4 ROOM");
+  if (!fourRoom) return null;
 
-    const latest = rows[rows.length - 1];
-    const [year, month] = latest.period!.split("-");
-    const lastYearPeriod = `${Number(year) - 1}-${month}`;
-    const lastYear = rows.find((row) => row.period === lastYearPeriod);
+  const doc = await getStatisticsById(
+    `AVG_PRICE_BY_FLAT_TYPE|monthly|flatType:${fourRoom.id}`,
+  );
+  if (!doc || doc.series.length === 0) return null;
 
-    return {
-      averagePrice: latest.value,
-      salesThisMonth: latest.sample_size,
-      priceTrendPercent: lastYear
-        ? ((latest.value - lastYear.value) / lastYear.value) * 100
-        : null,
-      period: latest.period!,
-    };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  const latest = doc.series[doc.series.length - 1];
+  const [year, month] = latest.period.split("-");
+  const lastYearPeriod = `${Number(year) - 1}-${month}`;
+  const lastYear = doc.series.find((p) => p.period === lastYearPeriod);
+
+  return {
+    averagePrice: latest.value,
+    salesThisMonth: latest.sampleSize,
+    priceTrendPercent: lastYear
+      ? ((latest.value - lastYear.value) / lastYear.value) * 100
+      : null,
+    period: latest.period,
+  };
 }

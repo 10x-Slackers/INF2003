@@ -27,8 +27,8 @@ async function Metrics() {
   if (!metrics) {
     return (
       <>
-        <MetricCard label="Average price" caption="No data yet" />
-        <MetricCard label="Sales this month" caption="No data yet" />
+        <MetricCard label="Average price (4-Room)" caption="No data yet" />
+        <MetricCard label="Sales (latest month)" caption="No data yet" />
         <MetricCard label="Price trend" caption="No data yet" />
       </>
     );
@@ -52,12 +52,12 @@ async function Metrics() {
   return (
     <>
       <MetricCard
-        label="Average price"
+        label="Average price (4-Room)"
         value={averagePrice}
         caption={caption}
       />
       <MetricCard
-        label="Sales this month"
+        label="Sales (latest month)"
         value={metrics.salesThisMonth.toString()}
         caption={caption}
       />
