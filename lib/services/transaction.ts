@@ -37,14 +37,14 @@ export async function addTransaction(
       transaction.flatTypeId,
       transaction.transactionDate,
     );
-
-    await markStatisticsTownDirty(transaction.townId);
-    await updatePropertyStatistic(transaction.propertyId);
+    await Promise.all([
+      markStatisticsTownDirty(transaction.townId),
+      updatePropertyStatistic(transaction.propertyId),
+    ]);
     if (await isStatisticsTriggerDue()) {
       await runStatisticsTrigger();
     }
     await createAlerts(transactionId, transaction);
-
     return town;
   } catch (error) {
     return handleDbError(error);
