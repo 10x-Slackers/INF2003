@@ -21,34 +21,19 @@ type PendingAction = "general" | "properties" | null;
 export function StatisticsPanel() {
   const [pending, setPending] = useState<PendingAction>(null);
 
-  async function handleGenerate() {
-    setPending("general");
+  async function handleAction(
+    type: PendingAction,
+    action: () => Promise<{ statistics: number }>,
+    successMsg: string,
+    errorMsg: string,
+  ) {
+    setPending(type);
     try {
-      const result = await forceGenerateStatisticsAction();
-      toast.success(
-        `Generated ${result.statistics} statistics across ${result.towns} towns`,
-      );
+      const result = await action();
+      toast.success(successMsg);
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to generate statistics",
-      );
-    } finally {
-      setPending(null);
-    }
-  }
-
-  async function handleGenerateProperties() {
-    setPending("properties");
-    try {
-      const result = await forceGeneratePropertyStatisticsAction();
-      toast.success(
-        `Generated ${result.statistics} statistics across ${result.properties} properties`,
-      );
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Failed to generate property statistics",
+        err instanceof Error ? err.message : errorMsg,
       );
     } finally {
       setPending(null);
@@ -66,7 +51,14 @@ export function StatisticsPanel() {
           <div className="flex flex-col gap-2">
             <Button
               className="w-full"
-              onClick={handleGenerate}
+              onClick={() =>
+                handleAction(
+                  "general",
+                  forceGenerateStatisticsAction,
+                  "Statistics generated successfully.",
+                  "Failed to generate statistics.",
+                )
+              }
               disabled={pending !== null}
             >
               <RefreshCw
@@ -77,7 +69,14 @@ export function StatisticsPanel() {
             <Button
               className="w-full"
               variant="outline"
-              onClick={handleGenerateProperties}
+              onClick={() =>
+                handleAction(
+                  "properties",
+                  forceGeneratePropertyStatisticsAction,
+                  "Property statistics generated successfully.",
+                  "Failed to generate property statistics.",
+                )
+              }
               disabled={pending !== null}
             >
               <RefreshCw
