@@ -26,6 +26,7 @@ export async function assertSignedIn() {
   if (!isSignedIn(session?.user?.role)) {
     throw new Error("Forbidden");
   }
+  return session;
 }
 
 type DbUser = {
