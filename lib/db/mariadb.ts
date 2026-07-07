@@ -17,6 +17,7 @@ const poolConfig: PoolOptions = {
   connectionLimit: 10,
   connectTimeout: 5000,
   enableKeepAlive: true,
+  decimalNumbers: true,
 };
 
 /** Singleton MariaDB connection pool */
