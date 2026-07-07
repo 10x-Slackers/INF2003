@@ -47,3 +47,17 @@ export type UpdateAlertNotificationParams = z.infer<
 export type AlertNotificationListQuery = z.infer<
   typeof alertNotificationListQuerySchema
 >;
+
+export type AlertNotificationWithDetails = AlertNotification & {
+  resale_price: number;
+  floor_area_sqm: number;
+  transaction_month: string;
+  town_id: string;
+  town_name: string;
+  block: string;
+  street_name: string;
+  flat_type_name: string;
+  flat_model_name: string;
+  min_storey: number;
+  max_storey: number;
+};

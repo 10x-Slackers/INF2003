@@ -30,6 +30,12 @@ Optimize for **low line count, readability, and simplicity** — not for product
 - **Don't over-engineer.** No speculative extensibility, no config layers for options nobody uses yet, no premature abstraction.
 - **Don't disable ESLint rules.** Fix the underlying issue instead of adding `eslint-disable` comments. Only disable a rule when fixing it properly would require significantly more code or a worse design.
 
+## Data layer posture
+
+- **Prefer SQL joins over JavaScript enrichment.** When a library function needs to return rows with related fields (e.g. a transaction with its town/flat-type names), write a single SQL query with `JOIN`s that selects the enriched columns directly. Do not fetch raw rows and then resolve names in JavaScript via lookup-table `list*` calls and `Map` lookups — that produces N+1-style code and more lines.
+- Add the joined columns to the function's return type (extend the existing row type in `types.ts`) rather than returning an untyped/loose shape.
+- Reach for JavaScript-side resolution only when the related data lives in a different database (e.g. MongoDB documents referencing MariaDB IDs) and a cross-DB join is not possible.
+
 ## UI posture
 
 The focus is functionality, not a polished UI. **Prefer simplicity over UX.** Keep styling minimal and consistent:
