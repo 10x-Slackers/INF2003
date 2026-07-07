@@ -1,10 +1,9 @@
 export {
-  createAlertNotification,
+  bulkCreateAlertNotifications,
   deleteAlertNotification,
   getAlertNotificationById,
   getUnreadCount,
   listAlertNotifications,
-  markAlertNotificationRead,
   updateAlertNotification,
 } from "./functions";
 

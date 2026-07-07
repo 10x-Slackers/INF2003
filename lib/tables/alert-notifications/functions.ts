@@ -70,14 +70,21 @@ export async function getUnreadCount(userId: string): Promise<number> {
   }
 }
 
-export async function createAlertNotification(
-  input: CreateAlertNotification,
+export async function bulkCreateAlertNotifications(
+  input: CreateAlertNotification[],
 ): Promise<void> {
   try {
-    const data = createAlertNotificationSchema.parse(input);
+    const data = createAlertNotificationSchema.array().parse(input);
+    if (data.length === 0) return;
+
     await execute(
-      "INSERT INTO alert_notifications (user_id, alert_uuid, transaction_id) VALUES (?, ?, ?) RETURNING id",
-      [data.userId, data.alert_uuid, data.transaction_id],
+      `INSERT INTO alert_notifications (user_id, alert_uuid, transaction_id)
+       VALUES ${data.map(() => "(?, ?, ?)").join(", ")}`,
+      data.flatMap((item) => [
+        item.userId,
+        item.alert_uuid,
+        item.transaction_id,
+      ]),
     );
   } catch (error) {
     return handleDbError(error);
@@ -120,22 +127,6 @@ export async function updateAlertNotification(
       [...params, parsed.id],
     );
     return result.affectedRows === 0 ? null : fetchRow(parsed.id);
-  } catch (error) {
-    return handleDbError(error);
-  }
-}
-
-export async function markAlertNotificationRead(
-  id: string,
-): Promise<AlertNotification | null> {
-  try {
-    const parsedId = idSchema.parse(id);
-    await execute(
-      `UPDATE alert_notifications SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
-     WHERE id = ?`,
-      [parsedId],
-    );
-    return fetchRow(parsedId);
   } catch (error) {
     return handleDbError(error);
   }

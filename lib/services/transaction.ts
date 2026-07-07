@@ -5,7 +5,6 @@ import {
 import {
   createTransaction,
   getTransactionStatistics,
-  type CreateTransactionParams,
 } from "@/lib/tables/transactions";
 
 import {
@@ -13,28 +12,20 @@ import {
   transactionStatisticsGranularitySchema,
 } from "@/lib/tables/transactions/types";
 import { handleDbError } from "../utils";
-
-type AddTransactionInput = {
-  user_id: string;
-  townId: string;
-  flatTypeId: string;
-  flatModelId: string;
-  propertyId: string;
-  storeyRangeId: number;
-  transactionDate: string;
-  resalePrice: number;
-  floorAreaSqm: number;
-};
+import { createAlerts } from "./alerts";
+import { AddTransactionInput } from "./types";
 
 export async function addTransaction(
   transaction: AddTransactionInput,
 ): Promise<{ id: string; updatedCount: number; thresholdMet: boolean } | null> {
-  const params: CreateTransactionParams = {
-    uploadedByUserId: transaction.user_id,
+  const flatTypeId = parseInt(transaction.flatTypeId, 10);
+  const flatModelId = parseInt(transaction.flatModelId, 10);
+  const params = {
+    uploadedByUserId: transaction.userId,
     input: {
       property_id: transaction.propertyId,
-      flat_type_id: parseInt(transaction.flatTypeId),
-      flat_model_id: parseInt(transaction.flatModelId),
+      flat_type_id: flatTypeId,
+      flat_model_id: flatModelId,
       storey_range_id: transaction.storeyRangeId,
       floor_area_sqm: transaction.floorAreaSqm,
       transaction_month: transaction.transactionDate,
@@ -42,15 +33,16 @@ export async function addTransaction(
     },
   };
   try {
-    // transaction id is not needed for roll down, so we can ignore the return value
-    await createTransaction(params);
+    // Create the transaction and get the transaction ID
+    const transactionId = await createTransaction(params);
+
+    // Roll down town profile transaction and update transactions last 6 months
     const town = await rollDownTownProfileTransaction(
       transaction.townId,
       transaction.flatTypeId,
       transaction.transactionDate,
     );
     if (!town?.thresholdMet) return town;
-
     const transactionsLast6Months = await countTownTransactionsLast6Months(
       transaction.townId,
     );
@@ -58,6 +50,8 @@ export async function addTransaction(
       transaction.townId,
       transactionsLast6Months,
     );
+    // create alerts for transaction
+    await createAlerts(transactionId, transaction);
     return updatedTown;
   } catch (error) {
     return handleDbError(error);
