@@ -4,7 +4,7 @@ import {
 } from "@/lib/collections/statistics-trigger";
 import { rollDownTownProfileTransaction } from "@/lib/collections/town-profile";
 import { createTransaction } from "@/lib/tables/transactions";
-import { getPropertyById } from "@/lib/tables/properties";
+import { getPropertyRowById } from "@/lib/tables/properties";
 
 import { handleDbError } from "../utils";
 import { createAlerts } from "./alerts";
@@ -16,7 +16,7 @@ export async function addTransaction(
 ): Promise<void> {
   const { uploadedByUserId, input } = transaction;
   try {
-    const property = await getPropertyById(input.property_id);
+    const property = await getPropertyRowById(input.property_id);
     if (!property) throw new Error("Property not found");
 
     const transactionId = await createTransaction({ input, uploadedByUserId });

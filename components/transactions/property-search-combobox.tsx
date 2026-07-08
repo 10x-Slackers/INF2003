@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useDebouncedCallback } from "use-debounce";
 import { toast } from "sonner";
@@ -55,6 +55,10 @@ export function PropertySearchCombobox({
       setLoading(false);
     }
   }, 300);
+
+  useEffect(() => {
+    return () => debouncedSearch.cancel();
+  }, [debouncedSearch]);
 
   function handleSelect(property: PropertySearchResult) {
     const label = `${property.block} ${property.street_name}, ${property.town_name}`;

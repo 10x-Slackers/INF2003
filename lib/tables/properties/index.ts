@@ -3,6 +3,7 @@ export {
   deleteProperty,
   getPropertiesWithLatestTransaction,
   getPropertyById,
+  getPropertyRowById,
   listProperties,
   lookupProperty,
   searchPropertiesByAddress,

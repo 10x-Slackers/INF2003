@@ -210,7 +210,7 @@ export async function listProperties(
   }
 }
 
-async function getPropertyRowById(id: string): Promise<Property | null> {
+export async function getPropertyRowById(id: string): Promise<Property | null> {
   try {
     const rows = await query<Property>(
       "SELECT id, town_id, block, street_name, lease_commence_year FROM properties WHERE id = ? LIMIT 1",
