@@ -83,8 +83,8 @@ export async function generateStatsAction(): Promise<{
 
     return { statistics: stats.length, towns: townIds.length };
   } catch (error) {
-    console.log("Error generating stats:", error);
-    return { statistics: 0, towns: 0 };
+    console.error("Error generating stats:", error);
+    throw error;
   }
 }
 
@@ -106,7 +106,7 @@ export async function generatePropertyStatsAction(): Promise<{
 
     return { statistics: stats.length, properties: propertyIds.size };
   } catch (error) {
-    console.log("Error generating property stats:", error);
-    return { statistics: 0, properties: 0 };
+    console.error("Error generating property stats:", error);
+    throw error;
   }
 }
