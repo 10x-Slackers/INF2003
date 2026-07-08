@@ -31,6 +31,7 @@ LIMIT ? OFFSET ?;
 
 Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`.
 Params: `page`, `pageSize`.
+Only provided filters are included in `WHERE`.
 
 Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price, town_id, town_name, block, street_name, lease_commence_year, flat_type_name, flat_model_name, min_storey, max_storey, uploaded_by_user_name`
 
@@ -49,6 +50,7 @@ WHERE p.town_id = ? AND rt.flat_type_id = ? AND rt.flat_model_id = ?
 ```
 
 Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`.
+Only provided filters are included in `WHERE`.
 
 Returned columns: `total`
 
@@ -99,6 +101,7 @@ ORDER BY {orderBy};
 
 Params: `metric`, `granularity`, `groupBy` (array, min 1, unique).
 Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`, `storey_range_id`.
+The selected group columns, metric expression, `GROUP BY`, `ORDER BY`, and optional `WHERE` filters are built from the input.
 
 Returned columns: selected `groupBy` columns, `value`, `sample_size`.
 
@@ -170,6 +173,7 @@ WHERE id = ?;
 ```
 
 Optional params: `flat_type_id`, `flat_model_id`, `storey_range_id`, `floor_area_sqm`, `transaction_month`, `resale_price`.
+Only provided fields are included in `SET`.
 
 ```sql
 SELECT rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,

@@ -49,7 +49,7 @@ Returned columns: `total`
 
 ```sql
 INSERT INTO alert_notifications (user_id, alert_uuid, transaction_id)
-VALUES (?, ?, ?);
+VALUES (?, ?, ?), ...;
 ```
 
 ## `updateAlertNotification(input)`
@@ -60,7 +60,7 @@ SET user_id = ?, alert_uuid = ?, transaction_id = ?, read_at = ?
 WHERE id = ?;
 ```
 
-Optional params: `userId`, `alert_uuid`, `transaction_id`, `read_at`.
+Optional params: `userId`, `alert_uuid`, `transaction_id`, `read_at`. Only provided fields are included in `SET`.
 
 ```sql
 SELECT id, user_id, alert_uuid, transaction_id, read_at, created_at

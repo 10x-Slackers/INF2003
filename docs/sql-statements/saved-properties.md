@@ -85,16 +85,20 @@ Returned columns: `id, town_id, block, street_name, lease_commence_year, lt_id, 
 ## `createSavedProperty(input)`
 
 ```sql
-INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?);
+INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?) RETURNING id;
 ```
+
+Returned columns: `id`
 
 ## `updateSavedProperty(input)`
 
 ```sql
-UPDATE saved_properties SET user_id = ?, property_id = ? WHERE id = ?;
+UPDATE saved_properties
+SET user_id = ?, property_id = ?
+WHERE id = ?;
 ```
 
-Optional params: `userId`, `propertyId`.
+Optional params: `userId`, `propertyId`. Only provided fields are included in `SET`.
 
 ```sql
 SELECT id, user_id, property_id, created_at FROM saved_properties WHERE id = ? LIMIT 1;

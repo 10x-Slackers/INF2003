@@ -14,6 +14,7 @@ LIMIT ? OFFSET ?;
 
 Params: `page`, `pageSize`.
 Optional params: `search`.
+The `WHERE` clause is included only when `search` is provided.
 
 Returned columns: `id, name, email, role, created_at, updated_at`
 
@@ -24,6 +25,7 @@ WHERE (name LIKE ? OR email LIKE ?);
 ```
 
 Optional params: `search`.
+The `WHERE` clause is included only when `search` is provided.
 
 Returned columns: `total`
 
@@ -65,6 +67,7 @@ WHERE id = ?;
 ```
 
 Optional params: `name`, `email`, `role`, `password_hash`.
+Only provided fields are included in `SET`.
 
 ```sql
 SELECT id, name, email, role, created_at, updated_at

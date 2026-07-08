@@ -14,6 +14,7 @@ LIMIT ? OFFSET ?;
 
 Optional params: `town_id`, `amenity_type_id`.
 Params: `page`, `pageSize`.
+Only provided filters are included in `WHERE`; `WHERE` is omitted when no filters are provided.
 
 Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
 
@@ -24,6 +25,7 @@ WHERE town_id = ? AND amenity_type_id = ?;
 ```
 
 Optional params: `town_id`, `amenity_type_id`.
+Only provided filters are included in `WHERE`; `WHERE` is omitted when no filters are provided.
 
 Returned columns: `total`
 

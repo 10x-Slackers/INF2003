@@ -61,6 +61,7 @@ LIMIT ? OFFSET ?;
 
 Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
 Params: `page`, `pageSize`.
+Only provided filters are included in `WHERE`.
 
 Returned columns: `id, town_id, block, street_name, lease_commence_year, lt_id, lt_uploaded_by_user_id, lt_property_id, lt_flat_type_id, lt_flat_model_id, lt_storey_range_id, lt_floor_area_sqm, lt_flat_type_name, lt_flat_model_name, lt_min_storey, lt_max_storey, lt_resale_price, lt_transaction_month`
 
@@ -82,6 +83,7 @@ WHERE p.town_id = ? AND lt.flat_type_id = ? AND lt.flat_model_id = ?
 ```
 
 Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
+Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields.
 
 Returned columns: `total`
 
@@ -130,6 +132,7 @@ WHERE id = ?;
 ```
 
 Optional params: `town_id`, `block`, `street_name`, `lease_commence_year`.
+Only provided fields are included in `SET`.
 
 ```sql
 SELECT id, town_id, block, street_name, lease_commence_year

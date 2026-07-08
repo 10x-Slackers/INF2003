@@ -52,6 +52,7 @@ LIMIT ? OFFSET ?;
 
 Params: `page`, `pageSize`.
 Optional params: `amenityTypeId`.
+The `amenity_type_id` filter is included only when `amenityTypeId` is provided.
 
 Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
 
@@ -62,6 +63,7 @@ WHERE town_id = ? AND amenity_type_id = ?;
 ```
 
 Optional params: `amenityTypeId`.
+The `amenity_type_id` filter is included only when `amenityTypeId` is provided.
 
 Returned columns: `total`
 
