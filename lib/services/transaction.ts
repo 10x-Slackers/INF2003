@@ -7,7 +7,7 @@ import { createTransaction } from "@/lib/tables/transactions";
 
 import { handleDbError } from "../utils";
 import { createAlerts } from "./alerts";
-import { runStatisticsTrigger, updatePropertyStatistic } from "./statistics";
+import { refreshPropertyStats, syncStats } from "./statistics";
 import { AddTransactionInput } from "./types";
 
 export async function addTransaction(
@@ -38,10 +38,10 @@ export async function addTransaction(
     );
     await Promise.all([
       markStatisticsTownDirty(transaction.townId),
-      updatePropertyStatistic(transaction.propertyId),
+      refreshPropertyStats(transaction.propertyId),
     ]);
     if (await isStatisticsTriggerDue()) {
-      await runStatisticsTrigger();
+      await syncStats();
     }
     await createAlerts(transactionId, transaction);
   } catch (error) {

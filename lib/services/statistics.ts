@@ -1,37 +1,36 @@
-import { bulkUpdateTownProfileTransactionsLast6Months } from "../collections/town-profile";
-import {
-  getTransactionStatistics,
-  transactionStatisticsGranularitySchema,
-  transactionStatisticsMetricSchema,
-  type TransactionStatisticsGroup,
-  type TransactionStatisticsMetric,
-  type TransactionStatisticsQuery,
-} from "../tables/transactions";
-import { handleDbError } from "../utils";
-import {
-  bulkUpsertStatistics,
-  prepareStatistics,
-  type StatisticsUpsert,
-} from "@/lib/collections/statistics";
+import { bulkUpdateTownProfileTransactionsLast6Months } from "@/lib/collections/town-profile";
 import {
   flushStatisticsTrigger,
   getStatisticsTrigger,
 } from "@/lib/collections/statistics-trigger";
-import { metricsSchema } from "@/lib/collections/statistics";
+import {
+  metricsSchema,
+  prepareStatistics,
+  saveStats,
+  type StatisticsUpsert,
+} from "@/lib/collections/statistics";
+import {
+  getTownSalesCounts6Months,
+  getTransactionStatistics,
+  type TransactionStatisticsGroup,
+  type TransactionStatisticsMetric,
+  type TransactionStatisticsQuery,
+} from "@/lib/tables/transactions";
+import { handleDbError } from "@/lib/utils";
 
-type StatisticBuild = {
+type StatsBuild = {
   metric: StatisticsUpsert["metric"];
   transactionMetric: TransactionStatisticsMetric;
   groupBy: TransactionStatisticsGroup[];
   filters?: Pick<TransactionStatisticsQuery, "town_id" | "property_id">;
 };
 
-async function buildStatistics({
+async function buildStats({
   metric,
   transactionMetric,
   groupBy,
   filters = {},
-}: StatisticBuild) {
+}: StatsBuild) {
   const groups: TransactionStatisticsGroup[] = ["period", ...groupBy];
   const [monthlyTransactions, yearlyTransactions] = await Promise.all([
     getTransactionStatistics({
@@ -54,8 +53,8 @@ async function buildStatistics({
   ];
 }
 
-async function buildTownStatistics(townId: string) {
-  return buildStatistics({
+async function buildTownStats(townId: string) {
+  return buildStats({
     metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
     groupBy: ["town_id", "flat_type_id"],
@@ -63,8 +62,16 @@ async function buildTownStatistics(townId: string) {
   });
 }
 
-async function buildPropertyStatistics(propertyId: string) {
-  return buildStatistics({
+export async function buildAllTownStats(): Promise<StatisticsUpsert[]> {
+  return buildStats({
+    metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
+    transactionMetric: "avg_price",
+    groupBy: ["town_id", "flat_type_id"],
+  });
+}
+
+async function buildPropertyStats(propertyId: string) {
+  return buildStats({
     metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
     groupBy: ["property_id", "flat_type_id"],
@@ -72,25 +79,33 @@ async function buildPropertyStatistics(propertyId: string) {
   });
 }
 
-async function buildGlobalStatistics() {
+export async function buildAllPropertyStats(): Promise<StatisticsUpsert[]> {
+  return buildStats({
+    metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
+    transactionMetric: "avg_price",
+    groupBy: ["property_id", "flat_type_id"],
+  });
+}
+
+export async function buildGlobalStats(): Promise<StatisticsUpsert[]> {
   const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
     await Promise.all([
-      buildStatistics({
+      buildStats({
         metric: metricsSchema.enum.AVG_PRICE_BY_FLAT_TYPE,
         transactionMetric: "avg_price",
         groupBy: ["flat_type_id"],
       }),
-      buildStatistics({
+      buildStats({
         metric: metricsSchema.enum.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
         transactionMetric: "avg_price_per_sqm",
         groupBy: ["flat_type_id"],
       }),
-      buildStatistics({
+      buildStats({
         metric: metricsSchema.enum.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE,
         transactionMetric: "avg_price",
         groupBy: ["lease_remaining_year", "flat_type_id"],
       }),
-      buildStatistics({
+      buildStats({
         metric: metricsSchema.enum.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
         transactionMetric: "avg_price",
         groupBy: ["storey_range_id", "flat_type_id"],
@@ -100,47 +115,40 @@ async function buildGlobalStatistics() {
   return [...flatTypeStats, ...perSqmStats, ...leaseStats, ...storeyStats];
 }
 
-async function upsertPreparedStatistics(stats: StatisticsUpsert[]) {
-  if (stats.length === 0) return;
-  await bulkUpsertStatistics(stats);
-}
-
-async function updateTownStatistic(townId: string) {
+async function refreshTownStats(townId: string) {
   try {
-    await upsertPreparedStatistics(await buildTownStatistics(townId));
+    await saveStats(await buildTownStats(townId));
   } catch (error) {
     return handleDbError(error);
   }
 }
 
-export async function updatePropertyStatistic(propertyId: string) {
+export async function refreshPropertyStats(propertyId: string) {
   try {
-    await upsertPreparedStatistics(await buildPropertyStatistics(propertyId));
+    await saveStats(await buildPropertyStats(propertyId));
   } catch (error) {
     return handleDbError(error);
   }
 }
 
-async function updateStatistics() {
+async function refreshStats() {
   try {
-    await upsertPreparedStatistics(await buildGlobalStatistics());
+    await saveStats(await buildGlobalStats());
   } catch (error) {
     return handleDbError(error);
   }
 }
 
-export async function runStatisticsTrigger() {
+export async function syncStats() {
   try {
     const { dirtyTownIds } = await getStatisticsTrigger();
-    await updateStatistics();
+    await refreshStats();
 
     if (dirtyTownIds.length > 0) {
       await bulkUpdateTownProfileTransactionsLast6Months(
-        await buildTownLast6MonthsUpdates(dirtyTownIds),
+        await buildTownCountUpdates(dirtyTownIds),
       );
-      await Promise.all(
-        dirtyTownIds.map((townId) => updateTownStatistic(townId)),
-      );
+      await Promise.all(dirtyTownIds.map((townId) => refreshTownStats(townId)));
     }
     await flushStatisticsTrigger();
   } catch (error) {
@@ -148,13 +156,11 @@ export async function runStatisticsTrigger() {
   }
 }
 
-async function buildTownLast6MonthsUpdates(townIds: string[]) {
+export async function buildTownCountUpdates(
+  townIds: string[],
+): Promise<{ townId: string; transactionsLast6Months: number }[]> {
   try {
-    const rows = await getTransactionStatistics({
-      metric: transactionStatisticsMetricSchema.enum.sales_count,
-      granularity: transactionStatisticsGranularitySchema.enum["last 6 months"],
-      groupBy: ["town_id"],
-    });
+    const rows = await getTownSalesCounts6Months();
     const countByTown = new Map(
       rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
     );

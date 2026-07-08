@@ -77,6 +77,11 @@ export async function bulkUpsertStatistics(
   }
 }
 
+export async function saveStats(input: StatisticsUpsert[]): Promise<void> {
+  if (input.length === 0) return;
+  await bulkUpsertStatistics(input);
+}
+
 export async function deleteStatistics(id: string): Promise<boolean> {
   try {
     const result = await statistics.deleteOne({ _id: idSchema.parse(id) });
