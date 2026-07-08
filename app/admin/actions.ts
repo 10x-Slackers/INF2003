@@ -1,7 +1,6 @@
 "use server";
 
-import bcrypt from "bcryptjs";
-import { assertAdmin } from "@/lib/auth";
+import { assertAdmin, hashPassword } from "@/lib/auth";
 import {
   createUser,
   deleteUser,
@@ -27,7 +26,7 @@ export async function createUserAction(input: {
   role?: UserRole;
 }): Promise<void> {
   await assertAdmin();
-  const password_hash = await bcrypt.hash(input.password, 10);
+  const password_hash = await hashPassword(input.password);
   await createUser({
     name: input.name,
     email: input.email,

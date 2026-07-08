@@ -5,6 +5,7 @@ import {
   type PublicUser,
   type UpdateUser,
   type UpdateUserParams,
+  type User,
   type UserListQuery,
   createUserSchema,
   updateUserParamsSchema,
@@ -59,6 +60,20 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
   }
 }
 
+export async function getUserWithPasswordById(
+  id: string,
+): Promise<User | null> {
+  try {
+    const rows = await query<User>(
+      "SELECT id, name, email, password_hash, role, created_at, updated_at FROM users WHERE id = ? LIMIT 1",
+      [idSchema.parse(id)],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 export async function createUser(input: CreateUser): Promise<void> {
   try {
     const data = createUserSchema.parse(input);
@@ -95,6 +110,10 @@ export async function updateUser(
     if (data.role !== undefined) {
       fields.push("role = ?");
       params.push(data.role);
+    }
+    if (data.password_hash !== undefined) {
+      fields.push("password_hash = ?");
+      params.push(data.password_hash);
     }
 
     const result = await execute(

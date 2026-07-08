@@ -14,9 +14,11 @@ export const updateUserSchema = z
     name: z.string().trim().min(1).max(255).optional(),
     email: z.email().trim().toLowerCase().max(320).optional(),
     role: roleSchema.optional(),
+    password_hash: z.string().min(1).max(255).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field (name, email, role) must be provided.",
+    message:
+      "At least one field (name, email, role, password_hash) must be provided.",
   });
 export const userListQuerySchema = paginationSchema.extend({
   search: z.string().trim().optional(),

@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { loginSchema } from "@/lib/auth/schemas";
 import { isAdmin, isAgent, isSignedIn } from "@/lib/permissions";
 import { query } from "@/lib/db";
+import { getUserWithPasswordById } from "@/lib/tables/users";
 
 export type UserRole = "ADMIN" | "AGENT" | "USER";
 
@@ -27,6 +28,26 @@ export async function assertSignedIn(): Promise<Session> {
     throw new Error("Forbidden");
   }
   return session;
+}
+
+export async function verifyPassword(
+  password: string,
+  hash: string,
+): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
+}
+
+export async function verifyUserPassword(
+  userId: string,
+  password: string,
+): Promise<boolean> {
+  const user = await getUserWithPasswordById(userId);
+  if (!user) return false;
+  return verifyPassword(password, user.password_hash);
 }
 
 type DbUser = {
@@ -63,7 +84,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!user) return null;
 
-        const validPassword = await bcrypt.compare(
+        const validPassword = await verifyPassword(
           parsed.data.password,
           user.password_hash,
         );
@@ -79,10 +100,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+      }
+      if (trigger === "update" && token.id) {
+        const users = await query<DbUser>(
+          "SELECT name, email, role FROM users WHERE id = ? LIMIT 1",
+          [token.id as string],
+        );
+        if (users[0]) {
+          token.name = users[0].name;
+          token.email = users[0].email;
+          token.role = users[0].role;
+        }
       }
       return token;
     },

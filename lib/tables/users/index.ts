@@ -2,6 +2,7 @@ export {
   createUser,
   deleteUser,
   getUserById,
+  getUserWithPasswordById,
   listUsers,
   updateUser,
 } from "./functions";

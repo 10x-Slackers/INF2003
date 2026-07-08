@@ -1,7 +1,7 @@
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { signupSchema } from "@/lib/auth/schemas";
+import { hashPassword } from "@/lib/auth";
 import { execute } from "@/lib/db";
 
 export async function signup(request: Request) {
@@ -15,7 +15,7 @@ export async function signup(request: Request) {
   }
 
   const { name, email, password } = parsed.data;
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
 
   try {
     await execute(
