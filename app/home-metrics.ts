@@ -10,7 +10,8 @@ export type HomeMetrics = {
 
 export async function getHomeMetrics(): Promise<HomeMetrics | null> {
   const flatTypes = await listFlatTypes();
-  const fourRoom = flatTypes.find((t) => t.name === "4 ROOM");
+  const FLAT_TYPE_4ROOM = "4 ROOM";
+  const fourRoom = flatTypes.find((t) => t.name === FLAT_TYPE_4ROOM);
   if (!fourRoom) return null;
 
   const doc = await getStatisticsById(

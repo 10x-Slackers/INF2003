@@ -23,7 +23,12 @@ export default function Home() {
 }
 
 async function Metrics() {
-  const metrics = await getHomeMetrics();
+  let metrics;
+  try {
+    metrics = await getHomeMetrics();
+  } catch (error) {
+    console.error("Error fetching home metrics:", error);
+  }
   if (!metrics) {
     return (
       <>
@@ -35,6 +40,9 @@ async function Metrics() {
   }
 
   const [year, month] = metrics.period.split("-");
+  if (!year || !month || isNaN(Number(year)) || isNaN(Number(month))) {
+    throw new Error(`Invalid period format: ${metrics.period}`);
+  }
   const caption = new Date(Number(year), Number(month) - 1).toLocaleDateString(
     "en-SG",
     { month: "long", year: "numeric" },
