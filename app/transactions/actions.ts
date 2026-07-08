@@ -19,10 +19,11 @@ export async function searchPropertiesAction(
 
 export async function createTransactionAction(
   input: CreateTransaction,
-): Promise<string> {
+): Promise<void> {
   const session = await auth();
-  if (!isAgent(session?.user?.role)) throw new Error("Forbidden");
-  await addTransaction({ uploadedByUserId: session!.user.id, input });
+  if (!session || !isAgent(session.user?.role)) {
+    throw new Error("Forbidden");
+  }
+  await addTransaction({ uploadedByUserId: session.user.id, input });
   revalidatePath(ROUTES.TRANSACTIONS);
-  return "ok";
 }

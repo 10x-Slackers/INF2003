@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useDebouncedCallback } from "use-debounce";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -45,8 +46,11 @@ export function PropertySearchCombobox({
     try {
       const data = await searchPropertiesAction(search);
       setResults(data);
-    } catch {
+    } catch (err) {
       setResults([]);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to search properties",
+      );
     } finally {
       setLoading(false);
     }
