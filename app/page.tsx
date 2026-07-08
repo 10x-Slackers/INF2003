@@ -3,6 +3,7 @@ import { MetricCardSkeleton } from "@/components/dashboard/MetricCardSkeleton";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
 import { getHomeMetrics } from "./home-metrics";
+import { toast } from "sonner";
 
 export default function Home() {
   return (
@@ -28,6 +29,7 @@ async function Metrics() {
     metrics = await getHomeMetrics();
   } catch (error) {
     console.error("Error fetching home metrics:", error);
+    toast.error("Failed to fetch home metrics. Please try again later.");
   }
   if (!metrics) {
     return (
@@ -40,10 +42,19 @@ async function Metrics() {
   }
 
   const [year, month] = metrics.period.split("-");
-  if (!year || !month || isNaN(Number(year)) || isNaN(Number(month))) {
-    throw new Error(`Invalid period format: ${metrics.period}`);
+  const yearNum = Number(year);
+  const monthNum = Number(month);
+  if (!year || !month || isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+    console.error(`Invalid period format: ${metrics.period}`);
+    return (
+      <>
+        <MetricCard label="Average price (4-Room)" caption="No data yet" />
+        <MetricCard label="Sales (latest month)" caption="No data yet" />
+        <MetricCard label="Price trend" caption="No data yet" />
+      </>
+    );
   }
-  const caption = new Date(Number(year), Number(month) - 1).toLocaleDateString(
+  const caption = new Date(yearNum, monthNum - 1).toLocaleDateString(
     "en-SG",
     { month: "long", year: "numeric" },
   );
