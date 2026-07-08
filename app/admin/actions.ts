@@ -19,7 +19,6 @@ import {
   type PublicUser,
   type UserRole,
 } from "@/lib/tables/users";
-import { handleDbError } from "@/lib/utils";
 
 export async function fetchUsers(input: {
   page: number;
@@ -84,7 +83,8 @@ export async function generateStatsAction(): Promise<{
 
     return { statistics: stats.length, towns: townIds.length };
   } catch (error) {
-    return handleDbError(error);
+    console.log("Error generating stats:", error);
+    return { statistics: 0, towns: 0 };
   }
 }
 
@@ -106,6 +106,7 @@ export async function generatePropertyStatsAction(): Promise<{
 
     return { statistics: stats.length, properties: propertyIds.size };
   } catch (error) {
-    return handleDbError(error);
+    console.log("Error generating property stats:", error);
+    return { statistics: 0, properties: 0 };
   }
 }

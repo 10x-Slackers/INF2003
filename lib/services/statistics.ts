@@ -157,13 +157,17 @@ export async function syncStats() {
 }
 
 export async function buildTownCountUpdates(townIds: string[]) {
-  const rows = await getTownSalesCounts6Months();
-  const countByTown = new Map(
-    rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
-  );
+  try {
+    const rows = await getTownSalesCounts6Months();
+    const countByTown = new Map(
+      rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
+    );
 
-  return townIds.map((townId) => ({
-    townId,
-    transactionsLast6Months: countByTown.get(townId) ?? 0,
-  }));
+    return townIds.map((townId) => ({
+      townId,
+      transactionsLast6Months: countByTown.get(townId) ?? 0,
+    }));
+  } catch (error) {
+    return handleDbError(error);
+  }
 }
