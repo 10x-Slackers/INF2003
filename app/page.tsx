@@ -3,7 +3,6 @@ import { MetricCardSkeleton } from "@/components/dashboard/MetricCardSkeleton";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Suspense } from "react";
 import { getHomeMetrics } from "./home-metrics";
-import { toast } from "sonner";
 
 export default function Home() {
   return (
@@ -44,14 +43,21 @@ async function Metrics() {
   const [year, month] = metrics.period.split("-");
   const yearNum = Number(year);
   const monthNum = Number(month);
-  if (!year || !month || isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+  if (
+    !year ||
+    !month ||
+    isNaN(yearNum) ||
+    isNaN(monthNum) ||
+    monthNum < 1 ||
+    monthNum > 12
+  ) {
     console.error(`Invalid period format: ${metrics.period}`);
     return metricsFallback;
   }
-  const caption = new Date(yearNum, monthNum - 1).toLocaleDateString(
-    "en-SG",
-    { month: "long", year: "numeric" },
-  );
+  const caption = new Date(yearNum, monthNum - 1).toLocaleDateString("en-SG", {
+    month: "long",
+    year: "numeric",
+  });
   const averagePrice = new Intl.NumberFormat("en-SG", {
     style: "currency",
     currency: "SGD",

@@ -1,6 +1,8 @@
 import { getStatisticsById } from "@/lib/collections/statistics";
 import { listFlatTypes } from "@/lib/tables/lookups";
 
+const FLAT_TYPE_4ROOM = "4 ROOM";
+
 export type HomeMetrics = {
   averagePrice: number;
   salesThisMonth: number;
@@ -11,7 +13,6 @@ export type HomeMetrics = {
 export async function getHomeMetrics(): Promise<HomeMetrics | null> {
   try {
     const flatTypes = await listFlatTypes();
-    const FLAT_TYPE_4ROOM = "4 ROOM";
     const fourRoom = flatTypes.find((t) => t.name === FLAT_TYPE_4ROOM);
     if (!fourRoom) return null;
 
