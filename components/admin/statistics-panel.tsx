@@ -23,7 +23,7 @@ export function StatisticsPanel() {
 
   async function handleAction(
     type: PendingAction,
-    action: () => Promise<{ statistics: number; [key: string]: number }>,
+    action: () => Promise<{ statistics: number;[key: string]: number }>,
     successMsg: string,
     errorMsg: string,
   ) {
@@ -37,6 +37,25 @@ export function StatisticsPanel() {
       setPending(null);
     }
   }
+  const actions = [
+    {
+      type: "general" as const,
+      action: generateStatsAction,
+      label: "Generate statistics",
+      loadingLabel: "Generating...",
+      successMsg: "Statistics generated successfully.",
+      errorMsg: "Failed to generate statistics.",
+    },
+    {
+      type: "properties" as const,
+      action: generatePropertyStatsAction,
+      label: "Generate property statistics",
+      loadingLabel: "Generating...",
+      successMsg: "Property statistics generated successfully.",
+      errorMsg: "Failed to generate property statistics.",
+      variant: "outline" as const,
+    },
+  ];
 
   return (
     <Card>
@@ -47,45 +66,18 @@ export function StatisticsPanel() {
         </CardDescription>
         <CardAction>
           <div className="flex flex-col gap-2">
-            <Button
-              className="w-full"
-              onClick={() =>
-                handleAction(
-                  "general",
-                  generateStatsAction,
-                  "Statistics generated successfully.",
-                  "Failed to generate statistics.",
-                )
-              }
-              disabled={pending !== null}
-            >
-              <RefreshCw
-                className={pending === "general" ? "animate-spin" : undefined}
-              />
-              {pending === "general" ? "Generating..." : "Generate statistics"}
-            </Button>
-            <Button
-              className="w-full"
-              variant="outline"
-              onClick={() =>
-                handleAction(
-                  "properties",
-                  generatePropertyStatsAction,
-                  "Property statistics generated successfully.",
-                  "Failed to generate property statistics.",
-                )
-              }
-              disabled={pending !== null}
-            >
-              <RefreshCw
-                className={
-                  pending === "properties" ? "animate-spin" : undefined
-                }
-              />
-              {pending === "properties"
-                ? "Generating..."
-                : "Generate property statistics"}
-            </Button>
+            {actions.map(({ type, action, label, loadingLabel, successMsg, errorMsg, variant }) => (
+              <Button
+                key={type}
+                className="w-full"
+                variant={variant}
+                onClick={() => handleAction(type, action, successMsg, errorMsg)}
+                disabled={pending !== null}
+              >
+                <RefreshCw className={pending === type ? "animate-spin" : undefined} />
+                {pending === type ? loadingLabel : label}
+              </Button>
+            ))}
           </div>
         </CardAction>
       </CardHeader>

@@ -62,7 +62,7 @@ async function buildTownStats(townId: string) {
   });
 }
 
-export async function buildAllTownStats() {
+export async function buildAllTownStats(): Promise<StatisticsUpsert[]> {
   return buildStats({
     metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
@@ -79,7 +79,7 @@ async function buildPropertyStats(propertyId: string) {
   });
 }
 
-export async function buildAllPropertyStats() {
+export async function buildAllPropertyStats(): Promise<StatisticsUpsert[]> {
   return buildStats({
     metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
@@ -87,7 +87,7 @@ export async function buildAllPropertyStats() {
   });
 }
 
-export async function buildGlobalStats() {
+export async function buildGlobalStats(): Promise<StatisticsUpsert[]> {
   const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
     await Promise.all([
       buildStats({
@@ -156,7 +156,9 @@ export async function syncStats() {
   }
 }
 
-export async function buildTownCountUpdates(townIds: string[]) {
+export async function buildTownCountUpdates(
+  townIds: string[],
+): Promise<{ townId: string; transactionsLast6Months: number }[]> {
   try {
     const rows = await getTownSalesCounts6Months();
     const countByTown = new Map(
