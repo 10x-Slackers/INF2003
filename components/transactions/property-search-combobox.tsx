@@ -42,9 +42,14 @@ export function PropertySearchCombobox({
     }
 
     setLoading(true);
-    const data = await searchPropertiesAction(search);
-    setResults(data);
-    setLoading(false);
+    try {
+      const data = await searchPropertiesAction(search);
+      setResults(data);
+    } catch {
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   }, 300);
 
   function handleSelect(property: PropertySearchResult) {
@@ -94,6 +99,7 @@ export function PropertySearchCombobox({
             placeholder="Search property..."
             value={query}
             onValueChange={handleInputChange}
+            aria-label="Search property"
           />
           <CommandList>
             {tooShort ? (

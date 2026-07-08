@@ -274,7 +274,7 @@ export async function updateTransaction(
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
         fields.push(`${key} = ?`);
-        params.push(value);
+        params.push(key === "transaction_month" ? `${value}-01` : value);
       }
     }
 

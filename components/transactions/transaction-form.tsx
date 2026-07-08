@@ -67,6 +67,7 @@ export function TransactionForm({
     try {
       await createTransactionAction(parsed.data);
       toast.success("Transaction created");
+      setPending(false);
       setTimeout(() => router.push(ROUTES.TRANSACTIONS), 1500);
     } catch (err) {
       setError(
