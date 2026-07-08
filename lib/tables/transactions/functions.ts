@@ -247,7 +247,7 @@ export async function createTransaction(
         data.flat_model_id,
         data.storey_range_id,
         data.floor_area_sqm,
-        data.transaction_month,
+        `${data.transaction_month}-01`,
         data.resale_price,
       ],
     );

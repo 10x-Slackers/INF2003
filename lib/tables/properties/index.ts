@@ -5,6 +5,7 @@ export {
   getPropertyById,
   listProperties,
   lookupProperty,
+  searchPropertiesByAddress,
   updateProperty,
 } from "./functions";
 
@@ -16,6 +17,7 @@ export type {
   Property,
   PropertyDetail,
   PropertyListQuery,
+  PropertySearchResult,
   PropertyWithLatestTransaction,
   UpdateProperty,
   UpdatePropertyParams,

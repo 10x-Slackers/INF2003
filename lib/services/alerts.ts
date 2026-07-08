@@ -11,8 +11,10 @@ const MAX_LEASE_YEARS = 99;
 export async function createAlerts(
   transactionId: string,
   transaction: AddTransactionInput,
+  townId: string,
+  leaseCommenceYear: number,
 ): Promise<void> {
-  const alerts = await fetchSavedAlerts(transaction);
+  const alerts = await fetchSavedAlerts(transaction, townId, leaseCommenceYear);
   await Promise.all([
     bulkCreateAlertNotifications(
       alerts.map((alert) => ({
@@ -27,28 +29,29 @@ export async function createAlerts(
 
 async function fetchSavedAlerts(
   transaction: AddTransactionInput,
+  townId: string,
+  leaseCommenceYear: number,
 ): Promise<{ userId: string; alertId: string }[]> {
-  const storey = await getStoreyRange(transaction.storeyRangeId);
+  const storey = await getStoreyRange(transaction.input.storey_range_id);
   const alerts = await findAlertsByTransaction({
-    townId: transaction.townId,
-    flatTypeId: parseInt(transaction.flatTypeId, 10),
-    flatModelId: parseInt(transaction.flatModelId, 10),
-    price: transaction.resalePrice,
-    floorAreaSqm: transaction.floorAreaSqm,
+    townId,
+    flatTypeId: transaction.input.flat_type_id,
+    flatModelId: transaction.input.flat_model_id,
+    price: transaction.input.resale_price,
+    floorAreaSqm: transaction.input.floor_area_sqm,
     storey,
     leaseRemaining: calculateLeaseRemaining(
-      transaction.transactionDate,
-      transaction.leaseCommenceYear,
+      transaction.input.transaction_month,
+      leaseCommenceYear,
     ),
   });
   return alerts;
 }
 
 function calculateLeaseRemaining(
-  transactionDate: string,
-  leaseCommenceYear: string,
+  transactionMonth: string,
+  leaseCommenceYear: number,
 ): number {
-  const yearsUsed =
-    Number(transactionDate.slice(0, 4)) - Number(leaseCommenceYear);
+  const yearsUsed = Number(transactionMonth.slice(0, 4)) - leaseCommenceYear;
   return Math.max(0, Math.min(MAX_LEASE_YEARS, MAX_LEASE_YEARS - yearsUsed));
 }

@@ -7,7 +7,7 @@ export const createTransactionSchema = z.object({
   flat_model_id: z.coerce.number().int().positive(),
   storey_range_id: z.coerce.number().int().positive(),
   floor_area_sqm: z.coerce.number().positive(),
-  transaction_month: z.string(),
+  transaction_month: z.string().regex(/^\d{4}-\d{2}$/),
   resale_price: z.coerce.number().positive(),
 });
 export const updateTransactionSchema = z

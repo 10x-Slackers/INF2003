@@ -1,12 +1,6 @@
+import type { CreateTransaction } from "@/lib/tables/transactions";
+
 export type AddTransactionInput = {
-  userId: string;
-  townId: string;
-  flatTypeId: string;
-  flatModelId: string;
-  propertyId: string;
-  storeyRangeId: number;
-  transactionDate: string;
-  resalePrice: number;
-  floorAreaSqm: number;
-  leaseCommenceYear: string;
+  uploadedByUserId: string;
+  input: CreateTransaction;
 };
