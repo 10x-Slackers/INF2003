@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS properties (
     street_name VARCHAR(255) NOT NULL,
     lease_commence_year INT NOT NULL,
     UNIQUE (town_id, block, street_name, lease_commence_year),
+    INDEX idx_properties_town (town_id),
     CONSTRAINT fk_properties_town FOREIGN KEY (town_id) REFERENCES towns(id)
 );
 CREATE TABLE IF NOT EXISTS saved_properties (
@@ -108,7 +109,9 @@ CREATE TABLE IF NOT EXISTS resale_transactions (
         INDEX idx_resale_transactions_month (transaction_month),
         INDEX idx_resale_transactions_property_month (property_id, transaction_month),
         INDEX idx_resale_transactions_flat_type_month (flat_type_id, transaction_month),
-        INDEX idx_resale_transactions_storey_month (storey_range_id, transaction_month)
+        INDEX idx_resale_transactions_storey_month (storey_range_id, transaction_month),
+        INDEX idx_resale_transactions_flat_model_month (flat_model_id, transaction_month),
+        INDEX idx_resale_transactions_price (resale_price)
 );
 -- Create alert_notifications table
 CREATE TABLE IF NOT EXISTS alert_notifications (
