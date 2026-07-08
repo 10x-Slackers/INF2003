@@ -55,9 +55,8 @@ Returned columns: `total`
 ## `getTransactionStatistics(input)`
 
 ```sql
-SELECT YEAR(rt.transaction_month) AS transaction_year,
-       MONTH(rt.transaction_month) AS transaction_month,
-       AVG(rt.resale_price) AS value,
+SELECT DATE_FORMAT(rt.transaction_month, '%Y-%m') AS period,
+       CAST(AVG(rt.resale_price) AS DOUBLE) AS value,
        COUNT(*) AS sample_size
 FROM resale_transactions rt
 JOIN properties p ON p.id = rt.property_id
@@ -66,13 +65,30 @@ WHERE rt.transaction_month >= ? AND rt.transaction_month < ?
   AND rt.transaction_month >= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)
   AND p.town_id = ? AND rt.flat_type_id = ? AND rt.property_id = ?
   AND rt.storey_range_id = ?
-GROUP BY YEAR(rt.transaction_month), MONTH(rt.transaction_month)
-ORDER BY transaction_year, transaction_month;
+GROUP BY DATE_FORMAT(rt.transaction_month, '%Y-%m')
+ORDER BY period;
 ```
 
+Params: `metric`, `granularity`, `groupBy`.
 Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`, `storey_range_id`.
 
-Returned columns: `transaction_year, transaction_month, value, sample_size`
+Returned columns: selected `groupBy` columns, `value, sample_size`
+
+## `getTownSalesCounts6Months()`
+
+```sql
+SELECT p.town_id AS town_id,
+       COUNT(*) AS value,
+       COUNT(*) AS sample_size
+FROM resale_transactions rt
+JOIN properties p ON p.id = rt.property_id
+JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+WHERE rt.transaction_month >= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)
+GROUP BY p.town_id
+ORDER BY town_id;
+```
+
+Returned columns: `town_id, value, sample_size`
 
 ## `getTransactionById(id)`
 
@@ -104,6 +120,19 @@ Returned columns: `id`
 ## `updateTransaction(input)`
 
 ```sql
+SELECT rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
+       rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
+       rt.flat_model_id AS flat_model_id, rt.storey_range_id AS storey_range_id,
+       rt.floor_area_sqm AS floor_area_sqm, rt.transaction_month AS transaction_month,
+       rt.resale_price AS resale_price
+FROM resale_transactions rt
+WHERE rt.id = ?
+LIMIT 1;
+```
+
+Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`
+
+```sql
 UPDATE resale_transactions
 SET flat_type_id = ?, flat_model_id = ?, storey_range_id = ?,
     floor_area_sqm = ?, transaction_month = ?, resale_price = ?
@@ -111,6 +140,19 @@ WHERE id = ?;
 ```
 
 Optional params: `flat_type_id`, `flat_model_id`, `storey_range_id`, `floor_area_sqm`, `transaction_month`, `resale_price`.
+
+```sql
+SELECT rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
+       rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
+       rt.flat_model_id AS flat_model_id, rt.storey_range_id AS storey_range_id,
+       rt.floor_area_sqm AS floor_area_sqm, rt.transaction_month AS transaction_month,
+       rt.resale_price AS resale_price
+FROM resale_transactions rt
+WHERE rt.id = ?
+LIMIT 1;
+```
+
+Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`
 
 ## `deleteTransaction(id)`
 

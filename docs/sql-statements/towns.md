@@ -2,27 +2,15 @@
 
 Source: `lib/tables/towns/functions.ts`
 
-## `listTowns(input)`
+## `listTowns()`
 
 ```sql
 SELECT id, region, name
 FROM towns
-WHERE region = ?
-ORDER BY name LIMIT ? OFFSET ?;
+ORDER BY name;
 ```
-
-Optional params: `region`.
-Params: `page`, `pageSize`.
 
 Returned columns: `id, region, name`
-
-```sql
-SELECT COUNT(*) AS total FROM towns WHERE region = ?;
-```
-
-Optional params: `region`.
-
-Returned columns: `total`
 
 ## `getTownById(id)`
 
@@ -49,6 +37,31 @@ Returned columns: `id, town_id, block, street_name, lease_commence_year`
 ```sql
 SELECT COUNT(*) AS total FROM properties WHERE town_id = ?;
 ```
+
+Returned columns: `total`
+
+## `listAmenitiesByTown(input)`
+
+```sql
+SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
+FROM amenities
+WHERE town_id = ? AND amenity_type_id = ?
+ORDER BY name
+LIMIT ? OFFSET ?;
+```
+
+Params: `page`, `pageSize`.
+Optional params: `amenityTypeId`.
+
+Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
+
+```sql
+SELECT COUNT(*) AS total
+FROM amenities
+WHERE town_id = ? AND amenity_type_id = ?;
+```
+
+Optional params: `amenityTypeId`.
 
 Returned columns: `total`
 

@@ -85,7 +85,7 @@ Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price
 
 Returned columns: `total`
 
-## `getPropertyRowById(id)`
+## `getPropertyById(id)`
 
 ```sql
 SELECT id, town_id, block, street_name, lease_commence_year
@@ -95,6 +95,21 @@ LIMIT 1;
 ```
 
 Returned columns: `id, town_id, block, street_name, lease_commence_year`
+
+```sql
+SELECT id, region, name FROM towns WHERE id = ? LIMIT 1;
+```
+
+Returned columns: `id, region, name`
+
+```sql
+SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
+FROM amenities
+WHERE town_id = ?
+ORDER BY name;
+```
+
+Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
 
 ## `createProperty(input)`
 
@@ -115,6 +130,15 @@ WHERE id = ?;
 ```
 
 Optional params: `town_id`, `block`, `street_name`, `lease_commence_year`.
+
+```sql
+SELECT id, town_id, block, street_name, lease_commence_year
+FROM properties
+WHERE id = ?
+LIMIT 1;
+```
+
+Returned columns: `id, town_id, block, street_name, lease_commence_year`
 
 ## `deleteProperty(id)`
 
