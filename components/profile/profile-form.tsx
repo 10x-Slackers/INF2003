@@ -62,7 +62,7 @@ export function ProfileForm({ user }: { user: PublicUser }) {
         newPassword: parsed.data.newPassword || undefined,
         currentPassword: parsed.data.currentPassword,
       });
-      await updateSession();
+      await updateSession({});
       toast.success("Profile updated");
       setTimeout(() => router.push(ROUTES.HOME), 1500);
     } catch (err) {
