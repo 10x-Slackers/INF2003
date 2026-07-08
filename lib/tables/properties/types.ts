@@ -64,3 +64,11 @@ export type CreateProperty = z.infer<typeof createPropertySchema>;
 export type UpdateProperty = z.infer<typeof updatePropertySchema>;
 export type UpdatePropertyParams = z.infer<typeof updatePropertyParamsSchema>;
 export type PropertyListQuery = z.infer<typeof propertyListQuerySchema>;
+
+export type PropertySearchResult = {
+  id: string;
+  block: string;
+  street_name: string;
+  town_id: string;
+  town_name: string;
+};

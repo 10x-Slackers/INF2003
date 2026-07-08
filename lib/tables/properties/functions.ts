@@ -10,6 +10,7 @@ import {
   type Property,
   type PropertyDetail,
   type PropertyListQuery,
+  type PropertySearchResult,
   type PropertyWithLatestTransaction,
   type UpdateProperty,
   type UpdatePropertyParams,
@@ -122,6 +123,28 @@ export async function getPropertiesWithLatestTransaction(
   }
 }
 
+export async function searchPropertiesByAddress(
+  search: string,
+  limit = 20,
+): Promise<PropertySearchResult[]> {
+  const term = search.trim();
+  if (term.length < 2) return [];
+  try {
+    return await query<PropertySearchResult>(
+      `SELECT p.id AS id, p.block AS block, p.street_name AS street_name,
+              p.town_id AS town_id, t.name AS town_name
+       FROM properties p
+       JOIN towns t ON t.id = p.town_id
+       WHERE p.block LIKE ? OR p.street_name LIKE ? OR t.name LIKE ?
+       ORDER BY p.block, p.street_name
+       LIMIT ?`,
+      [`%${term}%`, `%${term}%`, `%${term}%`, limit],
+    );
+  } catch (error) {
+    return handleDbError(error);
+  }
+}
+
 export async function listProperties(
   filters: PropertyListQuery,
 ): Promise<{ data: PropertyWithLatestTransaction[]; total: number }> {
@@ -187,7 +210,7 @@ export async function listProperties(
   }
 }
 
-async function getPropertyRowById(id: string): Promise<Property | null> {
+export async function getPropertyRowById(id: string): Promise<Property | null> {
   try {
     const rows = await query<Property>(
       "SELECT id, town_id, block, street_name, lease_commence_year FROM properties WHERE id = ? LIMIT 1",

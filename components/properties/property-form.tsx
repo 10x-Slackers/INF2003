@@ -4,13 +4,7 @@ import { useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createPropertyAction } from "@/app/properties/actions";
@@ -61,10 +55,6 @@ export function PropertyForm({ towns }: { towns: Town[] }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>New property</CardTitle>
-        <CardDescription>Enter the property details.</CardDescription>
-      </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error && <p className="text-sm text-destructive">{error}</p>}

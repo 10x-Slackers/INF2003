@@ -23,7 +23,7 @@ export function StatisticsPanel() {
 
   async function handleAction(
     type: PendingAction,
-    action: () => Promise<{ statistics: number;[key: string]: number }>,
+    action: () => Promise<{ statistics: number; [key: string]: number }>,
     successMsg: string,
     errorMsg: string,
   ) {
@@ -66,18 +66,32 @@ export function StatisticsPanel() {
         </CardDescription>
         <CardAction>
           <div className="flex flex-col gap-2">
-            {actions.map(({ type, action, label, loadingLabel, successMsg, errorMsg, variant }) => (
-              <Button
-                key={type}
-                className="w-full"
-                variant={variant}
-                onClick={() => handleAction(type, action, successMsg, errorMsg)}
-                disabled={pending !== null}
-              >
-                <RefreshCw className={pending === type ? "animate-spin" : undefined} />
-                {pending === type ? loadingLabel : label}
-              </Button>
-            ))}
+            {actions.map(
+              ({
+                type,
+                action,
+                label,
+                loadingLabel,
+                successMsg,
+                errorMsg,
+                variant,
+              }) => (
+                <Button
+                  key={type}
+                  className="w-full"
+                  variant={variant}
+                  onClick={() =>
+                    handleAction(type, action, successMsg, errorMsg)
+                  }
+                  disabled={pending !== null}
+                >
+                  <RefreshCw
+                    className={pending === type ? "animate-spin" : undefined}
+                  />
+                  {pending === type ? loadingLabel : label}
+                </Button>
+              ),
+            )}
           </div>
         </CardAction>
       </CardHeader>

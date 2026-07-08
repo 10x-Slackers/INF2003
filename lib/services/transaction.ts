@@ -4,6 +4,7 @@ import {
 } from "@/lib/collections/statistics-trigger";
 import { rollDownTownProfileTransaction } from "@/lib/collections/town-profile";
 import { createTransaction } from "@/lib/tables/transactions";
+import { getPropertyRowById } from "@/lib/tables/properties";
 
 import { handleDbError } from "../utils";
 import { createAlerts } from "./alerts";
@@ -13,37 +14,31 @@ import { AddTransactionInput } from "./types";
 export async function addTransaction(
   transaction: AddTransactionInput,
 ): Promise<void> {
-  const flatTypeId = parseInt(transaction.flatTypeId, 10);
-  const flatModelId = parseInt(transaction.flatModelId, 10);
-  const params = {
-    uploadedByUserId: transaction.userId,
-    input: {
-      property_id: transaction.propertyId,
-      flat_type_id: flatTypeId,
-      flat_model_id: flatModelId,
-      storey_range_id: transaction.storeyRangeId,
-      floor_area_sqm: transaction.floorAreaSqm,
-      transaction_month: transaction.transactionDate,
-      resale_price: transaction.resalePrice,
-    },
-  };
+  const { uploadedByUserId, input } = transaction;
   try {
-    // Create the transaction and get the transaction ID
-    const transactionId = await createTransaction(params);
+    const property = await getPropertyRowById(input.property_id);
+    if (!property) throw new Error("Property not found");
+
+    const transactionId = await createTransaction({ input, uploadedByUserId });
 
     await rollDownTownProfileTransaction(
-      transaction.townId,
-      transaction.flatTypeId,
-      transaction.transactionDate,
+      property.town_id,
+      String(input.flat_type_id),
+      input.transaction_month,
     );
     await Promise.all([
-      markStatisticsTownDirty(transaction.townId),
-      refreshPropertyStats(transaction.propertyId),
+      markStatisticsTownDirty(property.town_id),
+      refreshPropertyStats(input.property_id),
     ]);
     if (await isStatisticsTriggerDue()) {
       await syncStats();
     }
-    await createAlerts(transactionId, transaction);
+    await createAlerts(
+      transactionId,
+      transaction,
+      property.town_id,
+      property.lease_commence_year,
+    );
   } catch (error) {
     return handleDbError(error);
   }

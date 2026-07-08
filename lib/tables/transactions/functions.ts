@@ -247,7 +247,7 @@ export async function createTransaction(
         data.flat_model_id,
         data.storey_range_id,
         data.floor_area_sqm,
-        data.transaction_month,
+        `${data.transaction_month}-01`,
         data.resale_price,
       ],
     );
@@ -274,7 +274,7 @@ export async function updateTransaction(
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
         fields.push(`${key} = ?`);
-        params.push(value);
+        params.push(key === "transaction_month" ? `${value}-01` : value);
       }
     }
 
