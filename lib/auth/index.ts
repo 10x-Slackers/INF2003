@@ -106,7 +106,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.role = user.role;
       }
       if (trigger === "update" && token.id) {
-        const users = await query<DbUser>(
+        const users = await query<Pick<DbUser, "name" | "email" | "role">>(
           "SELECT name, email, role FROM users WHERE id = ? LIMIT 1",
           [token.id as string],
         );
