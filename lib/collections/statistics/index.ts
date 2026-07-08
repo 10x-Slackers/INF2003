@@ -4,6 +4,7 @@ export {
   getStatisticsById,
   getStatisticsByMetricAndDimensions,
   listStatistics,
+  saveStats,
   upsertStatistics,
 } from "./functions";
 

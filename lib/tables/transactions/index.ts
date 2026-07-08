@@ -3,6 +3,7 @@ export {
   deleteTransaction,
   getTransactionById,
   getTransactionStatistics,
+  getTownSalesCounts6Months,
   listTransactions,
   updateTransaction,
 } from "./functions";

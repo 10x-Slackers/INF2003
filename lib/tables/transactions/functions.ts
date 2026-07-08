@@ -204,6 +204,16 @@ export async function getTransactionStatistics(
   }
 }
 
+export async function getTownSalesCounts6Months(): Promise<
+  TransactionStatisticRow[]
+> {
+  return getTransactionStatistics({
+    metric: "sales_count",
+    granularity: "last 6 months",
+    groupBy: ["town_id"],
+  });
+}
+
 export async function getTransactionById(
   id: string,
 ): Promise<ResaleTransaction | null> {

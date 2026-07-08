@@ -4,8 +4,8 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
-  forceGeneratePropertyStatisticsAction,
-  forceGenerateStatisticsAction,
+  generatePropertyStatsAction,
+  generateStatsAction,
 } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ export function StatisticsPanel() {
 
   async function handleAction(
     type: PendingAction,
-    action: () => Promise<{ statistics: number;[key: string]: number }>,
+    action: () => Promise<{ statistics: number; [key: string]: number }>,
     successMsg: string,
     errorMsg: string,
   ) {
@@ -32,9 +32,7 @@ export function StatisticsPanel() {
       const { statistics } = await action();
       toast.success(`${successMsg} (${statistics} statistics generated)`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : errorMsg,
-      );
+      toast.error(err instanceof Error ? err.message : errorMsg);
     } finally {
       setPending(null);
     }
@@ -54,7 +52,7 @@ export function StatisticsPanel() {
               onClick={() =>
                 handleAction(
                   "general",
-                  forceGenerateStatisticsAction,
+                  generateStatsAction,
                   "Statistics generated successfully.",
                   "Failed to generate statistics.",
                 )
@@ -72,7 +70,7 @@ export function StatisticsPanel() {
               onClick={() =>
                 handleAction(
                   "properties",
-                  forceGeneratePropertyStatisticsAction,
+                  generatePropertyStatsAction,
                   "Property statistics generated successfully.",
                   "Failed to generate property statistics.",
                 )

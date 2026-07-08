@@ -1,10 +1,16 @@
 "use server";
 
 import { assertAdmin, hashPassword } from "@/lib/auth";
+import { bulkUpdateTownProfileTransactionsLast6Months } from "@/lib/collections/town-profile";
+import { flushStatisticsTrigger } from "@/lib/collections/statistics-trigger";
+import { saveStats } from "@/lib/collections/statistics";
 import {
-  forceGeneratePropertyStatistics,
-  forceGenerateStatisticsExceptProperties,
+  buildAllPropertyStats,
+  buildAllTownStats,
+  buildGlobalStats,
+  buildTownCountUpdates,
 } from "@/lib/services/statistics";
+import { listTowns } from "@/lib/tables/towns";
 import {
   createUser,
   deleteUser,
@@ -13,6 +19,7 @@ import {
   type PublicUser,
   type UserRole,
 } from "@/lib/tables/users";
+import { handleDbError } from "@/lib/utils";
 
 export async function fetchUsers(input: {
   page: number;
@@ -57,18 +64,48 @@ export async function deleteUserAction(id: string): Promise<void> {
   await deleteUser(id);
 }
 
-export async function forceGenerateStatisticsAction(): Promise<{
+export async function generateStatsAction(): Promise<{
   statistics: number;
   towns: number;
 }> {
   await assertAdmin();
-  return forceGenerateStatisticsExceptProperties();
+  try {
+    const townIds = (await listTowns()).map((town) => town.id);
+    const [globalStats, townStats, townUpdates] = await Promise.all([
+      buildGlobalStats(),
+      buildAllTownStats(),
+      buildTownCountUpdates(townIds),
+    ]);
+    const stats = [...globalStats, ...townStats];
+
+    await saveStats(stats);
+    await bulkUpdateTownProfileTransactionsLast6Months(townUpdates);
+    await flushStatisticsTrigger();
+
+    return { statistics: stats.length, towns: townIds.length };
+  } catch (error) {
+    return handleDbError(error);
+  }
 }
 
-export async function forceGeneratePropertyStatisticsAction(): Promise<{
+export async function generatePropertyStatsAction(): Promise<{
   statistics: number;
   properties: number;
 }> {
   await assertAdmin();
-  return forceGeneratePropertyStatistics();
+  try {
+    const stats = await buildAllPropertyStats();
+    const propertyIds = new Set<string>();
+
+    for (const stat of stats) {
+      if (stat.dimensions.propertyId)
+        propertyIds.add(stat.dimensions.propertyId);
+    }
+
+    await saveStats(stats);
+
+    return { statistics: stats.length, properties: propertyIds.size };
+  } catch (error) {
+    return handleDbError(error);
+  }
 }
