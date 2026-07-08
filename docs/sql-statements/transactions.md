@@ -54,27 +54,57 @@ Returned columns: `total`
 
 ## `getTransactionStatistics(input)`
 
+### Query template
+
 ```sql
-SELECT DATE_FORMAT(rt.transaction_month, '%Y-%m') AS period,
-       CAST(AVG(rt.resale_price) AS DOUBLE) AS value,
-       COUNT(*) AS sample_size
+SELECT {selectGroups}, {metric} AS value, COUNT(*) AS sample_size
 FROM resale_transactions rt
 JOIN properties p ON p.id = rt.property_id
 JOIN storey_ranges sr ON sr.id = rt.storey_range_id
-WHERE rt.transaction_month >= ? AND rt.transaction_month < ?
-  AND rt.transaction_month >= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)
-  AND p.town_id = ? AND rt.flat_type_id = ? AND rt.property_id = ?
-  AND rt.storey_range_id = ?
-GROUP BY DATE_FORMAT(rt.transaction_month, '%Y-%m')
-ORDER BY period;
+{where}
+GROUP BY {groupBy}
+ORDER BY {orderBy};
 ```
 
-Params: `metric`, `granularity`, `groupBy`.
+### Metric expressions
+
+| `metric`            | Expression                                                 |
+| ------------------- | ---------------------------------------------------------- |
+| `avg_price`         | `CAST(AVG(rt.resale_price) AS DOUBLE)`                     |
+| `avg_price_per_sqm` | `CAST(AVG(rt.resale_price / rt.floor_area_sqm) AS DOUBLE)` |
+| `sales_count`       | `COUNT(*)`                                                 |
+
+### Group expressions
+
+| `groupBy`              | Expression                                                                                                                   |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `period`               | `DATE_FORMAT(rt.transaction_month, '%Y-%m')` (monthly / last 6 months) or `DATE_FORMAT(rt.transaction_month, '%Y')` (yearly) |
+| `town_id`              | `p.town_id`                                                                                                                  |
+| `flat_type_id`         | `rt.flat_type_id`                                                                                                            |
+| `property_id`          | `rt.property_id`                                                                                                             |
+| `lease_remaining_year` | `99 - (YEAR(rt.transaction_month) - p.lease_commence_year)`                                                                  |
+| `storey_range_id`      | `CASE WHEN sr.min_storey <= 10 THEN '1-10' WHEN sr.min_storey <= 20 THEN '11-20' ELSE '20+' END`                             |
+
+### WHERE conditions (all optional)
+
+| Param                           | Condition                                                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `date_from`                     | `rt.transaction_month >= ?`                                                                                    |
+| `date_to`                       | `rt.transaction_month < ?`                                                                                     |
+| `granularity` = `last 6 months` | `rt.transaction_month >= DATE_SUB((SELECT MAX(transaction_month) FROM resale_transactions), INTERVAL 5 MONTH)` |
+| `town_id`                       | `p.town_id = ?`                                                                                                |
+| `flat_type_id`                  | `rt.flat_type_id = ?`                                                                                          |
+| `property_id`                   | `rt.property_id = ?`                                                                                           |
+| `storey_range_id`               | `rt.storey_range_id = ?`                                                                                       |
+
+Params: `metric`, `granularity`, `groupBy` (array, min 1, unique).
 Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`, `storey_range_id`.
 
-Returned columns: selected `groupBy` columns, `value, sample_size`
+Returned columns: selected `groupBy` columns, `value`, `sample_size`.
 
 ## `getTownSalesCounts6Months()`
+
+Delegates to `getTransactionStatistics({ metric: "sales_count", granularity: "last 6 months", groupBy: ["town_id"] })`.
 
 ```sql
 SELECT p.town_id AS town_id,
