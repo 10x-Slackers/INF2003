@@ -24,7 +24,13 @@ export default async function NewAlertPage() {
       <p className="text-sm text-muted-foreground">
         You will be notified when new transactions match your filters.
       </p>
-      <AlertForm towns={towns} flatTypes={flatTypes} flatModels={flatModels} />
+      <div className="mx-auto w-full max-w-xl">
+        <AlertForm
+          towns={towns}
+          flatTypes={flatTypes}
+          flatModels={flatModels}
+        />
+      </div>
     </main>
   );
 }

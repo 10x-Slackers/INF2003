@@ -4,13 +4,7 @@ import { useRouter } from "next/navigation";
 import { SubmitEvent, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Command,
   CommandEmpty,
@@ -134,12 +128,6 @@ export function AlertForm({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>New alert</CardTitle>
-        <CardDescription>
-          Choose the filters that will trigger your alert.
-        </CardDescription>
-      </CardHeader>
       <CardContent>
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error && <p className="text-sm text-destructive">{error}</p>}

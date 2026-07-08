@@ -27,7 +27,9 @@ export default async function NewPropertyPage() {
         </Link>{" "}
         before creating a new one.
       </p>
-      <PropertyForm towns={towns} />
+      <div className="mx-auto w-full max-w-xl">
+        <PropertyForm towns={towns} />
+      </div>
     </main>
   );
 }
