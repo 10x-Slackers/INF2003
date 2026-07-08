@@ -24,21 +24,21 @@ export default function Home() {
 }
 
 async function Metrics() {
+  const metricsFallback = (
+    <>
+      <MetricCard label="Average price (4-Room)" caption="No data yet" />
+      <MetricCard label="Sales (latest month)" caption="No data yet" />
+      <MetricCard label="Price trend" caption="No data yet" />
+    </>
+  );
   let metrics;
   try {
     metrics = await getHomeMetrics();
   } catch (error) {
     console.error("Error fetching home metrics:", error);
-    toast.error("Failed to fetch home metrics. Please try again later.");
   }
   if (!metrics) {
-    return (
-      <>
-        <MetricCard label="Average price (4-Room)" caption="No data yet" />
-        <MetricCard label="Sales (latest month)" caption="No data yet" />
-        <MetricCard label="Price trend" caption="No data yet" />
-      </>
-    );
+    return metricsFallback;
   }
 
   const [year, month] = metrics.period.split("-");
@@ -46,13 +46,7 @@ async function Metrics() {
   const monthNum = Number(month);
   if (!year || !month || isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
     console.error(`Invalid period format: ${metrics.period}`);
-    return (
-      <>
-        <MetricCard label="Average price (4-Room)" caption="No data yet" />
-        <MetricCard label="Sales (latest month)" caption="No data yet" />
-        <MetricCard label="Price trend" caption="No data yet" />
-      </>
-    );
+    return metricsFallback;
   }
   const caption = new Date(yearNum, monthNum - 1).toLocaleDateString(
     "en-SG",
