@@ -23,14 +23,14 @@ export function StatisticsPanel() {
 
   async function handleAction(
     type: PendingAction,
-    action: () => Promise<{ statistics: number }>,
+    action: () => Promise<{ statistics: number;[key: string]: number }>,
     successMsg: string,
     errorMsg: string,
   ) {
     setPending(type);
     try {
-      const result = await action();
-      toast.success(successMsg);
+      const { statistics } = await action();
+      toast.success(`${successMsg} (${statistics} statistics generated)`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : errorMsg,
