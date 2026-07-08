@@ -12,8 +12,8 @@ ORDER BY name
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `amenity_type_id`
-params: `page`, `pageSize`.
+Optional params: `town_id`, `amenity_type_id`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
 

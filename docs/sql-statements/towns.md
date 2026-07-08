@@ -11,8 +11,8 @@ WHERE region = ?
 ORDER BY name LIMIT ? OFFSET ?;
 ```
 
-Optional params: `region`
-params: `page`, `pageSize`.
+Optional params: `region`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, region, name`
 
@@ -42,7 +42,7 @@ ORDER BY block, street_name
 LIMIT ? OFFSET ?;
 ```
 
-params: `page`, `pageSize`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, town_id, block, street_name, lease_commence_year`
 

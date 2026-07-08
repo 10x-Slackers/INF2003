@@ -8,7 +8,7 @@ Source: `lib/tables/users/functions.ts`
 SELECT id, name, email, role, created_at, updated_at FROM users ORDER BY created_at LIMIT ? OFFSET ?;
 ```
 
-params: `page`, `pageSize`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, name, email, role, created_at, updated_at`
 
@@ -32,7 +32,9 @@ Returned columns: `id, name, email, role, created_at, updated_at`
 INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?);
 ```
 
-Optional params: `role`; defaults to `USER` before the query runs.
+Optional params: `role`.
+
+Defaults to `USER` before the query runs.
 
 ## `updateUser(input)`
 

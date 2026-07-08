@@ -29,8 +29,8 @@ ORDER BY rt.transaction_month DESC
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`
-Params:`page`, `pageSize`.
+Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price, town_id, town_name, block, street_name, lease_commence_year, flat_type_name, flat_model_name, min_storey, max_storey, uploaded_by_user_name`
 

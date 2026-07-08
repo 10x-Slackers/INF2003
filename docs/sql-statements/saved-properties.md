@@ -12,7 +12,7 @@ ORDER BY created_at DESC
 LIMIT ? OFFSET ?;
 ```
 
-params: `page`, `pageSize`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, user_id, property_id, created_at`
 

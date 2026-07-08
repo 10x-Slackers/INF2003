@@ -23,7 +23,7 @@ ORDER BY created_at DESC
 LIMIT ? OFFSET ?;
 ```
 
-params: `page`, `pageSize`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
 
@@ -62,6 +62,15 @@ WHERE id = ?;
 
 Optional params: `userId`, `alert_uuid`, `transaction_id`, `read_at`.
 
+```sql
+SELECT id, user_id, alert_uuid, transaction_id, read_at, created_at
+FROM alert_notifications
+WHERE id = ?
+LIMIT 1;
+```
+
+Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
+
 ## `listAlertNotificationsWithDetails(input)`
 
 ```sql
@@ -82,7 +91,7 @@ ORDER BY n.created_at DESC
 LIMIT ? OFFSET ?;
 ```
 
-params: `page`, `pageSize`.
+Params: `page`, `pageSize`.
 
 Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at, resale_price, floor_area_sqm, transaction_month, town_id, town_name, block, street_name, flat_type_name, flat_model_name, min_storey, max_storey`
 
