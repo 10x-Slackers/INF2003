@@ -44,14 +44,7 @@ export function TransactionsTable({
           {loading ? (
             <SkeletonRows />
           ) : transactions.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={8}
-                className="py-8 text-center text-muted-foreground"
-              >
-                No transactions found.
-              </TableCell>
-            </TableRow>
+            <EmptyRow />
           ) : (
             transactions.map((transaction) => (
               <TableRow key={transaction.id}>
@@ -100,4 +93,14 @@ function SkeletonRows() {
       ))}
     </TableRow>
   ));
+}
+
+function EmptyRow() {
+  return (
+    <TableRow>
+      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+        No transactions found.
+      </TableCell>
+    </TableRow>
+  );
 }
