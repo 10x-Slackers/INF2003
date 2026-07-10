@@ -83,8 +83,10 @@ def summarize_system_io(
     return {
         "readMB": round_number(read_mb),
         "writeMB": round_number(write_mb),
-        "readMBps": round_number(read_mb / elapsed_seconds),
-        "writeMBps": round_number(write_mb / elapsed_seconds),
+        "readMBps": round_number(read_mb / elapsed_seconds) if elapsed_seconds else 0,
+        "writeMBps": round_number(write_mb / elapsed_seconds)
+        if elapsed_seconds
+        else 0,
         "iowaitPercent": round_number(cpu["iowait"] / cpu["total"] * 100)
         if cpu and cpu["total"]
         else None,

@@ -48,6 +48,20 @@ class WorkerState:
         self.conn.close()
 
 
+def positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be greater than zero")
+    return number
+
+
+def concurrency_values(value: str) -> list[int]:
+    values = [positive_int(item) for item in value.split(",") if item]
+    if not values:
+        raise argparse.ArgumentTypeError("must contain at least one value")
+    return values
+
+
 def parse_args() -> Options:
     parser = argparse.ArgumentParser(
         description="Run database performance benchmarks.",
@@ -56,10 +70,12 @@ def parse_args() -> Options:
             "--warmups=1 --repeats=1 --concurrency=1"
         ),
     )
-    parser.add_argument("--duration", type=int, default=20)
+    parser.add_argument("--duration", type=positive_int, default=20)
     parser.add_argument("--warmups", type=int, default=5)
     parser.add_argument("--repeats", type=int, default=3)
-    parser.add_argument("--concurrency", default="1,5,10,20")
+    parser.add_argument(
+        "--concurrency", type=concurrency_values, default=[1, 5, 10, 20]
+    )
     parser.add_argument("--only", default="")
     parser.add_argument("--out", default="docs/db-benchmark.csv")
     parser.add_argument(
@@ -69,7 +85,7 @@ def parse_args() -> Options:
     args = parser.parse_args()
     return Options(
         comparison_out=Path(args.comparison_out),
-        concurrency=[int(value) for value in args.concurrency.split(",") if value],
+        concurrency=args.concurrency,
         duration_seconds=args.duration,
         explain=not args.no_explain,
         only=set(args.only.split(",")) if args.only else None,
@@ -101,7 +117,6 @@ def worker_loop(
 ) -> dict[str, Any]:
     state = WorkerState.open()
     latencies: list[float] = []
-    errors: dict[str, int] = {}
     completed = 0
     failed = 0
     try:
@@ -110,18 +125,15 @@ def worker_loop(
             try:
                 operation.run(state, context)
                 completed += 1
-            except Exception as exc:
+                latencies.append(now_ms() - started_at)
+            except Exception:
                 failed += 1
-                message = str(exc)
-                errors[message] = errors.get(message, 0) + 1
-            latencies.append(now_ms() - started_at)
     finally:
         state.close()
     return {
         "completed": completed,
         "failed": failed,
         "latencies": latencies,
-        "errors": errors,
     }
 
 
@@ -136,7 +148,6 @@ def run_measured_window(
     completed = 0
     failed = 0
     latencies: list[float] = []
-    errors: dict[str, int] = {}
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
         futures = [
             executor.submit(worker_loop, operation, context, ends_at)
@@ -147,15 +158,12 @@ def run_measured_window(
             completed += result["completed"]
             failed += result["failed"]
             latencies.extend(result["latencies"])
-            for message, count in result["errors"].items():
-                errors[message] = errors.get(message, 0) + count
 
     elapsed_seconds = (now_ms() - started_at) / 1000
     average, stddev = summarize_numbers(latencies)
     return {
         "averageLatencyMs": average,
         "completed": completed,
-        "errorSamples": errors,
         "failed": failed,
         "operationsPerSecond": round_number(completed / elapsed_seconds),
         "sampleCount": len(latencies),

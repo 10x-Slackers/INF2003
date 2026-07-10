@@ -99,7 +99,7 @@ def list_transactions(
     index_hint: str = "",
 ) -> None:
     """
-    List resale transactions with optional filtering.
+    List resale transactions with trusted static SQL fragments and parameter values.
     """
     query(
         conn,
