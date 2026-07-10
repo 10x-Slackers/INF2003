@@ -16,14 +16,12 @@ export default async function PropertyDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const property = await getPropertyById(id);
-  if (!property) notFound();
 
-  const { data: transactions, total } = await listTransactions({
-    property_id: id,
-    page: 1,
-    pageSize: PAGE_SIZE,
-  });
+  const [property, { data: transactions, total }] = await Promise.all([
+    getPropertyById(id),
+    listTransactions({ property_id: id, page: 1, pageSize: PAGE_SIZE }),
+  ]);
+  if (!property) notFound();
 
   const flatTypes = [...new Set(transactions.map((t) => t.flat_type_name))];
   const flatModels = [...new Set(transactions.map((t) => t.flat_model_name))];

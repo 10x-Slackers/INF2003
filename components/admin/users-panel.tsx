@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { useDebouncedCallback } from "use-debounce";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchUsers } from "@/app/admin/actions";
@@ -28,28 +29,32 @@ export function UsersPanel() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  async function load(
-    currentPage: number,
-    currentSearch: string,
-    cancelled: { current: boolean } = { current: false },
-  ) {
-    try {
-      const { data, total } = await fetchUsers({
-        page: currentPage,
-        pageSize: PAGE_SIZE,
-        search: currentSearch || undefined,
-      });
-      if (cancelled.current) return;
-      setUsers(data);
-      setTotal(total);
-    } catch {
-      if (cancelled.current) return;
-      setUsers([]);
-      setTotal(0);
-    } finally {
-      if (!cancelled.current) setLoading(false);
-    }
-  }
+  const load = useCallback(
+    async (
+      currentPage: number,
+      currentSearch: string,
+      cancelled: { current: boolean } = { current: false },
+    ) => {
+      try {
+        const { data, total } = await fetchUsers({
+          page: currentPage,
+          pageSize: PAGE_SIZE,
+          search: currentSearch || undefined,
+        });
+        if (cancelled.current) return;
+        setUsers(data);
+        setTotal(total);
+      } catch {
+        if (cancelled.current) return;
+        toast.error("Failed to load users");
+        setUsers([]);
+        setTotal(0);
+      } finally {
+        if (!cancelled.current) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const cancelled = { current: false };
@@ -59,7 +64,7 @@ export function UsersPanel() {
     return () => {
       cancelled.current = true;
     };
-  }, [page, search]);
+  }, [page, search, load]);
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setLoading(true);

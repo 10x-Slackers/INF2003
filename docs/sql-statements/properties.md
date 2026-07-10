@@ -71,7 +71,6 @@ Returned columns: `id, town_id, block, street_name, lease_commence_year, lt_id, 
 ```sql
 SELECT COUNT(*) AS total
 FROM properties p
-LEFT JOIN towns t ON t.id = p.town_id
 LEFT JOIN (
   SELECT rt2.*, ROW_NUMBER() OVER (
     PARTITION BY rt2.property_id
@@ -88,7 +87,7 @@ WHERE p.town_id IN (?) AND p.street_name LIKE ? AND p.block LIKE ? AND p.lease_c
 ```
 
 Optional params: `town_ids`, `street_name`, `block`, `lease_commence_year`, `flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`.
-Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields (`flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`).
+Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields (`flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`). The town join is excluded from the count query (only needed for `town_name` in the data query).
 
 Returned columns: `total`
 
@@ -108,9 +107,11 @@ Returned columns: `id, town_id, block, street_name, lease_commence_year, town_na
 ```sql
 SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
 FROM amenities
-WHERE town_id = (SELECT town_id FROM properties WHERE id = ?)
+WHERE town_id = ?
 ORDER BY name;
 ```
+
+The amenities query runs only if the property exists, using `town_id` from the first query result.
 
 Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
 

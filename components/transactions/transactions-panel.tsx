@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,43 +62,47 @@ export function TransactionsPanel() {
     };
   }, []);
 
-  async function load(
-    currentPage: number,
-    currentFilters: Filters,
-    cancelled: { current: boolean } = { current: false },
-  ) {
-    try {
-      const { data, total } = await fetchTransactions({
-        page: currentPage,
-        pageSize: PAGE_SIZE,
-        town_id:
-          currentFilters.townId !== "all" ? currentFilters.townId : undefined,
-        flat_type_id:
-          currentFilters.flatTypeId !== "all"
-            ? Number(currentFilters.flatTypeId)
+  const load = useCallback(
+    async (
+      currentPage: number,
+      currentFilters: Filters,
+      cancelled: { current: boolean } = { current: false },
+    ) => {
+      try {
+        const { data, total } = await fetchTransactions({
+          page: currentPage,
+          pageSize: PAGE_SIZE,
+          town_id:
+            currentFilters.townId !== "all" ? currentFilters.townId : undefined,
+          flat_type_id:
+            currentFilters.flatTypeId !== "all"
+              ? Number(currentFilters.flatTypeId)
+              : undefined,
+          flat_model_id:
+            currentFilters.flatModelId !== "all"
+              ? Number(currentFilters.flatModelId)
+              : undefined,
+          price_min: currentFilters.minPrice
+            ? Number(currentFilters.minPrice)
             : undefined,
-        flat_model_id:
-          currentFilters.flatModelId !== "all"
-            ? Number(currentFilters.flatModelId)
+          price_max: currentFilters.maxPrice
+            ? Number(currentFilters.maxPrice)
             : undefined,
-        price_min: currentFilters.minPrice
-          ? Number(currentFilters.minPrice)
-          : undefined,
-        price_max: currentFilters.maxPrice
-          ? Number(currentFilters.maxPrice)
-          : undefined,
-      });
-      if (cancelled.current) return;
-      setTransactions(data);
-      setTotal(total);
-    } catch {
-      if (cancelled.current) return;
-      setTransactions([]);
-      setTotal(0);
-    } finally {
-      if (!cancelled.current) setLoading(false);
-    }
-  }
+        });
+        if (cancelled.current) return;
+        setTransactions(data);
+        setTotal(total);
+      } catch {
+        if (cancelled.current) return;
+        toast.error("Failed to load transactions");
+        setTransactions([]);
+        setTotal(0);
+      } finally {
+        if (!cancelled.current) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const cancelled = { current: false };
@@ -107,7 +112,7 @@ export function TransactionsPanel() {
     return () => {
       cancelled.current = true;
     };
-  }, [page, applied]);
+  }, [page, applied, load]);
 
   function applyFilters() {
     setLoading(true);

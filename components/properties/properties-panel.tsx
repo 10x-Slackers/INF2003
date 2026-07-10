@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,41 +66,45 @@ export function PropertiesPanel() {
     };
   }, []);
 
-  async function load(
-    currentPage: number,
-    currentFilters: Filters,
-    cancelled: { current: boolean } = { current: false },
-  ) {
-    try {
-      const { data, total } = await fetchProperties({
-        page: currentPage,
-        pageSize: PAGE_SIZE,
-        town_ids: currentFilters.townIds.length
-          ? currentFilters.townIds
-          : undefined,
-        flat_type_ids: currentFilters.flatTypeIds.length
-          ? currentFilters.flatTypeIds.map(Number)
-          : undefined,
-        flat_model_ids: currentFilters.flatModelIds.length
-          ? currentFilters.flatModelIds.map(Number)
-          : undefined,
-        street_name: currentFilters.streetName || undefined,
-        block: currentFilters.block || undefined,
-        lease_commence_year: currentFilters.leaseCommenceYear
-          ? Number(currentFilters.leaseCommenceYear)
-          : undefined,
-      });
-      if (cancelled.current) return;
-      setProperties(data);
-      setTotal(total);
-    } catch {
-      if (cancelled.current) return;
-      setProperties([]);
-      setTotal(0);
-    } finally {
-      if (!cancelled.current) setLoading(false);
-    }
-  }
+  const load = useCallback(
+    async (
+      currentPage: number,
+      currentFilters: Filters,
+      cancelled: { current: boolean } = { current: false },
+    ) => {
+      try {
+        const { data, total } = await fetchProperties({
+          page: currentPage,
+          pageSize: PAGE_SIZE,
+          town_ids: currentFilters.townIds.length
+            ? currentFilters.townIds
+            : undefined,
+          flat_type_ids: currentFilters.flatTypeIds.length
+            ? currentFilters.flatTypeIds.map(Number)
+            : undefined,
+          flat_model_ids: currentFilters.flatModelIds.length
+            ? currentFilters.flatModelIds.map(Number)
+            : undefined,
+          street_name: currentFilters.streetName || undefined,
+          block: currentFilters.block || undefined,
+          lease_commence_year: currentFilters.leaseCommenceYear
+            ? Number(currentFilters.leaseCommenceYear)
+            : undefined,
+        });
+        if (cancelled.current) return;
+        setProperties(data);
+        setTotal(total);
+      } catch {
+        if (cancelled.current) return;
+        toast.error("Failed to load properties");
+        setProperties([]);
+        setTotal(0);
+      } finally {
+        if (!cancelled.current) setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     const cancelled = { current: false };
@@ -109,7 +114,7 @@ export function PropertiesPanel() {
     return () => {
       cancelled.current = true;
     };
-  }, [page, applied]);
+  }, [page, applied, load]);
 
   function applyFilters() {
     setLoading(true);

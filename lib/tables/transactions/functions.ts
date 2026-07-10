@@ -185,9 +185,7 @@ export async function getTransactionStatistics(
       data.town_id !== undefined ||
       data.groupBy.includes("town_id") ||
       data.groupBy.includes("lease_remaining_year");
-    const needsStoreyRanges =
-      data.storey_range_id !== undefined ||
-      data.groupBy.includes("storey_range_id");
+    const needsStoreyRanges = data.groupBy.includes("storey_range_id");
 
     const propertyJoin = needsProperties
       ? "JOIN properties p ON p.id = rt.property_id"

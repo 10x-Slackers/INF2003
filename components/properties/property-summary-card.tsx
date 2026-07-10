@@ -26,7 +26,7 @@ export function PropertySummaryCard({
           {property.town?.name && `${property.town.name} · `}
           Lease commence {property.lease_commence_year}
         </CardDescription>
-        {flatTypes.length > 0 && (
+        {(flatTypes.length > 0 || flatModels.length > 0) && (
           <div className="flex flex-wrap gap-2 pt-2">
             {flatTypes.map((type) => (
               <Badge key={type} variant="secondary">
