@@ -28,6 +28,7 @@ async function fetchAllTransactions(
       page,
       pageSize: FETCH_PAGE_SIZE,
     });
+    if (data.length === 0) break;
     all.push(...data);
     total = t;
     page++;
@@ -64,7 +65,7 @@ export async function getPropertyStats(
   );
 
   const priceRanges = computePriceRanges(transactions);
-  const priceRangeMap = new Map(priceRanges.map((r) => [r.flatTypeName, r]));
+  const priceRangeMap = new Map(priceRanges.map((r) => [r.flatTypeId, r]));
 
   const result = flatTypeIdsInUse.map((flatTypeId, i) => {
     const name = flatTypeNameById.get(flatTypeId) ?? String(flatTypeId);
@@ -74,7 +75,7 @@ export async function getPropertyStats(
           .map((p) => ({ period: p.period, value: p.value }))
           .sort((a, b) => a.period.localeCompare(b.period))
       : [];
-    const range = priceRangeMap.get(name);
+    const range = priceRangeMap.get(flatTypeId);
     return {
       name,
       chartData,
@@ -89,28 +90,28 @@ export async function getPropertyStats(
 }
 
 function computePriceRanges(
-  transactions: { flat_type_name: string; resale_price: number }[],
-): { flatTypeName: string; minPrice: number; maxPrice: number }[] {
-  const ranges = new Map<string, { minPrice: number; maxPrice: number }>();
+  transactions: { flat_type_id: number; resale_price: number }[],
+): { flatTypeId: number; minPrice: number; maxPrice: number }[] {
+  const ranges = new Map<number, { minPrice: number; maxPrice: number }>();
   for (const t of transactions) {
-    const existing = ranges.get(t.flat_type_name);
+    const existing = ranges.get(t.flat_type_id);
     if (!existing) {
-      ranges.set(t.flat_type_name, {
+      ranges.set(t.flat_type_id, {
         minPrice: t.resale_price,
         maxPrice: t.resale_price,
       });
     } else {
-      ranges.set(t.flat_type_name, {
+      ranges.set(t.flat_type_id, {
         minPrice: Math.min(existing.minPrice, t.resale_price),
         maxPrice: Math.max(existing.maxPrice, t.resale_price),
       });
     }
   }
   return [...ranges.entries()]
-    .map(([flatTypeName, { minPrice, maxPrice }]) => ({
-      flatTypeName,
+    .map(([flatTypeId, { minPrice, maxPrice }]) => ({
+      flatTypeId,
       minPrice,
       maxPrice,
     }))
-    .sort((a, b) => a.flatTypeName.localeCompare(b.flatTypeName));
+    .sort((a, b) => a.flatTypeId - b.flatTypeId);
 }

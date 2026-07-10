@@ -34,7 +34,7 @@ function formatPrice(value: number) {
 }
 
 function formatCurrency(value: number) {
-  return `S$${value.toLocaleString()}`;
+  return `S$${value.toLocaleString("en-SG")}`;
 }
 
 function PriceChart({
@@ -82,6 +82,15 @@ function PriceChart({
   );
 }
 
+function StatBox({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex flex-1 flex-col justify-center border rounded-md p-3">
+      <p className="text-muted-foreground text-sm">{label}</p>
+      <p className="font-medium">{formatCurrency(value)}</p>
+    </div>
+  );
+}
+
 export function PropertyStatisticsCard({ data }: PropertyStatisticsCardProps) {
   if (!data || data.flatTypes.length === 0) {
     return (
@@ -123,18 +132,8 @@ export function PropertyStatisticsCard({ data }: PropertyStatisticsCardProps) {
                   color={CHART_COLORS[i % CHART_COLORS.length]}
                 />
                 <div className="flex w-40 shrink-0 flex-col gap-4">
-                  <div className="flex flex-1 flex-col justify-center border rounded-md p-3">
-                    <p className="text-muted-foreground text-sm">
-                      Lowest price
-                    </p>
-                    <p className="font-medium">{formatCurrency(ft.minPrice)}</p>
-                  </div>
-                  <div className="flex flex-1 flex-col justify-center border rounded-md p-3">
-                    <p className="text-muted-foreground text-sm">
-                      Highest price
-                    </p>
-                    <p className="font-medium">{formatCurrency(ft.maxPrice)}</p>
-                  </div>
+                  <StatBox label="Lowest price" value={ft.minPrice} />
+                  <StatBox label="Highest price" value={ft.maxPrice} />
                 </div>
               </div>
             </TabsContent>
