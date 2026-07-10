@@ -19,6 +19,7 @@ import { idSchema } from "../common";
 import { executeReturning } from "@/lib/db/mariadb";
 
 const LATEST_TRANSACTION_JOIN = `
+  LEFT JOIN towns t ON t.id = p.town_id
   LEFT JOIN resale_transactions lt ON lt.id = (
     SELECT rt2.id FROM resale_transactions rt2
     WHERE rt2.property_id = p.id
@@ -31,7 +32,7 @@ const LATEST_TRANSACTION_JOIN = `
 `;
 
 const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
-  p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+  p.id, p.town_id, p.block, p.street_name, p.lease_commence_year, t.name AS town_name,
   lt.id AS lt_id, lt.uploaded_by_user_id AS lt_uploaded_by_user_id,
   lt.property_id AS lt_property_id, lt.flat_type_id AS lt_flat_type_id,
   lt.flat_model_id AS lt_flat_model_id, lt.storey_range_id AS lt_storey_range_id,
@@ -43,6 +44,7 @@ const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
 `;
 
 type PropertyRow = Property & {
+  town_name: string;
   lt_id: string | null;
   lt_uploaded_by_user_id: string | null;
   lt_property_id: string | null;
@@ -154,17 +156,31 @@ export async function listProperties(
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (data.town_id !== undefined) {
-      conditions.push("p.town_id = ?");
-      params.push(data.town_id);
+    if (data.town_ids?.length) {
+      conditions.push(
+        `p.town_id IN (${data.town_ids.map(() => "?").join(", ")})`,
+      );
+      params.push(...data.town_ids);
     }
-    if (data.flat_type_id !== undefined) {
-      conditions.push("lt.flat_type_id = ?");
-      params.push(data.flat_type_id);
+    if (data.street_name !== undefined) {
+      conditions.push("p.street_name LIKE ?");
+      params.push(`%${data.street_name}%`);
     }
-    if (data.flat_model_id !== undefined) {
-      conditions.push("lt.flat_model_id = ?");
-      params.push(data.flat_model_id);
+    if (data.lease_commence_year !== undefined) {
+      conditions.push("p.lease_commence_year = ?");
+      params.push(data.lease_commence_year);
+    }
+    if (data.flat_type_ids?.length) {
+      conditions.push(
+        `lt.flat_type_id IN (${data.flat_type_ids.map(() => "?").join(", ")})`,
+      );
+      params.push(...data.flat_type_ids);
+    }
+    if (data.flat_model_ids?.length) {
+      conditions.push(
+        `lt.flat_model_id IN (${data.flat_model_ids.map(() => "?").join(", ")})`,
+      );
+      params.push(...data.flat_model_ids);
     }
     if (data.price_min !== undefined) {
       conditions.push("lt.resale_price >= ?");
@@ -178,8 +194,8 @@ export async function listProperties(
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const countJoin =
-      data.flat_type_id !== undefined ||
-      data.flat_model_id !== undefined ||
+      data.flat_type_ids?.length ||
+      data.flat_model_ids?.length ||
       data.price_min !== undefined ||
       data.price_max !== undefined
         ? LATEST_TRANSACTION_JOIN

@@ -1,8 +1,13 @@
 "use server";
 
 import { assertAgent } from "@/lib/auth";
-import { createProperty, type CreateProperty } from "@/lib/tables/properties";
-import { listTowns, type Town } from "@/lib/tables/towns";
+import {
+  createProperty,
+  listProperties,
+  type CreateProperty,
+  type PropertyListQuery,
+  type PropertyWithLatestTransaction,
+} from "@/lib/tables/properties";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
 
@@ -13,7 +18,8 @@ export async function createPropertyAction(input: CreateProperty) {
   return id;
 }
 
-export async function fetchTownsAction(): Promise<Town[]> {
-  await assertAgent();
-  return listTowns();
+export async function fetchPropertiesAction(
+  input: PropertyListQuery,
+): Promise<{ data: PropertyWithLatestTransaction[]; total: number }> {
+  return listProperties(input);
 }

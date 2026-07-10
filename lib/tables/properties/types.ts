@@ -20,9 +20,11 @@ export const updatePropertyParamsSchema = z.object({
   input: updatePropertySchema.or(z.object({}).strict()),
 });
 export const propertyListQuerySchema = paginationSchema.extend({
-  town_id: idSchema.optional(),
-  flat_type_id: z.coerce.number().int().optional(),
-  flat_model_id: z.coerce.number().int().positive().optional(),
+  town_ids: z.array(idSchema).optional(),
+  street_name: z.string().trim().min(1).optional(),
+  lease_commence_year: z.coerce.number().int().min(1960).max(2100).optional(),
+  flat_type_ids: z.array(z.coerce.number().int().positive()).optional(),
+  flat_model_ids: z.array(z.coerce.number().int().positive()).optional(),
   price_min: z.coerce.number().nonnegative().optional(),
   price_max: z.coerce.number().nonnegative().optional(),
 });
@@ -52,6 +54,7 @@ export type LatestTransactionSummary = {
 };
 
 export type PropertyWithLatestTransaction = Property & {
+  town_name: string;
   latest_transaction: LatestTransactionSummary | null;
 };
 
