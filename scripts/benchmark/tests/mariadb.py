@@ -2,7 +2,6 @@ from typing import Any
 
 from ..db import query
 from .common import (
-    STATISTIC_GROUPS,
     TRANSACTION_LIST_COLUMNS,
     TRANSACTION_LIST_JOIN,
     Operation,
@@ -72,21 +71,6 @@ def build_mariadb_operations(context: dict[str, Any]) -> list[Operation]:
                 ["property_id", "flat_type_id"],
                 "WHERE rt.property_id = %s",
                 (transaction["property_id"],),
-            ),
-        ),
-        Operation(
-            "mariadb_stats_by_storey",
-            lambda state, _: transaction_stats(
-                state.conn, "avg_price", "monthly", ["storey_range_id", "flat_type_id"]
-            ),
-        ),
-        Operation(
-            "mariadb_stats_by_lease_remaining",
-            lambda state, _: transaction_stats(
-                state.conn,
-                "avg_price",
-                "monthly",
-                ["lease_remaining_year", "flat_type_id"],
             ),
         ),
     ]
@@ -163,28 +147,6 @@ def maria_explain_queries(context: dict[str, Any]) -> list[dict[str, Any]]:
             ),
             "params": (transaction["property_id"],),
         },
-        {
-            "name": "stats_by_storey",
-            "sql": stats_sql(
-                (
-                    f"{STATISTIC_GROUPS['storey_range_id']} AS storey_range_id, "
-                    "rt.flat_type_id AS flat_type_id"
-                ),
-                f"{STATISTIC_GROUPS['storey_range_id']}, rt.flat_type_id",
-            ),
-            "params": (),
-        },
-        {
-            "name": "stats_by_lease_remaining",
-            "sql": stats_sql(
-                (
-                    f"{STATISTIC_GROUPS['lease_remaining_year']} "
-                    "AS lease_remaining_year, rt.flat_type_id AS flat_type_id"
-                ),
-                f"{STATISTIC_GROUPS['lease_remaining_year']}, rt.flat_type_id",
-            ),
-            "params": (),
-        },
     ]
 
 
@@ -199,7 +161,5 @@ def run_maria_explain(conn, context: dict[str, Any]) -> list[dict[str, Any]]:
             result = {"sql": sql, "rows": query(conn, sql, item["params"])}
         except Exception as exc:
             error = str(exc)
-        output.append(
-            {"error": None if result else error, "name": item["name"], "result": result}
-        )
+        output.append({"error": error, "name": item["name"], "result": result})
     return output

@@ -12,11 +12,13 @@ from benchmark.db import (
     get_mongodb_counters,
     mongo_db,
 )
-from benchmark.operations import (
+from benchmark.tests import (
     Operation,
     build_operations,
+    get_context,
+    run_maria_explain,
+    run_mongo_explain,
 )
-from benchmark.tests import get_context, run_maria_explain, run_mongo_explain
 from benchmark.utils import (
     diff_counters,
     now_ms,
@@ -63,19 +65,31 @@ def parse_args() -> Options:
             "--warmups=1 --repeats=1 --concurrency=1"
         ),
     )
-    parser.add_argument("--duration", type=int, default=60)
+    parser.add_argument("--duration", type=int, default=20)
     parser.add_argument("--warmups", type=int, default=5)
     parser.add_argument("--repeats", type=int, default=3)
     parser.add_argument("--concurrency", default="1,5,10,20")
     parser.add_argument("--only", default="")
-    parser.add_argument("--out", default="docs/db-performance-results/db-benchmark.csv")
+    parser.add_argument("--out", default="docs/db-benchmark.csv")
     parser.add_argument("--no-explain", action="store_true")
     args = parser.parse_args()
+    try:
+        concurrency = [int(value) for value in args.concurrency.split(",") if value]
+    except ValueError:
+        parser.error("--concurrency must be comma-separated integers")
+    if not concurrency:
+        parser.error("--concurrency must include at least one value")
+    if any(value < 1 for value in concurrency):
+        parser.error("--concurrency values must be >= 1")
+    if args.duration < 1:
+        parser.error("--duration must be >= 1")
+    if args.repeats < 1:
+        parser.error("--repeats must be >= 1")
     return Options(
-        concurrency=[int(value) for value in args.concurrency.split(",") if value],
+        concurrency=concurrency,
         duration_seconds=args.duration,
         explain=not args.no_explain,
-        only=set(args.only.split(",")) if args.only else None,
+        only=set(filter(None, args.only.split(","))) if args.only else None,
         out=Path(args.out),
         repeats=args.repeats,
         warmups=args.warmups,
@@ -265,9 +279,7 @@ def aggregate_latency(rows: list[dict[str, Any]]) -> tuple[float, float]:
 
 def average_io(rows: list[dict[str, Any]], field: str) -> float:
     values = [
-        row["io"][field]
-        for row in rows
-        if row.get("io", {}).get(field) is not None
+        row["io"][field] for row in rows if row.get("io", {}).get(field) is not None
     ]
     return summarize_numbers(values)[0]
 
@@ -315,14 +327,12 @@ def build_index_summary(
     if not only:
         return rows
     return {
-        operation: summary
-        for operation, summary in rows.items()
-        if operation in only
+        operation: summary for operation, summary in rows.items() if operation in only
     }
 
 
 def summarize_mariadb_explain(
-    explain: list[dict[str, Any]]
+    explain: list[dict[str, Any]],
 ) -> dict[str, dict[str, Any]]:
     rows = {}
     for item in explain:
@@ -338,7 +348,7 @@ def summarize_mariadb_explain(
 
 
 def summarize_mongodb_explain(
-    explain: list[dict[str, Any]]
+    explain: list[dict[str, Any]],
 ) -> dict[str, dict[str, Any]]:
     rows = {}
     for item in explain:

@@ -80,6 +80,7 @@ def get_context(conn, mongo) -> dict[str, Any]:
 
 
 def list_transactions(conn, where: str = "", params: tuple[Any, ...] = ()) -> None:
+    # Keep where as a static fragment; pass dynamic values through params.
     query(
         conn,
         f"""SELECT {TRANSACTION_LIST_COLUMNS}
@@ -108,6 +109,8 @@ def transaction_stats(
     where: str = "",
     params: tuple[Any, ...] = (),
 ) -> None:
+    if granularity not in ("monthly", "yearly"):
+        raise ValueError("granularity must be monthly or yearly")
     period_format = "%%Y" if granularity == "yearly" else "%%Y-%%m"
     expressions = {
         "period": f"DATE_FORMAT(rt.transaction_month, '{period_format}')",
