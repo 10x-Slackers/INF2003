@@ -145,3 +145,9 @@ SELECT id FROM saved_properties WHERE user_id = ? AND property_id = ? LIMIT 1;
 ```
 
 Returned columns: `id`
+
+## `deleteSavedPropertyByUserAndProperty(input)`
+
+```sql
+DELETE FROM saved_properties WHERE user_id = ? AND property_id = ?;
+```

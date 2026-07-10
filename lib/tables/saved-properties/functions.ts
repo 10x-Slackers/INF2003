@@ -120,3 +120,16 @@ export async function isPropertySaved(
     return rows.length > 0;
   });
 }
+
+export async function deleteSavedPropertyByUserAndProperty(
+  input: SavedPropertyIdentity,
+): Promise<boolean> {
+  return withDbError(async () => {
+    const data = savedPropertyIdentitySchema.parse(input);
+    const result = await execute(
+      "DELETE FROM saved_properties WHERE user_id = ? AND property_id = ?",
+      [data.userId, data.propertyId],
+    );
+    return result.affectedRows > 0;
+  });
+}
