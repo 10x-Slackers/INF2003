@@ -24,10 +24,12 @@ JOIN storey_ranges sr ON sr.id = rt.storey_range_id
 LEFT JOIN users u ON u.id = rt.uploaded_by_user_id
 WHERE p.town_id = ? AND rt.flat_type_id = ? AND rt.flat_model_id = ?
   AND rt.storey_range_id = ? AND rt.resale_price >= ? AND rt.resale_price <= ?
-  AND YEAR(rt.transaction_month) = ? AND rt.property_id = ?
+  AND rt.transaction_month >= ? AND rt.transaction_month < ? AND rt.property_id = ?
 ORDER BY rt.transaction_month DESC
 LIMIT ? OFFSET ?;
 ```
+
+Params for the year range: `${year}-01-01` and `${year + 1}-01-01`.
 
 Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`.
 Params: `page`, `pageSize`.
@@ -41,8 +43,10 @@ FROM resale_transactions rt
 [JOIN properties p ON p.id = rt.property_id]
 WHERE p.town_id = ? AND rt.flat_type_id = ? AND rt.flat_model_id = ?
   AND rt.storey_range_id = ? AND rt.resale_price >= ? AND rt.resale_price <= ?
-  AND YEAR(rt.transaction_month) = ? AND rt.property_id = ?;
+  AND rt.transaction_month >= ? AND rt.transaction_month < ? AND rt.property_id = ?;
 ```
+
+Params for the year range: `${year}-01-01` and `${year + 1}-01-01`.
 
 The `JOIN properties` is only included when `town_id` is provided; otherwise the count runs on `resale_transactions` alone.
 
@@ -58,12 +62,14 @@ Returned columns: `total`
 ```sql
 SELECT {selectGroups}, {metric} AS value, COUNT(*) AS sample_size
 FROM resale_transactions rt
-JOIN properties p ON p.id = rt.property_id
-JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+{propertyJoin}
+{storeyRangeJoin}
 {where}
 GROUP BY {groupBy}
 ORDER BY {orderBy};
 ```
+
+The `properties` join is only included when filtering/grouping by `town_id` or `lease_remaining_year`. The `storey_ranges` join is only included when filtering/grouping by `storey_range_id`.
 
 ### Metric expressions
 

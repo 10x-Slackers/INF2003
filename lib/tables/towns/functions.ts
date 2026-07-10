@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { query } from "@/lib/db";
 import { listAmenities, type Amenity } from "@/lib/tables/amenities";
 import { handleDbError } from "@/lib/utils";
@@ -11,7 +12,7 @@ import {
 } from "./types";
 import { idSchema } from "../common";
 
-export async function listTowns(): Promise<Town[]> {
+export const listTowns = cache(async (): Promise<Town[]> => {
   try {
     return await query<Town>(
       "SELECT id, region, name FROM towns ORDER BY name",
@@ -19,7 +20,7 @@ export async function listTowns(): Promise<Town[]> {
   } catch (error) {
     return handleDbError(error);
   }
-}
+});
 
 export async function getTownById(id: string): Promise<Town | null> {
   try {

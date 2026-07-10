@@ -1,5 +1,6 @@
 import { execute, query } from "@/lib/db";
-import { getTownById, listAllAmenitiesByTown } from "@/lib/tables/towns";
+import type { Amenity } from "@/lib/tables/amenities";
+import type { Region } from "@/lib/tables/towns";
 import { handleDbError } from "@/lib/utils";
 import {
   createPropertySchema,
@@ -20,12 +21,13 @@ import { executeReturning } from "@/lib/db/mariadb";
 
 const LATEST_TRANSACTION_JOIN = `
   LEFT JOIN towns t ON t.id = p.town_id
-  LEFT JOIN resale_transactions lt ON lt.id = (
-    SELECT rt2.id FROM resale_transactions rt2
-    WHERE rt2.property_id = p.id
-    ORDER BY rt2.transaction_month DESC, rt2.id DESC
-    LIMIT 1
-  )
+  LEFT JOIN (
+    SELECT rt2.*, ROW_NUMBER() OVER (
+      PARTITION BY rt2.property_id
+      ORDER BY rt2.transaction_month DESC, rt2.id DESC
+    ) AS rn
+    FROM resale_transactions rt2
+  ) lt ON lt.property_id = p.id AND lt.rn = 1
   LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
   LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
   LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
@@ -207,7 +209,7 @@ export async function listProperties(
        FROM properties p
        ${LATEST_TRANSACTION_JOIN}
        ${where}
-       ORDER BY p.block, p.street_name
+       ORDER BY p.lease_commence_year DESC, p.block, p.street_name
        LIMIT ? OFFSET ?`,
         [...params, pageSize, (page - 1) * pageSize],
       ),
@@ -242,15 +244,38 @@ export async function getPropertyById(
   id: string,
 ): Promise<PropertyDetail | null> {
   try {
-    const property = await getPropertyRowById(id);
-    if (!property) return null;
-
-    const [town, amenities] = await Promise.all([
-      getTownById(property.town_id),
-      listAllAmenitiesByTown(property.town_id),
+    const parsedId = idSchema.parse(id);
+    const [rows, amenities] = await Promise.all([
+      query<Property & { region: string; town_name: string }>(
+        `SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+                t.name AS town_name, t.region
+         FROM properties p
+         JOIN towns t ON t.id = p.town_id
+         WHERE p.id = ? LIMIT 1`,
+        [parsedId],
+      ),
+      query<Amenity>(
+        `SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
+         FROM amenities WHERE town_id = (SELECT town_id FROM properties WHERE id = ?) ORDER BY name`,
+        [parsedId],
+      ),
     ]);
 
-    return { ...property, town, amenities };
+    if (rows.length === 0) return null;
+    const row = rows[0];
+    return {
+      id: row.id,
+      town_id: row.town_id,
+      block: row.block,
+      street_name: row.street_name,
+      lease_commence_year: row.lease_commence_year,
+      town: {
+        id: row.town_id,
+        name: row.town_name,
+        region: row.region as Region,
+      },
+      amenities,
+    };
   } catch (error) {
     return handleDbError(error);
   }

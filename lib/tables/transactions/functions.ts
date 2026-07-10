@@ -108,13 +108,10 @@ export async function listTransactions(
     );
     addCondition(conditions, params, data.price_min, "rt.resale_price", ">=");
     addCondition(conditions, params, data.price_max, "rt.resale_price", "<=");
-    addCondition(
-      conditions,
-      params,
-      data.year,
-      "YEAR(rt.transaction_month)",
-      "=",
-    );
+    if (data.year !== undefined) {
+      conditions.push("rt.transaction_month >= ? AND rt.transaction_month < ?");
+      params.push(`${data.year}-01-01`, `${data.year + 1}-01-01`);
+    }
     addCondition(conditions, params, data.property_id, "rt.property_id", "=");
 
     const where =
@@ -184,6 +181,21 @@ export async function getTransactionStatistics(
       "=",
     );
 
+    const needsProperties =
+      data.town_id !== undefined ||
+      data.groupBy.includes("town_id") ||
+      data.groupBy.includes("lease_remaining_year");
+    const needsStoreyRanges =
+      data.storey_range_id !== undefined ||
+      data.groupBy.includes("storey_range_id");
+
+    const propertyJoin = needsProperties
+      ? "JOIN properties p ON p.id = rt.property_id"
+      : "";
+    const storeyRangeJoin = needsStoreyRanges
+      ? "JOIN storey_ranges sr ON sr.id = rt.storey_range_id"
+      : "";
+
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const selectGroups = groups
@@ -196,8 +208,8 @@ export async function getTransactionStatistics(
       `SELECT ${selectGroups}, ${STATISTIC_METRICS[data.metric]} AS value,
               COUNT(*) AS sample_size
        FROM resale_transactions rt
-       JOIN properties p ON p.id = rt.property_id
-       JOIN storey_ranges sr ON sr.id = rt.storey_range_id
+       ${propertyJoin}
+       ${storeyRangeJoin}
        ${where}
        GROUP BY ${groupBy}
        ORDER BY ${orderBy}`,
