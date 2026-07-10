@@ -1,5 +1,4 @@
-import { randomUUID } from "node:crypto";
-import { db } from "@/lib/db";
+import { db, findById, deleteDocById, createWithUuid } from "@/lib/db";
 import {
   createSavedAlertSchema,
   alertTransactionFilterSchema,
@@ -8,60 +7,41 @@ import {
   type SavedAlert,
   type SavedAlertCreate,
 } from "./types";
-import { handleDbError, now } from "@/lib/utils";
+import { withDbError, now } from "@/lib/utils";
 
 const alerts = db.collection<SavedAlert>("alerts");
 
 export async function listSavedAlerts(userId?: string): Promise<SavedAlert[]> {
-  try {
+  return withDbError(async () => {
     return await alerts
       .find(userId ? { userId: idSchema.parse(userId) } : {})
       .sort({ createdAt: -1 })
       .toArray();
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function getSavedAlertById(
   id: string,
 ): Promise<SavedAlert | null> {
-  try {
-    return await alerts.findOne({ _id: idSchema.parse(id) });
-  } catch (error) {
-    return handleDbError(error);
-  }
+  return findById(alerts, id);
 }
 
 export async function createSavedAlert(
   input: SavedAlertCreate,
 ): Promise<SavedAlert> {
-  try {
-    const data = createSavedAlertSchema.parse(input);
-    const timestamp = now();
-    const alert: SavedAlert = {
-      _id: randomUUID(),
-      userId: data.userId,
-      filters: data.filters,
-      isActive: data.isActive ?? true,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-
-    await alerts.insertOne(alert);
-    return alert;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  const data = createSavedAlertSchema.parse(input);
+  const timestamp = now();
+  return createWithUuid(alerts, {
+    userId: data.userId,
+    filters: data.filters,
+    isActive: data.isActive ?? true,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+  });
 }
 
 export async function deleteSavedAlert(id: string): Promise<boolean> {
-  try {
-    const result = await alerts.deleteOne({ _id: idSchema.parse(id) });
-    return result.deletedCount > 0;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  return deleteDocById(alerts, id);
 }
 
 function addFilterClause(
@@ -132,7 +112,7 @@ function addValueInRangeFilter(
 export async function findAlertsByTransaction(
   filters: AlertTransactionFilter,
 ): Promise<{ userId: string; alertId: string }[]> {
-  try {
+  return withDbError(async () => {
     const data = alertTransactionFilterSchema.parse(filters);
     const query: Record<string, unknown> = {};
     query.isActive = true;
@@ -168,19 +148,15 @@ export async function findAlertsByTransaction(
       userId: alert.userId,
       alertId: alert._id,
     }));
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function triggerSavedAlerts(alertIds: string[]): Promise<void> {
-  try {
+  return withDbError(async () => {
     const parsedIds = alertIds.map((id) => idSchema.parse(id));
     await alerts.updateMany(
       { _id: { $in: parsedIds } },
       { $set: { lastTriggeredAt: now() } },
     );
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

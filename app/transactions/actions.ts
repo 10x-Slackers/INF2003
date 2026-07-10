@@ -5,16 +5,15 @@ import { isAgent } from "@/lib/permissions";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
 import { addTransaction } from "@/lib/services/transaction";
-import { listFlatModels, listFlatTypes } from "@/lib/tables/lookups";
 import { searchPropertiesByAddress } from "@/lib/tables/properties";
 import type { PropertySearchResult } from "@/lib/tables/properties";
-import { listTowns } from "@/lib/tables/towns";
 import {
   listTransactions,
   type CreateTransaction,
   type TransactionListItem,
   type TransactionListQuery,
 } from "@/lib/tables/transactions";
+import { fetchPropertyFilters } from "@/app/filters";
 
 export async function searchPropertiesAction(
   query: string,
@@ -41,15 +40,4 @@ export async function fetchTransactions(
   return listTransactions(input);
 }
 
-export async function fetchTransactionFilters() {
-  try {
-    const [towns, flatTypes, flatModels] = await Promise.all([
-      listTowns(),
-      listFlatTypes(),
-      listFlatModels(),
-    ]);
-    return { towns, flatTypes, flatModels };
-  } catch {
-    return { towns: [], flatTypes: [], flatModels: [] };
-  }
-}
+export { fetchPropertyFilters as fetchTransactionFilters };

@@ -1,6 +1,7 @@
 import { z } from "zod";
+import { idSchema } from "@/lib/tables/common";
 
-export const idSchema = z.uuid();
+export { idSchema };
 
 const numberRangeSchema = z
   .object({

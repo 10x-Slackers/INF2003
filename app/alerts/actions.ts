@@ -16,14 +16,20 @@ import {
   updateAlertNotification,
   markAllNotificationsRead,
 } from "@/lib/tables/alert-notifications";
-import { listTowns } from "@/lib/tables/towns";
-import { listFlatTypes, listFlatModels } from "@/lib/tables/lookups";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
+import { fetchPropertyFilters } from "@/app/filters";
+
+function ownedBy<T extends Record<string, unknown>>(
+  item: T | null,
+  userId: string,
+  key: string = "userId",
+): T | null {
+  return item && item[key] === userId ? item : null;
+}
 
 async function getOwnedNotification(id: string, userId: string) {
-  const n = await getAlertNotificationById(id);
-  return n && n.user_id === userId ? n : null;
+  return ownedBy(await getAlertNotificationById(id), userId, "user_id");
 }
 
 export async function createAlertAction(filters: SavedAlertFilters) {
@@ -80,21 +86,19 @@ export async function deleteNotificationAction(
 
 export async function listSavedAlertsAction() {
   const session = await assertSignedIn();
-  const [alerts, towns, flatTypes, flatModels] = await Promise.all([
+  const [alerts, filters] = await Promise.all([
     listSavedAlerts(session.user.id),
-    listTowns(),
-    listFlatTypes(),
-    listFlatModels(),
+    fetchPropertyFilters(),
   ]);
-  return { alerts, towns, flatTypes, flatModels };
+  return { alerts, ...filters };
 }
 
 export async function deleteSavedAlertAction(
   id: string,
 ): Promise<{ ok: boolean }> {
   const session = await assertSignedIn();
-  const alert = await getSavedAlertById(id);
-  if (!alert || alert.userId !== session.user.id) return { ok: false };
+  const alert = ownedBy(await getSavedAlertById(id), session.user.id);
+  if (!alert) return { ok: false };
   await deleteSavedAlert(id);
   revalidatePath(ROUTES.ALERTS);
   return { ok: true };

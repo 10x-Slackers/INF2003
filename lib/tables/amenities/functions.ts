@@ -1,5 +1,5 @@
-import { query } from "@/lib/db";
-import { handleDbError } from "@/lib/utils";
+import { queryOne, addCondition, paginatedQuery } from "@/lib/db";
+import { withDbError } from "@/lib/utils";
 import {
   amenityListQuerySchema,
   type Amenity,
@@ -13,49 +13,33 @@ const AMENITY_COLUMNS =
 export async function listAmenities(
   filters: AmenityListQuery,
 ): Promise<{ data: Amenity[]; total: number }> {
-  try {
-    const data = amenityListQuerySchema.parse(filters);
-    const { page, pageSize } = data;
-    const conditions: string[] = [];
-    const params: unknown[] = [];
-
-    if (data.town_id !== undefined) {
-      conditions.push("town_id = ?");
-      params.push(data.town_id);
-    }
-    if (data.amenity_type_id !== undefined) {
-      conditions.push("amenity_type_id = ?");
-      params.push(data.amenity_type_id);
-    }
-
-    const where =
-      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-
-    const [rows, countRows] = await Promise.all([
-      query<Amenity>(
-        `SELECT ${AMENITY_COLUMNS} FROM amenities ${where} ORDER BY name LIMIT ? OFFSET ?`,
-        [...params, pageSize, (page - 1) * pageSize],
-      ),
-      query<{ total: number }>(
-        `SELECT COUNT(*) AS total FROM amenities ${where}`,
-        params,
-      ),
-    ]);
-
-    return { data: rows, total: countRows[0].total };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  const data = amenityListQuerySchema.parse(filters);
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  addCondition(conditions, params, data.town_id, "town_id", "=");
+  addCondition(
+    conditions,
+    params,
+    data.amenity_type_id,
+    "amenity_type_id",
+    "=",
+  );
+  const where =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  return paginatedQuery<Amenity>(
+    `SELECT ${AMENITY_COLUMNS} FROM amenities ${where} ORDER BY name LIMIT ? OFFSET ?`,
+    `SELECT COUNT(*) AS total FROM amenities ${where}`,
+    params,
+    data.page,
+    data.pageSize,
+  );
 }
 
 export async function getAmenityById(id: string): Promise<Amenity | null> {
-  try {
-    const rows = await query<Amenity>(
+  return withDbError(async () => {
+    return queryOne<Amenity>(
       `SELECT ${AMENITY_COLUMNS} FROM amenities WHERE id = ? LIMIT 1`,
       [idSchema.parse(id)],
     );
-    return rows[0] ?? null;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

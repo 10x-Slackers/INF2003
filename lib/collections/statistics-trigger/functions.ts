@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { handleDbError, now } from "@/lib/utils";
+import { withDbError, now } from "@/lib/utils";
 import { z } from "zod";
 import {
   STATISTICS_TRIGGER_INTERVAL_SECONDS,
@@ -13,7 +13,7 @@ const statisticsTriggers =
 const townIdSchema = z.uuid();
 
 export async function markStatisticsTownDirty(townId: string): Promise<void> {
-  try {
+  return withDbError(async () => {
     await statisticsTriggers.updateOne(
       { _id: statisticsTriggerId },
       {
@@ -22,13 +22,11 @@ export async function markStatisticsTownDirty(townId: string): Promise<void> {
       },
       { upsert: true },
     );
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function getStatisticsTrigger(): Promise<StatisticsTrigger> {
-  try {
+  return withDbError(async () => {
     const trigger = await statisticsTriggers.findOne({
       _id: statisticsTriggerId,
     });
@@ -36,28 +34,22 @@ export async function getStatisticsTrigger(): Promise<StatisticsTrigger> {
     return trigger
       ? statisticsTriggerSchema.parse(trigger)
       : { _id: statisticsTriggerId, dirtyTownIds: [], updatedAt: 0 };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function isStatisticsTriggerDue(): Promise<boolean> {
-  try {
+  return withDbError(async () => {
     const trigger = await getStatisticsTrigger();
     return now() - trigger.updatedAt >= STATISTICS_TRIGGER_INTERVAL_SECONDS;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function flushStatisticsTrigger(): Promise<void> {
-  try {
+  return withDbError(async () => {
     await statisticsTriggers.updateOne(
       { _id: statisticsTriggerId },
       { $set: { dirtyTownIds: [], updatedAt: now() } },
       { upsert: true },
     );
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

@@ -1,13 +1,9 @@
 "use server";
 
-import {
-  listTransactions,
-  type TransactionListItem,
-  type TransactionListQuery,
-} from "@/lib/tables/transactions";
+import { fetchTransactions } from "@/app/transactions/actions";
 
 export async function fetchTransactionsAction(
-  input: TransactionListQuery,
-): Promise<{ data: TransactionListItem[]; total: number }> {
-  return listTransactions(input);
+  input: Parameters<typeof fetchTransactions>[0],
+): Promise<ReturnType<typeof fetchTransactions>> {
+  return fetchTransactions(input);
 }

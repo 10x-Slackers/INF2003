@@ -59,3 +59,12 @@ export function handleDbError(error: unknown): never {
   }
   throw error;
 }
+
+/** Wrap an async DB operation with the standard try/catch + handleDbError. */
+export async function withDbError<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    return handleDbError(error);
+  }
+}

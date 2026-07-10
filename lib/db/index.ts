@@ -1,3 +1,16 @@
-export { pool, query, execute, type QueryResult } from "./mariadb";
+export {
+  pool,
+  query,
+  execute,
+  queryOne,
+  executeReturning,
+  isEmptyUpdate,
+  buildUpdateFields,
+  addCondition,
+  addInCondition,
+  deleteById,
+  paginatedQuery,
+  type QueryResult,
+} from "./mariadb";
 
-export { client, db } from "./mongodb";
+export { client, db, findById, deleteDocById, createWithUuid } from "./mongodb";

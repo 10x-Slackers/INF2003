@@ -1,5 +1,14 @@
-import { execute, query } from "@/lib/db";
-import { handleDbError } from "@/lib/utils";
+import {
+  execute,
+  query,
+  queryOne,
+  executeReturning,
+  addCondition,
+  buildUpdateFields,
+  deleteById,
+  isEmptyUpdate,
+} from "@/lib/db";
+import { withDbError } from "@/lib/utils";
 import {
   createTransactionSchema,
   type CreateTransactionParams,
@@ -11,7 +20,6 @@ import {
   type TransactionStatisticsQuery,
   type TransactionListItem,
   type TransactionListQuery,
-  type UpdateTransaction,
   type UpdateTransactionParams,
   createTransactionParamsSchema,
   transactionStatisticsQuerySchema,
@@ -20,8 +28,6 @@ import {
   updateTransactionSchema,
 } from "./types";
 import { idSchema } from "../common";
-import { executeReturning } from "@/lib/db/mariadb";
-import { addCondition } from "./utils";
 
 const TRANSACTION_COLUMNS = `rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
             rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
@@ -63,9 +69,6 @@ const STATISTIC_GROUPS: Record<
     "CASE WHEN sr.min_storey <= 10 THEN '1-10' WHEN sr.min_storey <= 20 THEN '11-20' ELSE '20+' END",
 };
 
-const isEmptyUpdate = (input: UpdateTransaction) =>
-  Object.values(input).every((value) => value === undefined);
-
 function periodExpression(granularity: TransactionStatisticsGranularity) {
   return `DATE_FORMAT(rt.transaction_month, '${
     granularity === "yearly" ? "%Y" : "%Y-%m"
@@ -84,7 +87,7 @@ function statisticGroupExpression(
 export async function listTransactions(
   filters: TransactionListQuery,
 ): Promise<{ data: TransactionListItem[]; total: number }> {
-  try {
+  return withDbError(async () => {
     const data = transactionListQuerySchema.parse(filters);
     const { page, pageSize } = data;
     const conditions: string[] = [];
@@ -147,15 +150,13 @@ export async function listTransactions(
       })),
       total: countRows[0].total,
     };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function getTransactionStatistics(
   input: TransactionStatisticsQuery,
 ): Promise<TransactionStatisticRow[]> {
-  try {
+  return withDbError(async () => {
     const data = transactionStatisticsQuerySchema.parse(input);
     const groups = data.groupBy.map((group) => ({
       name: group,
@@ -219,9 +220,7 @@ export async function getTransactionStatistics(
        ORDER BY ${orderBy}`,
       params,
     );
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function getTownSalesCounts6Months(): Promise<
@@ -237,22 +236,19 @@ export async function getTownSalesCounts6Months(): Promise<
 export async function getTransactionById(
   id: string,
 ): Promise<ResaleTransaction | null> {
-  try {
-    const rows = await query<ResaleTransaction>(
+  return withDbError(() =>
+    queryOne<ResaleTransaction>(
       `SELECT ${TRANSACTION_COLUMNS}
      FROM resale_transactions rt WHERE rt.id = ? LIMIT 1`,
       [idSchema.parse(id)],
-    );
-    return rows[0] ?? null;
-  } catch (error) {
-    return handleDbError(error);
-  }
+    ),
+  );
 }
 
 export async function createTransaction(
   input: CreateTransactionParams,
 ): Promise<string> {
-  try {
+  return withDbError(async () => {
     const params = createTransactionParamsSchema.parse(input);
     const data = createTransactionSchema.parse(params.input);
     const result = await executeReturning<{ id: string }>(
@@ -272,15 +268,13 @@ export async function createTransaction(
       ],
     );
     return result[0].id;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function updateTransaction(
   input: UpdateTransactionParams,
 ): Promise<ResaleTransaction | null> {
-  try {
+  return withDbError(async () => {
     const parsed = updateTransactionParamsSchema.parse(input);
     if (isEmptyUpdate(parsed.input)) return getTransactionById(parsed.id);
 
@@ -288,34 +282,20 @@ export async function updateTransaction(
     const existing = await getTransactionById(parsed.id);
     if (!existing) return null;
 
-    const fields: string[] = [];
-    const params: (string | number)[] = [];
-
-    for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
-        fields.push(`${key} = ?`);
-        params.push(key === "transaction_month" ? `${value}-01` : value);
-      }
+    const transformed = { ...data };
+    if (transformed.transaction_month !== undefined) {
+      transformed.transaction_month =
+        `${transformed.transaction_month}-01` as never;
     }
-
-    await execute(
-      `UPDATE resale_transactions SET ${fields.join(", ")} WHERE id = ?`,
-      [...params, parsed.id],
-    );
+    const { setClause, params } = buildUpdateFields(transformed);
+    await execute(`UPDATE resale_transactions SET ${setClause} WHERE id = ?`, [
+      ...params,
+      parsed.id,
+    ] as (string | number)[]);
     return getTransactionById(parsed.id);
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function deleteTransaction(id: string): Promise<boolean> {
-  try {
-    const result = await execute(
-      "DELETE FROM resale_transactions WHERE id = ?",
-      [idSchema.parse(id)],
-    );
-    return result.affectedRows > 0;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  return deleteById("resale_transactions", id);
 }
