@@ -85,11 +85,9 @@ db.createCollection("statistics", {
         _id: { bsonType: "string" },
         metric: {
           enum: [
-            "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE",
             "AVG_PRICE_BY_FLAT_TYPE",
             "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
             "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
-            "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
             "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
           ],
         },
@@ -105,33 +103,11 @@ db.createCollection("statistics", {
         },
         dimensions: {
           bsonType: "object",
-          required: [
-            "townId",
-            "flatTypeId",
-            "propertyId",
-            "leaseRemaining",
-            "storey",
-          ],
+          required: ["townId", "flatTypeId", "propertyId"],
           properties: {
             townId: { bsonType: ["null", "string"] },
             flatTypeId: { bsonType: ["null", "string"] },
             propertyId: { bsonType: ["null", "string"] },
-            leaseRemaining: {
-              bsonType: ["null", "object"],
-              properties: {
-                year: { bsonType: ["null", "int"] },
-              },
-              additionalProperties: false,
-            },
-            storey: {
-              bsonType: ["null", "object"],
-              properties: {
-                min: { bsonType: ["null", "int"] },
-                max: { bsonType: ["null", "int"] },
-                label: { bsonType: ["null", "string"] },
-              },
-              additionalProperties: false,
-            },
           },
           additionalProperties: false,
         },

@@ -58,8 +58,6 @@ export async function getPropertyStats(
           townId: null,
           flatTypeId: String(flatTypeId),
           propertyId,
-          leaseRemaining: null,
-          storey: null,
         },
       }),
     ),

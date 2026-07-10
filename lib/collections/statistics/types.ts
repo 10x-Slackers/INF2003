@@ -3,11 +3,9 @@ import { z } from "zod";
 export const idSchema = z.string().min(1);
 
 export const metricsSchema = z.enum([
-  "AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE",
   "AVG_PRICE_BY_FLAT_TYPE",
   "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
   "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
-  "AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE",
   "AVG_PRICE_BY_TOWN_AND_FLAT_TYPE",
 ]);
 
@@ -25,18 +23,6 @@ export const statisticsDimensionsSchema = z
     townId: z.uuid().nullable(),
     flatTypeId: z.string().nullable(),
     propertyId: z.string().nullable(),
-    leaseRemaining: z
-      .object({
-        year: z.number().int().nullable(),
-      })
-      .nullable(),
-    storey: z
-      .object({
-        min: z.number().int().nullable(),
-        max: z.number().int().nullable(),
-        label: z.string().nullable(),
-      })
-      .nullable(),
   })
   .strict();
 
