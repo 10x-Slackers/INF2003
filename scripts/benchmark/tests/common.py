@@ -23,6 +23,18 @@ TRANSACTION_LIST_JOIN = """JOIN properties p ON p.id = rt.property_id
        JOIN storey_ranges sr ON sr.id = rt.storey_range_id
        LEFT JOIN users u ON u.id = rt.uploaded_by_user_id"""
 
+PROPERTY_LIST_COLUMNS = """p.id, p.town_id, p.block, p.street_name,
+       p.lease_commence_year, t.name AS town_name,
+       lt.id AS lt_id, lt.uploaded_by_user_id AS lt_uploaded_by_user_id,
+       lt.property_id AS lt_property_id, lt.flat_type_id AS lt_flat_type_id,
+       lt.flat_model_id AS lt_flat_model_id,
+       lt.storey_range_id AS lt_storey_range_id,
+       lt.floor_area_sqm AS lt_floor_area_sqm,
+       lft.name AS lt_flat_type_name, lfm.name AS lt_flat_model_name,
+       lsr.min_storey AS lt_min_storey, lsr.max_storey AS lt_max_storey,
+       lt.resale_price AS lt_resale_price,
+       lt.transaction_month AS lt_transaction_month"""
+
 # Metrics mapped to SQL expression
 STATISTIC_METRICS = {
     "avg_price": "CAST(AVG(rt.resale_price) AS DOUBLE)",
@@ -49,47 +61,50 @@ class Operation:
     run: Callable[[Any, dict[str, Any]], Any]
 
 
-def get_context(conn, mongo) -> dict[str, Any]:
-    """
-    get a context dictionary containing a sample for statistic, user and transaction
-    """
+def get_context(conn) -> dict[str, Any]:
     sample = query(
         conn,
-        """SELECT rt.property_id, p.town_id, rt.flat_type_id, rt.flat_model_id,
-                  rt.storey_range_id, YEAR(rt.transaction_month) AS year,
-                  rt.resale_price, rt.floor_area_sqm, p.lease_commence_year,
-                  sr.min_storey, sr.max_storey
+        """SELECT rt.flat_type_id
            FROM resale_transactions rt
-           JOIN properties p ON p.id = rt.property_id
-           JOIN storey_ranges sr ON sr.id = rt.storey_range_id
            ORDER BY rt.transaction_month DESC
            LIMIT 1""",
     )
-    users = query(conn, "SELECT id FROM users ORDER BY created_at LIMIT 1")
-    statistic = mongo.statistics.find_one({}, sort=[("_id", 1)])
-
     if not sample:
         raise RuntimeError("No resale transaction rows found for benchmarking.")
-    if not users:
-        raise RuntimeError(
-            "No users found. Run USER_PASSWORD=P@ssw0rd pnpm seed:users."
-        )
 
+    return {"flatTypeId": sample[0]["flat_type_id"]}
+
+
+def get_precompute_context(mongo) -> dict[str, Any]:
+    statistic = mongo.statistics.find_one(
+        {
+            "metric": "AVG_PRICE_BY_FLAT_TYPE",
+            "granularity": "monthly",
+            "dimensions.flatTypeId": {"$ne": None},
+        },
+        sort=[("_id", 1)],
+    )
+    if not statistic:
+        raise RuntimeError("No monthly flat-type statistic found for comparison.")
     return {
-        "statisticId": statistic["_id"] if statistic else None,
-        "transaction": sample[0],
-        "userId": users[0]["id"],
+        "flatTypeId": int(statistic["dimensions"]["flatTypeId"]),
+        "statisticId": statistic["_id"],
     }
 
 
-def list_transactions(conn, where: str = "", params: tuple[Any, ...] = ()) -> None:
+def list_transactions(
+    conn,
+    where: str = "",
+    params: tuple[Any, ...] = (),
+    index_hint: str = "",
+) -> None:
     """
     List resale transactions with optional filtering.
     """
     query(
         conn,
         f"""SELECT {TRANSACTION_LIST_COLUMNS}
-            FROM resale_transactions rt
+            FROM resale_transactions rt {index_hint}
             {TRANSACTION_LIST_JOIN}
             {where}
             ORDER BY rt.transaction_month DESC
@@ -99,11 +114,58 @@ def list_transactions(conn, where: str = "", params: tuple[Any, ...] = ()) -> No
     query(
         conn,
         f"""SELECT COUNT(*) AS total
-            FROM resale_transactions rt
+            FROM resale_transactions rt {index_hint}
             {TRANSACTION_LIST_JOIN}
             {where}""",
         params,
     )
+
+
+def property_list_queries(
+    flat_type_id: int | None = None, index_hint: str = ""
+) -> list[tuple[str, tuple[Any, ...]]]:
+    latest_join = f"""LEFT JOIN (
+      SELECT rt2.property_id,
+             MAX(CONCAT(DATE_FORMAT(rt2.transaction_month, '%%Y%%m%%d'),
+                        HEX(rt2.id))) AS latest_key
+      FROM resale_transactions rt2 {index_hint}
+      GROUP BY rt2.property_id
+    ) latest ON latest.property_id = p.id
+    LEFT JOIN resale_transactions lt
+      ON lt.property_id = p.id
+     AND CONCAT(DATE_FORMAT(lt.transaction_month, '%%Y%%m%%d'), HEX(lt.id))
+         = latest.latest_key
+    LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
+    LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
+    LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id"""
+    where = "WHERE lt.flat_type_id = %s" if flat_type_id is not None else ""
+    params = (flat_type_id,) if flat_type_id is not None else ()
+    return [
+        (
+            f"""SELECT {PROPERTY_LIST_COLUMNS}
+                FROM properties p
+                {latest_join}
+                JOIN towns t ON t.id = p.town_id
+                {where}
+                ORDER BY p.lease_commence_year DESC, p.block, p.street_name
+                LIMIT %s OFFSET %s""",
+            (*params, 20, 0),
+        ),
+        (
+            f"""SELECT COUNT(*) AS total
+                FROM properties p
+                {latest_join if flat_type_id is not None else ""}
+                {where}""",
+            params,
+        ),
+    ]
+
+
+def list_properties(
+    conn, flat_type_id: int | None = None, index_hint: str = ""
+) -> None:
+    for sql, params in property_list_queries(flat_type_id, index_hint):
+        query(conn, sql, params)
 
 
 def transaction_stats(

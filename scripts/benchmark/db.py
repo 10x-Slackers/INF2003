@@ -6,14 +6,11 @@ import MySQLdb.cursors
 from load import connect_mariadb as open_mariadb
 from load import connect_mongodb as open_mongodb
 
-from .utils import nested_number
-
 MARIADB_HOST = os.environ.get("MARIADB_HOST", "mariadb")
 MARIADB_PORT = int(os.environ.get("MARIADB_PORT", 3306))
 MARIADB_DATABASE = os.environ.get("MARIADB_DATABASE", "inf2003")
 MARIADB_USER = os.environ.get("MARIADB_USER", "root")
 MARIADB_PASSWORD = os.environ.get("MARIADB_PASSWORD", "P@ssw0rd")
-
 MONGO_HOST = os.environ.get("MONGO_HOST", "mongo")
 MONGO_PORT = int(os.environ.get("MONGO_PORT", 27017))
 MONGO_DATABASE = os.environ.get("MONGO_DATABASE", "inf2003")
@@ -34,37 +31,6 @@ MARIADB_STATUS_COUNTERS = [
     "Sort_merge_passes",
     "Sort_rows",
 ]
-
-MONGO_COUNTER_PATHS = {
-    "opcounters.query": ["opcounters", "query"],
-    "opcounters.insert": ["opcounters", "insert"],
-    "opcounters.update": ["opcounters", "update"],
-    "opcounters.delete": ["opcounters", "delete"],
-    "metrics.document.returned": ["metrics", "document", "returned"],
-    "metrics.document.inserted": ["metrics", "document", "inserted"],
-    "metrics.document.updated": ["metrics", "document", "updated"],
-    "metrics.document.deleted": ["metrics", "document", "deleted"],
-    "wiredTiger.cache.bytes_read_into_cache": [
-        "wiredTiger",
-        "cache",
-        "bytes read into cache",
-    ],
-    "wiredTiger.cache.bytes_written_from_cache": [
-        "wiredTiger",
-        "cache",
-        "bytes written from cache",
-    ],
-    "wiredTiger.cache.pages_read_into_cache": [
-        "wiredTiger",
-        "cache",
-        "pages read into cache",
-    ],
-    "wiredTiger.cache.pages_written_from_cache": [
-        "wiredTiger",
-        "cache",
-        "pages written from cache",
-    ],
-}
 
 
 def connect_mariadb():
@@ -105,15 +71,3 @@ def get_mariadb_status(conn) -> dict[str, float]:
         tuple(MARIADB_STATUS_COUNTERS),
     )
     return {row["Variable_name"]: float(row["Value"]) for row in rows}
-
-
-def get_mongodb_counters(db) -> dict[str, float] | dict[str, str]:
-    try:
-        status = db.command("serverStatus")
-        return {
-            name: value
-            for name, keys in MONGO_COUNTER_PATHS.items()
-            if (value := nested_number(status, keys)) is not None
-        }
-    except Exception as exc:
-        return {"error": str(exc)}

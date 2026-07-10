@@ -26,15 +26,6 @@ def diff_counters(before: dict[str, Any], after: dict[str, Any]) -> dict[str, fl
     }
 
 
-def nested_number(data: dict[str, Any], keys: list[str]) -> int | float | None:
-    value: Any = data
-    for key in keys:
-        if not isinstance(value, dict):
-            return None
-        value = value.get(key)
-    return value if isinstance(value, int | float) else None
-
-
 def read_system_snapshot() -> dict[str, Any]:
     return {
         "cpu": read_cpu_snapshot(),

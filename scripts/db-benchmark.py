@@ -5,19 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from benchmark.db import (
-    connect_mariadb,
-    connect_mongodb,
-    get_mariadb_status,
-    get_mongodb_counters,
-    mongo_db,
-)
+from benchmark.db import connect_mariadb, connect_mongodb, get_mariadb_status, mongo_db
 from benchmark.tests import (
     Operation,
     build_operations,
+    build_precompute_operation,
     get_context,
+    get_precompute_context,
     run_maria_explain,
-    run_mongo_explain,
 )
 from benchmark.utils import (
     diff_counters,
@@ -31,6 +26,7 @@ from benchmark.utils import (
 
 @dataclass
 class Options:
+    comparison_out: Path
     concurrency: list[int]
     duration_seconds: int
     explain: bool
@@ -43,17 +39,12 @@ class Options:
 @dataclass
 class WorkerState:
     conn: Any
-    client: Any
-    mongo: Any
 
     @classmethod
     def open(cls) -> "WorkerState":
-        conn = connect_mariadb()
-        client = connect_mongodb()
-        return cls(conn, client, mongo_db(client))
+        return cls(connect_mariadb())
 
     def close(self) -> None:
-        self.client.close()
         self.conn.close()
 
 
@@ -71,9 +62,13 @@ def parse_args() -> Options:
     parser.add_argument("--concurrency", default="1,5,10,20")
     parser.add_argument("--only", default="")
     parser.add_argument("--out", default="docs/db-benchmark.csv")
+    parser.add_argument(
+        "--comparison-out", default="docs/db-statistic-precompute.csv"
+    )
     parser.add_argument("--no-explain", action="store_true")
     args = parser.parse_args()
     return Options(
+        comparison_out=Path(args.comparison_out),
         concurrency=[int(value) for value in args.concurrency.split(",") if value],
         duration_seconds=args.duration,
         explain=not args.no_explain,
@@ -176,14 +171,12 @@ def benchmark_operation(
     concurrency: int,
     repeat: int,
     status_conn,
-    status_mongo,
 ) -> dict[str, Any]:
     print(f"Running {operation.name} | concurrency={concurrency} | repeat={repeat}")
     run_warmups(operation, context, options.warmups)
 
     before = {
         "mariadb": get_mariadb_status(status_conn),
-        "mongodb": get_mongodb_counters(status_mongo),
         "system": read_system_snapshot(),
     }
 
@@ -193,7 +186,6 @@ def benchmark_operation(
 
     after = {
         "mariadb": get_mariadb_status(status_conn),
-        "mongodb": get_mongodb_counters(status_mongo),
         "system": read_system_snapshot(),
     }
 
@@ -204,9 +196,68 @@ def benchmark_operation(
             before["system"], after["system"], options.duration_seconds
         ),
         "mariadbStatusDiff": diff_counters(before["mariadb"], after["mariadb"]),
-        "mongodbStatusDiff": diff_counters(before["mongodb"], after["mongodb"]),
         "operation": operation.name,
         "repeat": repeat,
+    }
+
+
+def benchmark_precompute(
+    operation: Operation, context: dict[str, Any], options: Options
+) -> dict[str, Any]:
+    print(f"Running standalone {operation.name} | runs={options.repeats}")
+    run_warmups(operation, context, options.warmups)
+    state = WorkerState.open()
+    latencies = []
+    completed = 0
+    failed = 0
+    try:
+        for _ in range(options.repeats):
+            started_at = now_ms()
+            try:
+                operation.run(state, context)
+                completed += 1
+                latencies.append(now_ms() - started_at)
+            except Exception:
+                failed += 1
+    finally:
+        state.close()
+    average, stddev = summarize_numbers(latencies)
+    return {
+        "operation": operation.name,
+        "runs": options.repeats,
+        "averageLatencyMs": average,
+        "standardDeviationMs": stddev,
+        "completed": completed,
+        "failed": failed,
+    }
+
+
+def benchmark_mongodb_lookup(
+    mongo, statistic_id: str, options: Options
+) -> dict[str, Any]:
+    name = "mongodb_lookup_precomputed_statistics_document"
+    print(f"Running standalone {name} | runs={options.repeats}")
+    for _ in range(options.warmups):
+        mongo.statistics.find_one({"_id": statistic_id})
+    latencies = []
+    completed = 0
+    failed = 0
+    for _ in range(options.repeats):
+        started_at = now_ms()
+        try:
+            mongo.statistics.find_one({"_id": statistic_id})
+            completed += 1
+            latencies.append(now_ms() - started_at)
+        except Exception:
+            failed += 1
+    average, stddev = summarize_numbers(latencies)
+    return {
+        "operation": name,
+        "runs": options.repeats,
+        "averageLatencyMs": average,
+        "standardDeviationMs": stddev,
+        "completed": completed,
+        "failed": failed,
     }
 
 
@@ -305,13 +356,27 @@ def write_performance_summary(
     print(f"Wrote benchmark results to {options.out}")
 
 
+def write_precompute_summary(options: Options, results: list[dict[str, Any]]) -> None:
+    columns = [
+        "operation",
+        "runs",
+        "averageLatencyMs",
+        "standardDeviationMs",
+        "completed",
+        "failed",
+    ]
+    options.comparison_out.parent.mkdir(parents=True, exist_ok=True)
+    with options.comparison_out.open("w", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(results)
+    print(f"Wrote standalone results to {options.comparison_out}")
+
+
 def build_index_summary(
-    conn, mongo, context: dict[str, Any], only: set[str] | None
+    conn, context: dict[str, Any], only: set[str] | None
 ) -> dict[str, dict[str, Any]]:
-    rows = {
-        **summarize_mariadb_explain(run_maria_explain(conn, context)),
-        **summarize_mongodb_explain(run_mongo_explain(mongo, context)),
-    }
+    rows = summarize_mariadb_explain(run_maria_explain(conn, context))
     if not only:
         return rows
     return {
@@ -324,7 +389,12 @@ def summarize_mariadb_explain(
 ) -> dict[str, dict[str, Any]]:
     rows = {}
     for item in explain:
-        plan_rows = (item.get("result") or {}).get("rows") or []
+        tables = set(item.get("tables") or ["rt"])
+        plan_rows = [
+            row
+            for row in (item.get("result") or {}).get("rows") or []
+            if row.get("table") in tables
+        ]
         keys = sorted({str(row["key"]) for row in plan_rows if row.get("key")})
         scan_types = sorted({str(row.get("type") or "") for row in plan_rows})
         rows[f"mariadb_{item['name']}"] = {
@@ -335,52 +405,12 @@ def summarize_mariadb_explain(
     return rows
 
 
-def summarize_mongodb_explain(
-    explain: list[dict[str, Any]],
-) -> dict[str, dict[str, Any]]:
-    rows = {}
-    for item in explain:
-        result = item.get("result") or {}
-        stages = collect_mongo_stages(result)
-        indexes = sorted(
-            {str(stage["indexName"]) for stage in stages if stage.get("indexName")}
-        )
-        stage_names = sorted(
-            {
-                str(stage["stage"])
-                for stage in stages
-                if stage.get("stage") in {"IXSCAN", "COLLSCAN"}
-            }
-        )
-        rows[f"mongodb_{item['name']}"] = {
-            "usesIndex": "yes" if "IXSCAN" in stage_names else "no",
-            "scan": ", ".join(stage_names) or "-",
-            "index": ", ".join(indexes) or "-",
-        }
-    return rows
-
-
-def collect_mongo_stages(value: Any) -> list[dict[str, Any]]:
-    stages = []
-    if isinstance(value, dict):
-        if "stage" in value:
-            stages.append(value)
-        for child in value.values():
-            stages.extend(collect_mongo_stages(child))
-    elif isinstance(value, list):
-        for child in value:
-            stages.extend(collect_mongo_stages(child))
-    return stages
-
-
 def main() -> None:
     options = parse_args()
 
     conn = connect_mariadb()
-    client = connect_mongodb()
-    mongo = mongo_db(client)
     try:
-        context = get_context(conn, mongo)
+        context = get_context(conn)
         operations = build_operations(context)
         if options.only:
             operations = [op for op in operations if op.name in options.only]
@@ -388,9 +418,7 @@ def main() -> None:
             raise RuntimeError("No benchmark operations selected.")
 
         index_summary = (
-            build_index_summary(conn, mongo, context, options.only)
-            if options.explain
-            else {}
+            build_index_summary(conn, context, options.only) if options.explain else {}
         )
 
         results = []
@@ -406,13 +434,30 @@ def main() -> None:
                             concurrency,
                             repeat,
                             conn,
-                            mongo,
                         )
                     )
 
         write_performance_summary(options, results, index_summary)
+        client = connect_mongodb()
+        try:
+            mongo = mongo_db(client)
+            comparison_context = get_precompute_context(mongo)
+            write_precompute_summary(
+                options,
+                [
+                    benchmark_mongodb_lookup(
+                        mongo, comparison_context["statisticId"], options
+                    ),
+                    benchmark_precompute(
+                        build_precompute_operation(comparison_context),
+                        comparison_context,
+                        options,
+                    ),
+                ],
+            )
+        finally:
+            client.close()
     finally:
-        client.close()
         conn.close()
 
 
