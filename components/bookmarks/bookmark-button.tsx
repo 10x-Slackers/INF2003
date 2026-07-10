@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Bookmark, BookmarkCheck } from "lucide-react";
@@ -19,11 +19,11 @@ export function BookmarkButton({
   className?: string;
 }) {
   const [saved, setSaved] = useState(initialSaved);
-  const [isPending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
 
-  function handleClick() {
+  async function handleClick() {
     if (!session) {
       toast.info("Please sign in to save bookmarks");
       router.push(
@@ -31,21 +31,22 @@ export function BookmarkButton({
       );
       return;
     }
-    startTransition(async () => {
-      try {
-        const result = await toggleBookmarkAction(propertyId);
-        setSaved(result.saved);
-        toast.success(result.saved ? "Bookmark added" : "Bookmark removed");
-      } catch {
-        toast.error("Failed to update bookmark");
-      }
-    });
+    setPending(true);
+    try {
+      const result = await toggleBookmarkAction(propertyId);
+      setSaved(result.saved);
+      toast.success(result.saved ? "Bookmark added" : "Bookmark removed");
+    } catch {
+      toast.error("Failed to update bookmark");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <Button
       variant={saved ? "default" : "outline"}
-      disabled={isPending}
+      disabled={pending}
       className={className}
       onClick={handleClick}
     >
