@@ -33,7 +33,7 @@ const LATEST_TRANSACTION_JOIN = `
 `;
 
 const TOWN_JOIN = `
-  LEFT JOIN towns t ON t.id = p.town_id
+  JOIN towns t ON t.id = p.town_id
 `;
 
 const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `

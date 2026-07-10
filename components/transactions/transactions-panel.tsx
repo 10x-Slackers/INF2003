@@ -51,12 +51,17 @@ export function TransactionsPanel() {
 
   useEffect(() => {
     const cancelled = { current: false };
-    fetchTransactionFilters().then(({ towns, flatTypes, flatModels }) => {
-      if (cancelled.current) return;
-      setTowns(towns);
-      setFlatTypes(flatTypes);
-      setFlatModels(flatModels);
-    });
+    fetchTransactionFilters()
+      .then(({ towns, flatTypes, flatModels }) => {
+        if (cancelled.current) return;
+        setTowns(towns);
+        setFlatTypes(flatTypes);
+        setFlatModels(flatModels);
+      })
+      .catch(() => {
+        if (cancelled.current) return;
+        toast.error("Failed to load filter options");
+      });
     return () => {
       cancelled.current = true;
     };

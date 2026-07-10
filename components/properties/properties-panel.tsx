@@ -55,12 +55,17 @@ export function PropertiesPanel() {
 
   useEffect(() => {
     const cancelled = { current: false };
-    fetchPropertyFilters().then(({ towns, flatTypes, flatModels }) => {
-      if (cancelled.current) return;
-      setTowns(towns);
-      setFlatTypes(flatTypes);
-      setFlatModels(flatModels);
-    });
+    fetchPropertyFilters()
+      .then(({ towns, flatTypes, flatModels }) => {
+        if (cancelled.current) return;
+        setTowns(towns);
+        setFlatTypes(flatTypes);
+        setFlatModels(flatModels);
+      })
+      .catch(() => {
+        if (cancelled.current) return;
+        toast.error("Failed to load filter options");
+      });
     return () => {
       cancelled.current = true;
     };

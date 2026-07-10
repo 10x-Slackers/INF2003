@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/ui/pagination";
@@ -31,6 +31,7 @@ export function TransactionsTable({
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const mounted = useRef(true);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -42,13 +43,15 @@ export function TransactionsTable({
         page: p,
         pageSize: PAGE_SIZE,
       });
+      if (!mounted.current) return;
       setTransactions(data);
       setTotal(total);
       setPage(p);
     } catch {
+      if (!mounted.current) return;
       toast.error("Failed to load transactions");
     } finally {
-      setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }
 
