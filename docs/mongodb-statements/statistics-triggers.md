@@ -2,6 +2,8 @@
 
 Source: `lib/collections/statistics-trigger/functions.ts`
 
+Output examples use placeholder strings to show shape and type, not real data.
+
 ## `markStatisticsTownDirty(townId)`
 
 ```js
@@ -21,15 +23,23 @@ db.statisticsTriggers.updateOne(
 db.statisticsTriggers.findOne({ _id: "statistics" });
 ```
 
-Returned fields: `_id, dirtyTownIds, updatedAt`
+Output:
 
-Default when missing:
-
-```js
+```json
 {
-  _id: "statistics",
-  dirtyTownIds: [],
-  updatedAt: 0,
+  "_id": "statistics",
+  "dirtyTownIds": ["<uuid>"],
+  "updatedAt": "<timestamp_ms>"
+}
+```
+
+Default output when missing:
+
+```json
+{
+  "_id": "statistics",
+  "dirtyTownIds": [],
+  "updatedAt": 0
 }
 ```
 

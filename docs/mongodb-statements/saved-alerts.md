@@ -2,6 +2,8 @@
 
 Source: `lib/collections/saved-alerts/functions.ts`
 
+Output examples use placeholder strings to show shape and type, not real data.
+
 ## `listSavedAlerts(userId)`
 
 ```js
@@ -13,7 +15,27 @@ db.alerts
 
 Optional params: `userId`.
 
-Returned fields: `_id, userId, filters, isActive, createdAt, updatedAt, lastTriggeredAt`
+Output:
+
+```json
+[
+  {
+    "_id": "<uuid>",
+    "userId": "<uuid>",
+    "filters": {
+      "townId": ["<uuid>"],
+      "price": {
+        "min": "<number>",
+        "max": "<number>"
+      }
+    },
+    "isActive": "<boolean>",
+    "createdAt": "<timestamp_ms>",
+    "updatedAt": "<timestamp_ms>",
+    "lastTriggeredAt": "<timestamp_ms_optional>"
+  }
+]
+```
 
 ## `getSavedAlertById(id)`
 
@@ -21,7 +43,27 @@ Returned fields: `_id, userId, filters, isActive, createdAt, updatedAt, lastTrig
 db.alerts.findOne({ _id: id });
 ```
 
-Returned fields: `_id, userId, filters, isActive, createdAt, updatedAt, lastTriggeredAt` or `null`
+Output:
+
+```json
+{
+  "_id": "<uuid>",
+  "userId": "<uuid>",
+  "filters": {
+    "townId": ["<uuid>"],
+    "price": {
+      "min": "<number>",
+      "max": "<number>"
+    }
+  },
+  "isActive": "<boolean>",
+  "createdAt": "<timestamp_ms>",
+  "updatedAt": "<timestamp_ms>",
+  "lastTriggeredAt": "<timestamp_ms_optional>"
+}
+```
+
+Returns `null` when no document matches.
 
 ## `createSavedAlert(input)`
 
@@ -38,7 +80,24 @@ db.alerts.insertOne({
 
 Optional params: `isActive`.
 
-Returned fields: `_id, userId, filters, isActive, createdAt, updatedAt`
+Output:
+
+```json
+{
+  "_id": "<uuid>",
+  "userId": "<uuid>",
+  "filters": {
+    "townId": ["<uuid>"],
+    "price": {
+      "min": "<number>",
+      "max": "<number>"
+    }
+  },
+  "isActive": "<boolean>",
+  "createdAt": "<timestamp_ms>",
+  "updatedAt": "<timestamp_ms>"
+}
+```
 
 ## `deleteSavedAlert(id)`
 
@@ -46,7 +105,7 @@ Returned fields: `_id, userId, filters, isActive, createdAt, updatedAt`
 db.alerts.deleteOne({ _id: id });
 ```
 
-Returned value: `boolean`
+Output: boolean, either `true` or `false`.
 
 ## `findAlertsByTransaction(filters)`
 
@@ -80,7 +139,16 @@ db.alerts.find({
 Optional params: `townId`, `flatTypeId`, `flatModelId`, `price`, `floorAreaSqm`, `storey`, `leaseRemaining`.
 Only provided filters are included in `$and`.
 
-Returned fields after mapping: `userId, alertId`
+Output:
+
+```json
+[
+  {
+    "userId": "<uuid>",
+    "alertId": "<uuid>"
+  }
+]
+```
 
 ## `triggerSavedAlerts(alertIds)`
 

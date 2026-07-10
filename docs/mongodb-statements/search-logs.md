@@ -2,6 +2,8 @@
 
 Source: `lib/collections/search-logs/functions.ts`
 
+Output examples use placeholder strings to show shape and type, not real data.
+
 ## `listSearchLogs(input)`
 
 ```js
@@ -12,8 +14,26 @@ db.searchHistory
   .toArray();
 ```
 
-Optional params: `userId`, `limit`
-Returned fields: `_id, userId, query, searchedAt`
+Optional params: `userId`, `limit`.
+
+Output:
+
+```json
+[
+  {
+    "_id": "<uuid>",
+    "userId": "<uuid>",
+    "query": {
+      "townId": ["<uuid>"],
+      "price": {
+        "min": "<number>",
+        "max": "<number>"
+      }
+    },
+    "searchedAt": "<timestamp_ms>"
+  }
+]
+```
 
 ## `getSearchLogById(id)`
 
@@ -21,7 +41,24 @@ Returned fields: `_id, userId, query, searchedAt`
 db.searchHistory.findOne({ _id: id });
 ```
 
-Returned fields: `_id, userId, query, searchedAt` or `null`
+Output:
+
+```json
+{
+  "_id": "<uuid>",
+  "userId": "<uuid>",
+  "query": {
+    "townId": ["<uuid>"],
+    "price": {
+      "min": "<number>",
+      "max": "<number>"
+    }
+  },
+  "searchedAt": "<timestamp_ms>"
+}
+```
+
+Returns `null` when no document matches.
 
 ## `createSearchLog(input)`
 
@@ -34,7 +71,22 @@ db.searchHistory.insertOne({
 });
 ```
 
-Returned fields: `_id, userId, query, searchedAt`
+Output:
+
+```json
+{
+  "_id": "<uuid>",
+  "userId": "<uuid>",
+  "query": {
+    "townId": ["<uuid>"],
+    "price": {
+      "min": "<number>",
+      "max": "<number>"
+    }
+  },
+  "searchedAt": "<timestamp_ms>"
+}
+```
 
 ## `deleteSearchLog(id)`
 
@@ -42,4 +94,4 @@ Returned fields: `_id, userId, query, searchedAt`
 db.searchHistory.deleteOne({ _id: id });
 ```
 
-Returned value: `boolean`
+Output: boolean, either `true` or `false`.

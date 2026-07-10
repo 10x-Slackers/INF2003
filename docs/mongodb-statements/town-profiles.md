@@ -2,13 +2,41 @@
 
 Source: `lib/collections/town-profile/functions.ts`
 
+Output examples use placeholder strings to show shape and type, not real data.
+
 ## `listTownProfiles()`
 
 ```js
 db.towns.find({}).toArray();
 ```
 
-Returned fields: `_id, transactionSummary, coordinates, updatedAt`
+Output:
+
+```json
+[
+  {
+    "_id": "<uuid>",
+    "transactionSummary": {
+      "totalTransaction": "<number>",
+      "earliestTransaction": "<yyyy-mm>",
+      "latestTransaction": "<yyyy-mm>",
+      "transactionsLast6Months": "<number>",
+      "transactionCountByFlatType": {
+        "<flat_type_id>": "<number>"
+      }
+    },
+    "coordinates": [
+      [
+        ["<longitude>", "<latitude>"],
+        ["<longitude>", "<latitude>"],
+        ["<longitude>", "<latitude>"],
+        ["<longitude>", "<latitude>"]
+      ]
+    ],
+    "updatedAt": "<timestamp_ms>"
+  }
+]
+```
 
 ## `getTownProfileById(id)`
 
@@ -16,7 +44,33 @@ Returned fields: `_id, transactionSummary, coordinates, updatedAt`
 db.towns.findOne({ _id: id });
 ```
 
-Returned fields: `_id, transactionSummary, coordinates, updatedAt` or `null`
+Output:
+
+```json
+{
+  "_id": "<uuid>",
+  "transactionSummary": {
+    "totalTransaction": "<number>",
+    "earliestTransaction": "<yyyy-mm>",
+    "latestTransaction": "<yyyy-mm>",
+    "transactionsLast6Months": "<number>",
+    "transactionCountByFlatType": {
+      "<flat_type_id>": "<number>"
+    }
+  },
+  "coordinates": [
+    [
+      ["<longitude>", "<latitude>"],
+      ["<longitude>", "<latitude>"],
+      ["<longitude>", "<latitude>"],
+      ["<longitude>", "<latitude>"]
+    ]
+  ],
+  "updatedAt": "<timestamp_ms>"
+}
+```
+
+Returns `null` when no document matches.
 
 ## `rollDownTownProfileTransaction(townId, flatTypeId, transactionMonth)`
 
