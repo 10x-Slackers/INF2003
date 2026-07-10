@@ -8,10 +8,9 @@ import {
   type PropertyListQuery,
   type PropertyWithLatestTransaction,
 } from "@/lib/tables/properties";
-import { listFlatModels, listFlatTypes } from "@/lib/tables/lookups";
-import { listTowns } from "@/lib/tables/towns";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
+import { fetchPropertyFilters } from "@/app/filters";
 
 export async function createPropertyAction(input: CreateProperty) {
   await assertAgent();
@@ -26,15 +25,4 @@ export async function fetchProperties(
   return listProperties(input);
 }
 
-export async function fetchPropertyFilters() {
-  try {
-    const [towns, flatTypes, flatModels] = await Promise.all([
-      listTowns(),
-      listFlatTypes(),
-      listFlatModels(),
-    ]);
-    return { towns, flatTypes, flatModels };
-  } catch {
-    return { towns: [], flatTypes: [], flatModels: [] };
-  }
-}
+export { fetchPropertyFilters };

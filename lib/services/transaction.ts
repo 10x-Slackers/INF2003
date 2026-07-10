@@ -6,7 +6,7 @@ import { rollDownTownProfileTransaction } from "@/lib/collections/town-profile";
 import { createTransaction } from "@/lib/tables/transactions";
 import { getPropertyRowById } from "@/lib/tables/properties";
 
-import { handleDbError } from "../utils";
+import { withDbError } from "../utils";
 import { createAlerts } from "./alerts";
 import { refreshPropertyStats, syncStats } from "./statistics";
 import { AddTransactionInput } from "./types";
@@ -15,7 +15,7 @@ export async function addTransaction(
   transaction: AddTransactionInput,
 ): Promise<void> {
   const { uploadedByUserId, input } = transaction;
-  try {
+  return withDbError(async () => {
     const property = await getPropertyRowById(input.property_id);
     if (!property) throw new Error("Property not found");
 
@@ -39,7 +39,5 @@ export async function addTransaction(
       property.town_id,
       property.lease_commence_year,
     );
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

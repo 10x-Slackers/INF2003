@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const idSchema = z.uuid();
+export { idSchema } from "@/lib/tables/common";
 
 export const TownProfileSummarySchema = z
   .object({

@@ -1,7 +1,7 @@
 import type { AnyBulkWriteOperation } from "mongodb";
-import { db } from "@/lib/db";
+import { db, findById } from "@/lib/db";
 import { idSchema, type TownProfile } from "./types";
-import { handleDbError, now } from "@/lib/utils";
+import { withDbError, now } from "@/lib/utils";
 import { z } from "zod";
 
 const towns = db.collection<TownProfile>("towns");
@@ -11,21 +11,15 @@ const townProfileLast6MonthsUpdateSchema = z.object({
 });
 
 export async function listTownProfiles(): Promise<TownProfile[]> {
-  try {
+  return withDbError(async () => {
     return await towns.find({}).toArray();
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function getTownProfileById(
   id: string,
 ): Promise<TownProfile | null> {
-  try {
-    return await towns.findOne({ _id: idSchema.parse(id) });
-  } catch (error) {
-    return handleDbError(error);
-  }
+  return findById(towns, idSchema.parse(id));
 }
 
 export async function rollDownTownProfileTransaction(
@@ -33,7 +27,7 @@ export async function rollDownTownProfileTransaction(
   flatTypeId: string,
   transactionMonth: string,
 ): Promise<void> {
-  try {
+  return withDbError(async () => {
     const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
     const monthschema = z.string().regex(/^\d{4}-\d{2}$/);
@@ -75,15 +69,13 @@ export async function rollDownTownProfileTransaction(
         },
       },
     ]);
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function bulkUpdateTownProfileTransactionsLast6Months(
   input: { townId: string; transactionsLast6Months: number }[],
 ): Promise<void> {
-  try {
+  return withDbError(async () => {
     const timestamp = now();
     const operations: AnyBulkWriteOperation<TownProfile>[] = input.map(
       (item) => {
@@ -107,7 +99,5 @@ export async function bulkUpdateTownProfileTransactionsLast6Months(
     if (operations.length > 0) {
       await towns.bulkWrite(operations);
     }
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

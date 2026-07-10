@@ -1,7 +1,17 @@
-import { execute, query } from "@/lib/db";
+import {
+  execute,
+  query,
+  queryOne,
+  executeReturning,
+  addCondition,
+  addInCondition,
+  buildUpdateFields,
+  deleteById,
+  isEmptyUpdate,
+} from "@/lib/db";
 import type { Amenity } from "@/lib/tables/amenities";
 import { regionSchema } from "@/lib/tables/towns";
-import { handleDbError } from "@/lib/utils";
+import { withDbError } from "@/lib/utils";
 import {
   createPropertySchema,
   propertyListQuerySchema,
@@ -13,11 +23,9 @@ import {
   type PropertyListQuery,
   type PropertySearchResult,
   type PropertyWithLatestTransaction,
-  type UpdateProperty,
   type UpdatePropertyParams,
 } from "./types";
 import { idSchema } from "../common";
-import { executeReturning } from "@/lib/db/mariadb";
 
 const LATEST_TRANSACTION_JOIN = `
   LEFT JOIN (
@@ -111,7 +119,7 @@ function toPropertyWithLatestTransaction(
 export async function getPropertiesWithLatestTransaction(
   propertyIds: string[],
 ): Promise<PropertyWithLatestTransaction[]> {
-  try {
+  return withDbError(async () => {
     const ids = idSchema.array().parse(propertyIds);
     if (ids.length === 0) return [];
 
@@ -126,9 +134,7 @@ export async function getPropertiesWithLatestTransaction(
     );
 
     return rows.map(toPropertyWithLatestTransaction);
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function searchPropertiesByAddress(
@@ -137,7 +143,7 @@ export async function searchPropertiesByAddress(
 ): Promise<PropertySearchResult[]> {
   const term = search.trim();
   if (term.length < 2) return [];
-  try {
+  return withDbError(async () => {
     return await query<PropertySearchResult>(
       `SELECT p.id AS id, p.block AS block, p.street_name AS street_name,
               p.town_id AS town_id, t.name AS town_name
@@ -148,26 +154,19 @@ export async function searchPropertiesByAddress(
        LIMIT ?`,
       [`%${term}%`, `%${term}%`, `%${term}%`, limit],
     );
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function listProperties(
   filters: PropertyListQuery,
 ): Promise<{ data: PropertyWithLatestTransaction[]; total: number }> {
-  try {
+  return withDbError(async () => {
     const data = propertyListQuerySchema.parse(filters);
     const { page, pageSize } = data;
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (data.town_ids?.length) {
-      conditions.push(
-        `p.town_id IN (${data.town_ids.map(() => "?").join(", ")})`,
-      );
-      params.push(...data.town_ids);
-    }
+    addInCondition(conditions, params, data.town_ids, "p.town_id");
     if (data.street_name !== undefined) {
       conditions.push("p.street_name LIKE ?");
       params.push(`%${data.street_name}%`);
@@ -176,30 +175,17 @@ export async function listProperties(
       conditions.push("p.block LIKE ?");
       params.push(`%${data.block}%`);
     }
-    if (data.lease_commence_year !== undefined) {
-      conditions.push("p.lease_commence_year = ?");
-      params.push(data.lease_commence_year);
-    }
-    if (data.flat_type_ids?.length) {
-      conditions.push(
-        `lt.flat_type_id IN (${data.flat_type_ids.map(() => "?").join(", ")})`,
-      );
-      params.push(...data.flat_type_ids);
-    }
-    if (data.flat_model_ids?.length) {
-      conditions.push(
-        `lt.flat_model_id IN (${data.flat_model_ids.map(() => "?").join(", ")})`,
-      );
-      params.push(...data.flat_model_ids);
-    }
-    if (data.price_min !== undefined) {
-      conditions.push("lt.resale_price >= ?");
-      params.push(data.price_min);
-    }
-    if (data.price_max !== undefined) {
-      conditions.push("lt.resale_price <= ?");
-      params.push(data.price_max);
-    }
+    addCondition(
+      conditions,
+      params,
+      data.lease_commence_year,
+      "p.lease_commence_year",
+      "=",
+    );
+    addInCondition(conditions, params, data.flat_type_ids, "lt.flat_type_id");
+    addInCondition(conditions, params, data.flat_model_ids, "lt.flat_model_id");
+    addCondition(conditions, params, data.price_min, "lt.resale_price", ">=");
+    addCondition(conditions, params, data.price_max, "lt.resale_price", "<=");
 
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -232,27 +218,22 @@ export async function listProperties(
       data: rows.map(toPropertyWithLatestTransaction),
       total: countRows[0].total,
     };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function getPropertyRowById(id: string): Promise<Property | null> {
-  try {
-    const rows = await query<Property>(
+  return withDbError(() =>
+    queryOne<Property>(
       "SELECT id, town_id, block, street_name, lease_commence_year FROM properties WHERE id = ? LIMIT 1",
       [idSchema.parse(id)],
-    );
-    return rows[0] ?? null;
-  } catch (error) {
-    return handleDbError(error);
-  }
+    ),
+  );
 }
 
 export async function getPropertyById(
   id: string,
 ): Promise<PropertyDetail | null> {
-  try {
+  return withDbError(async () => {
     const parsedId = idSchema.parse(id);
     const rows = await query<Property & { region: string; town_name: string }>(
       `SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
@@ -284,70 +265,45 @@ export async function getPropertyById(
       },
       amenities,
     };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function createProperty(input: CreateProperty): Promise<string> {
-  try {
+  return withDbError(async () => {
     const data = createPropertySchema.parse(input);
     const result = await executeReturning<{ id: string }>(
       "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
       [data.town_id, data.block, data.street_name, data.lease_commence_year],
     );
     return result[0].id;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
-
-const isEmptyUpdate = (input: UpdateProperty) =>
-  Object.values(input).every((value) => value === undefined);
 
 export async function updateProperty(
   input: UpdatePropertyParams,
 ): Promise<Property | null> {
-  try {
+  return withDbError(async () => {
     const parsed = updatePropertyParamsSchema.parse(input);
     if (isEmptyUpdate(parsed.input)) return getPropertyRowById(parsed.id);
 
     const data = updatePropertySchema.parse(parsed.input);
-    const fields: string[] = [];
-    const params: (string | number)[] = [];
-
-    for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) {
-        fields.push(`${key} = ?`);
-        params.push(value);
-      }
-    }
-
+    const { setClause, params } = buildUpdateFields(data);
     const result = await execute(
-      `UPDATE properties SET ${fields.join(", ")} WHERE id = ?`,
+      `UPDATE properties SET ${setClause} WHERE id = ?`,
       [...params, parsed.id],
     );
     return result.affectedRows === 0 ? null : getPropertyRowById(parsed.id);
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function deleteProperty(id: string): Promise<boolean> {
-  try {
-    const result = await execute("DELETE FROM properties WHERE id = ?", [
-      idSchema.parse(id),
-    ]);
-    return result.affectedRows > 0;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  return deleteById("properties", id);
 }
 
 export async function lookupProperty(
   input: CreateProperty,
 ): Promise<{ found: boolean; property_id?: string }> {
-  try {
+  return withDbError(async () => {
     const data = createPropertySchema.parse(input);
     const rows = await query<{ id: string }>(
       `SELECT id FROM properties
@@ -359,7 +315,5 @@ export async function lookupProperty(
     return rows[0]
       ? { found: true, property_id: rows[0].id }
       : { found: false };
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

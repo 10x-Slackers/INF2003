@@ -16,7 +16,7 @@ import {
   type TransactionStatisticsMetric,
   type TransactionStatisticsQuery,
 } from "@/lib/tables/transactions";
-import { handleDbError } from "@/lib/utils";
+import { withDbError } from "@/lib/utils";
 
 type StatsBuild = {
   metric: StatisticsUpsert["metric"];
@@ -116,31 +116,25 @@ export async function buildGlobalStats(): Promise<StatisticsUpsert[]> {
 }
 
 async function refreshTownStats(townId: string) {
-  try {
+  return withDbError(async () => {
     await saveStats(await buildTownStats(townId));
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function refreshPropertyStats(propertyId: string) {
-  try {
+  return withDbError(async () => {
     await saveStats(await buildPropertyStats(propertyId));
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 async function refreshStats() {
-  try {
+  return withDbError(async () => {
     await saveStats(await buildGlobalStats());
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function syncStats() {
-  try {
+  return withDbError(async () => {
     const { dirtyTownIds } = await getStatisticsTrigger();
     await refreshStats();
 
@@ -151,15 +145,13 @@ export async function syncStats() {
       await Promise.all(dirtyTownIds.map((townId) => refreshTownStats(townId)));
     }
     await flushStatisticsTrigger();
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 export async function buildTownCountUpdates(
   townIds: string[],
 ): Promise<{ townId: string; transactionsLast6Months: number }[]> {
-  try {
+  return withDbError(async () => {
     const rows = await getTownSalesCounts6Months();
     const countByTown = new Map(
       rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
@@ -169,7 +161,5 @@ export async function buildTownCountUpdates(
       townId,
       transactionsLast6Months: countByTown.get(townId) ?? 0,
     }));
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
