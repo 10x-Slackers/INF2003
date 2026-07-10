@@ -16,26 +16,6 @@ const numberRangeSchema = z
     },
   );
 
-const nullableNumberRangeSchema = z
-  .object({
-    min: z.number().min(0).nullable().optional(),
-    max: z.number().min(0).nullable().optional(),
-  })
-  .strict()
-  .refine(({ min, max }) => min == null || max == null || min <= max, {
-    message: "min cannot be greater than max",
-  });
-
-const nullableStoreyRangeSchema = z
-  .object({
-    min: z.number().int().nullable().optional(),
-    max: z.number().int().nullable().optional(),
-  })
-  .strict()
-  .refine(({ min, max }) => min == null || max == null || min <= max, {
-    message: "min cannot be greater than max",
-  });
-
 const nullableIntRangeSchema = z
   .object({
     min: z.number().int().nullable().optional(),
@@ -50,9 +30,6 @@ const filterShape = {
   townId: z.array(z.uuid()).optional(),
   flatTypeId: z.array(z.string()).optional(),
   price: numberRangeSchema.optional(),
-  floorAreaSqm: numberRangeSchema.optional(),
-  storey: nullableStoreyRangeSchema.optional(),
-  leaseRemaining: nullableNumberRangeSchema.optional(),
 };
 
 const hasFields = (value: object) => Object.keys(value).length > 0;
