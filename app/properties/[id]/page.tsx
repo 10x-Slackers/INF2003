@@ -8,7 +8,7 @@ import { PropertySummaryCard } from "@/components/properties/property-summary-ca
 import { PropertyStatisticsCard } from "@/components/properties/property-statistics-card";
 import { TransactionsTable } from "@/components/properties/transactions-table";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 8;
 
 export default async function PropertyDetailPage({
   params,

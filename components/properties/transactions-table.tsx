@@ -15,7 +15,7 @@ import {
 import type { TransactionListItem } from "@/lib/tables/transactions";
 import { fetchTransactionsAction } from "@/app/properties/[id]/actions";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 8;
 const COLUMN_COUNT = 6;
 
 export function TransactionsTable({

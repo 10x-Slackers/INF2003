@@ -53,13 +53,14 @@ LEFT JOIN resale_transactions lt ON lt.id = (
 LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
 LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
 LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
-WHERE p.town_id = ? AND lt.flat_type_id = ? AND lt.flat_model_id = ?
+WHERE p.town_id IN (?) AND p.street_name LIKE ? AND p.lease_commence_year = ?
+  AND lt.flat_type_id IN (?) AND lt.flat_model_id IN (?)
   AND lt.resale_price >= ? AND lt.resale_price <= ?
 ORDER BY p.block, p.street_name
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
+Optional params: `town_ids`, `street_name`, `lease_commence_year`, `flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`.
 Params: `page`, `pageSize`.
 Only provided filters are included in `WHERE`.
 
@@ -78,12 +79,13 @@ LEFT JOIN resale_transactions lt ON lt.id = (
 LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
 LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
 LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
-WHERE p.town_id = ? AND lt.flat_type_id = ? AND lt.flat_model_id = ?
+WHERE p.town_id IN (?) AND p.street_name LIKE ? AND p.lease_commence_year = ?
+  AND lt.flat_type_id IN (?) AND lt.flat_model_id IN (?)
   AND lt.resale_price >= ? AND lt.resale_price <= ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
-Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields.
+Optional params: `town_ids`, `street_name`, `lease_commence_year`, `flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`.
+Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields (`flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`).
 
 Returned columns: `total`
 
