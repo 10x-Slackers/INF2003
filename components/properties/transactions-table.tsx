@@ -16,7 +16,7 @@ import type { TransactionListItem } from "@/lib/tables/transactions";
 import { fetchTransactionsAction } from "@/app/properties/[id]/actions";
 
 const PAGE_SIZE = 8;
-const COLUMN_COUNT = 6;
+const COLUMN_COUNT = 7;
 
 export function TransactionsTable({
   propertyId,
@@ -67,6 +67,7 @@ export function TransactionsTable({
               <TableHead>Storey range</TableHead>
               <TableHead>Floor area (sqm)</TableHead>
               <TableHead>Resale price</TableHead>
+              <TableHead>$/sqm</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -104,6 +105,10 @@ export function TransactionsTable({
                   <TableCell>
                     S$
                     {Math.round(transaction.resale_price).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    S$
+                    {Math.round(transaction.price_per_sqm).toLocaleString()}
                   </TableCell>
                 </TableRow>
               ))

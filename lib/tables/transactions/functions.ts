@@ -140,7 +140,13 @@ export async function listTransactions(
       ),
     ]);
 
-    return { data: rows, total: countRows[0].total };
+    return {
+      data: rows.map((row) => ({
+        ...row,
+        price_per_sqm: row.resale_price / row.floor_area_sqm,
+      })),
+      total: countRows[0].total,
+    };
   } catch (error) {
     return handleDbError(error);
   }
