@@ -22,6 +22,7 @@ type Filters = {
   flatTypeIds: string[];
   flatModelIds: string[];
   streetName: string;
+  block: string;
   leaseCommenceYear: string;
 };
 
@@ -30,6 +31,7 @@ const DEFAULT_FILTERS: Filters = {
   flatTypeIds: [],
   flatModelIds: [],
   streetName: "",
+  block: "",
   leaseCommenceYear: "",
 };
 
@@ -82,6 +84,7 @@ export function PropertiesPanel() {
           ? currentFilters.flatModelIds.map(Number)
           : undefined,
         street_name: currentFilters.streetName || undefined,
+        block: currentFilters.block || undefined,
         lease_commence_year: currentFilters.leaseCommenceYear
           ? Number(currentFilters.leaseCommenceYear)
           : undefined,
@@ -178,6 +181,17 @@ export function PropertiesPanel() {
             value={draft.streetName}
             onChange={(e) =>
               setDraft((prev) => ({ ...prev, streetName: e.target.value }))
+            }
+          />
+        </div>
+
+        <div className="flex min-w-40 flex-1 flex-col gap-2">
+          <Label htmlFor="block">Block</Label>
+          <Input
+            id="block"
+            value={draft.block}
+            onChange={(e) =>
+              setDraft((prev) => ({ ...prev, block: e.target.value }))
             }
           />
         </div>

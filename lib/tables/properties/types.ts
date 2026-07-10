@@ -22,6 +22,7 @@ export const updatePropertyParamsSchema = z.object({
 export const propertyListQuerySchema = paginationSchema.extend({
   town_ids: z.array(idSchema).optional(),
   street_name: z.string().trim().min(1).optional(),
+  block: z.string().trim().min(1).optional(),
   lease_commence_year: z.coerce.number().int().min(1960).max(2100).optional(),
   flat_type_ids: z.array(z.coerce.number().int().positive()).optional(),
   flat_model_ids: z.array(z.coerce.number().int().positive()).optional(),

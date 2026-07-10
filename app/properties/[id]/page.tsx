@@ -25,13 +25,20 @@ export default async function PropertyDetailPage({
     pageSize: PAGE_SIZE,
   });
 
+  const flatTypes = [...new Set(transactions.map((t) => t.flat_type_name))];
+  const flatModels = [...new Set(transactions.map((t) => t.flat_model_name))];
+
   return (
     <main className="container mx-auto flex flex-col gap-6 px-5 py-6">
       <Button asChild variant="outline" className="w-fit">
         <Link href={ROUTES.PROPERTIES}>Back to properties</Link>
       </Button>
 
-      <PropertySummaryCard property={property} />
+      <PropertySummaryCard
+        property={property}
+        flatTypes={flatTypes}
+        flatModels={flatModels}
+      />
 
       <PropertyStatisticsCard />
 

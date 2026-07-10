@@ -168,6 +168,10 @@ export async function listProperties(
       conditions.push("p.street_name LIKE ?");
       params.push(`%${data.street_name}%`);
     }
+    if (data.block !== undefined) {
+      conditions.push("p.block LIKE ?");
+      params.push(`%${data.block}%`);
+    }
     if (data.lease_commence_year !== undefined) {
       conditions.push("p.lease_commence_year = ?");
       params.push(data.lease_commence_year);
