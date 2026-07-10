@@ -10,7 +10,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "./ui/dropdown-menu";
-import { Bookmark, Bell, Plus, ShieldUser } from "lucide-react";
+import { BarChart3, Bookmark, Bell, Plus, ShieldUser } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
 import { useEffect, useMemo, useState } from "react";
 import { getUnreadCountAction } from "@/app/alerts/actions";
@@ -40,6 +40,12 @@ const actionLinks: ActionLink[] = [
     icon: Bookmark,
   },
   { href: ROUTES.ALERTS, label: "Alerts", canView: isSignedIn, icon: Bell },
+  {
+    href: ROUTES.SEARCH_STATS,
+    label: "Search statistics",
+    canView: isAgent,
+    icon: BarChart3,
+  },
   { href: ROUTES.ADMIN, label: "Admin", canView: isAdmin, icon: ShieldUser },
 ];
 

@@ -9,6 +9,7 @@ export const ROUTES = {
   ALERT_NEW: "/alerts/new",
   BOOKMARKS: "/bookmarks",
   ADMIN: "/admin",
+  SEARCH_STATS: "/search-stats",
   PROPERTIES_NEW: "/properties/new",
   PROPERTY_DETAIL: (id: string) => `/properties/${id}`,
   TRANSACTIONS_NEW: "/transactions/new",

@@ -208,15 +208,16 @@ db.createCollection("searchHistory", {
   validator: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "userId", "query", "searchedAt"],
+      required: ["_id", "query", "searchedAt"],
       properties: {
         _id: { bsonType: "string" },
-        userId: { bsonType: "string" },
+        userId: { bsonType: ["string", "null"] },
         query: {
           bsonType: "object",
           properties: {
             townId: { bsonType: "array", items: { bsonType: "string" } },
             flatTypeId: { bsonType: "array", items: { bsonType: "string" } },
+            flatModelId: { bsonType: "array", items: { bsonType: "string" } },
             price: {
               bsonType: "object",
               properties: {
@@ -225,38 +226,7 @@ db.createCollection("searchHistory", {
               },
               additionalProperties: false,
             },
-            floorAreaSqm: {
-              bsonType: "object",
-              properties: {
-                min: { bsonType: ["int", "long", "double", "decimal"] },
-                max: { bsonType: ["int", "long", "double", "decimal"] },
-              },
-              additionalProperties: false,
-            },
-            storey: {
-              bsonType: "object",
-              properties: {
-                min: { bsonType: ["null", "int", "long"] },
-                max: { bsonType: ["null", "int", "long"] },
-              },
-              additionalProperties: false,
-            },
-            leaseRemaining: {
-              bsonType: "object",
-              properties: {
-                min: { bsonType: ["null", "int", "long", "double", "decimal"] },
-                max: { bsonType: ["null", "int", "long", "double", "decimal"] },
-              },
-              additionalProperties: false,
-            },
-            transactionYear: {
-              bsonType: "object",
-              properties: {
-                from: { bsonType: ["null", "int", "long"] },
-                to: { bsonType: ["null", "int", "long"] },
-              },
-              additionalProperties: false,
-            },
+            leaseCommenceYear: { bsonType: ["null", "int", "long"] },
           },
           additionalProperties: false,
         },
