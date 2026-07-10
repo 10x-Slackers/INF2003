@@ -63,13 +63,12 @@ Returned columns: `total`
 SELECT {selectGroups}, {metric} AS value, COUNT(*) AS sample_size
 FROM resale_transactions rt
 {propertyJoin}
-{storeyRangeJoin}
 {where}
 GROUP BY {groupBy}
 ORDER BY {orderBy};
 ```
 
-The `properties` join is only included when filtering/grouping by `town_id` or `lease_remaining_year`. The `storey_ranges` join is only included when filtering/grouping by `storey_range_id`.
+The `properties` join is only included when filtering/grouping by `town_id`.
 
 ### Metric expressions
 
@@ -81,14 +80,12 @@ The `properties` join is only included when filtering/grouping by `town_id` or `
 
 ### Group expressions
 
-| `groupBy`              | Expression                                                                                                                   |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `period`               | `DATE_FORMAT(rt.transaction_month, '%Y-%m')` (monthly / last 6 months) or `DATE_FORMAT(rt.transaction_month, '%Y')` (yearly) |
-| `town_id`              | `p.town_id`                                                                                                                  |
-| `flat_type_id`         | `rt.flat_type_id`                                                                                                            |
-| `property_id`          | `rt.property_id`                                                                                                             |
-| `lease_remaining_year` | `99 - (YEAR(rt.transaction_month) - p.lease_commence_year)`                                                                  |
-| `storey_range_id`      | `CASE WHEN sr.min_storey <= 10 THEN '1-10' WHEN sr.min_storey <= 20 THEN '11-20' ELSE '20+' END`                             |
+| `groupBy`      | Expression                                                                                                                   |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `period`       | `DATE_FORMAT(rt.transaction_month, '%Y-%m')` (monthly / last 6 months) or `DATE_FORMAT(rt.transaction_month, '%Y')` (yearly) |
+| `town_id`      | `p.town_id`                                                                                                                  |
+| `flat_type_id` | `rt.flat_type_id`                                                                                                            |
+| `property_id`  | `rt.property_id`                                                                                                             |
 
 ### WHERE conditions (all optional)
 
@@ -100,10 +97,9 @@ The `properties` join is only included when filtering/grouping by `town_id` or `
 | `town_id`                       | `p.town_id = ?`                                                                                                |
 | `flat_type_id`                  | `rt.flat_type_id = ?`                                                                                          |
 | `property_id`                   | `rt.property_id = ?`                                                                                           |
-| `storey_range_id`               | `rt.storey_range_id = ?`                                                                                       |
 
 Params: `metric`, `granularity`, `groupBy` (array, min 1, unique).
-Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`, `storey_range_id`.
+Optional params: `date_from`, `date_to`, `town_id`, `flat_type_id`, `property_id`.
 The selected group columns, metric expression, `GROUP BY`, `ORDER BY`, and optional `WHERE` filters are built from the input.
 
 Returned columns: selected `groupBy` columns, `value`, `sample_size`.

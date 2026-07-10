@@ -63,10 +63,6 @@ const STATISTIC_GROUPS: Record<
   town_id: "p.town_id",
   flat_type_id: "rt.flat_type_id",
   property_id: "rt.property_id",
-  lease_remaining_year:
-    "99 - (YEAR(rt.transaction_month) - p.lease_commence_year)",
-  storey_range_id:
-    "CASE WHEN sr.min_storey <= 10 THEN '1-10' WHEN sr.min_storey <= 20 THEN '11-20' ELSE '20+' END",
 };
 
 function periodExpression(granularity: TransactionStatisticsGranularity) {
@@ -180,25 +176,12 @@ export async function getTransactionStatistics(
     addCondition(conditions, params, data.town_id, "p.town_id", "=");
     addCondition(conditions, params, data.flat_type_id, "rt.flat_type_id", "=");
     addCondition(conditions, params, data.property_id, "rt.property_id", "=");
-    addCondition(
-      conditions,
-      params,
-      data.storey_range_id,
-      "rt.storey_range_id",
-      "=",
-    );
 
     const needsProperties =
-      data.town_id !== undefined ||
-      data.groupBy.includes("town_id") ||
-      data.groupBy.includes("lease_remaining_year");
-    const needsStoreyRanges = data.groupBy.includes("storey_range_id");
+      data.town_id !== undefined || data.groupBy.includes("town_id");
 
     const propertyJoin = needsProperties
       ? "JOIN properties p ON p.id = rt.property_id"
-      : "";
-    const storeyRangeJoin = needsStoreyRanges
-      ? "JOIN storey_ranges sr ON sr.id = rt.storey_range_id"
       : "";
 
     const where =
@@ -211,13 +194,12 @@ export async function getTransactionStatistics(
 
     return await query<TransactionStatisticRow>(
       `SELECT ${selectGroups}, ${STATISTIC_METRICS[data.metric]} AS value,
-              COUNT(*) AS sample_size
-       FROM resale_transactions rt
-       ${propertyJoin}
-       ${storeyRangeJoin}
-       ${where}
-       GROUP BY ${groupBy}
-       ORDER BY ${orderBy}`,
+               COUNT(*) AS sample_size
+        FROM resale_transactions rt
+        ${propertyJoin}
+        ${where}
+        GROUP BY ${groupBy}
+        ORDER BY ${orderBy}`,
       params,
     );
   });

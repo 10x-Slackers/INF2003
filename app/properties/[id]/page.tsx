@@ -6,6 +6,7 @@ import { isSignedIn } from "@/lib/permissions";
 import { getPropertyById } from "@/lib/tables/properties";
 import { isPropertySaved } from "@/lib/tables/saved-properties";
 import { listTransactions } from "@/lib/tables/transactions";
+import { getPropertyStats } from "./property-stats";
 import { ROUTES } from "@/lib/routes";
 import { PropertySummaryCard } from "@/components/properties/property-summary-card";
 import { PropertyStatisticsCard } from "@/components/properties/property-statistics-card";
@@ -21,9 +22,10 @@ export default async function PropertyDetailPage({
 }) {
   const { id } = await params;
 
-  const [property, { data: transactions, total }] = await Promise.all([
+  const [property, { data: transactions, total }, stats] = await Promise.all([
     getPropertyById(id),
     listTransactions({ property_id: id, page: 1, pageSize: PAGE_SIZE }),
+    getPropertyStats(id),
   ]);
   if (!property) notFound();
 
@@ -55,7 +57,7 @@ export default async function PropertyDetailPage({
         flatModels={flatModels}
       />
 
-      <PropertyStatisticsCard />
+      <PropertyStatisticsCard data={stats} />
 
       <TransactionsTable
         propertyId={id}

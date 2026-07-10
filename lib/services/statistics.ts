@@ -88,31 +88,20 @@ export async function buildAllPropertyStats(): Promise<StatisticsUpsert[]> {
 }
 
 export async function buildGlobalStats(): Promise<StatisticsUpsert[]> {
-  const [flatTypeStats, perSqmStats, leaseStats, storeyStats] =
-    await Promise.all([
-      buildStats({
-        metric: metricsSchema.enum.AVG_PRICE_BY_FLAT_TYPE,
-        transactionMetric: "avg_price",
-        groupBy: ["flat_type_id"],
-      }),
-      buildStats({
-        metric: metricsSchema.enum.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
-        transactionMetric: "avg_price_per_sqm",
-        groupBy: ["flat_type_id"],
-      }),
-      buildStats({
-        metric: metricsSchema.enum.AVG_PRICE_BY_LEASE_REMAINING_AND_FLAT_TYPE,
-        transactionMetric: "avg_price",
-        groupBy: ["lease_remaining_year", "flat_type_id"],
-      }),
-      buildStats({
-        metric: metricsSchema.enum.AVG_PRICE_BY_STOREY_RANGE_AND_FLAT_TYPE,
-        transactionMetric: "avg_price",
-        groupBy: ["storey_range_id", "flat_type_id"],
-      }),
-    ]);
+  const [flatTypeStats, perSqmStats] = await Promise.all([
+    buildStats({
+      metric: metricsSchema.enum.AVG_PRICE_BY_FLAT_TYPE,
+      transactionMetric: "avg_price",
+      groupBy: ["flat_type_id"],
+    }),
+    buildStats({
+      metric: metricsSchema.enum.AVG_PRICE_PER_SQM_BY_FLAT_TYPE,
+      transactionMetric: "avg_price_per_sqm",
+      groupBy: ["flat_type_id"],
+    }),
+  ]);
 
-  return [...flatTypeStats, ...perSqmStats, ...leaseStats, ...storeyStats];
+  return [...flatTypeStats, ...perSqmStats];
 }
 
 async function refreshTownStats(townId: string) {

@@ -47,8 +47,6 @@ export const transactionStatisticsGroupSchema = z.enum([
   "town_id",
   "flat_type_id",
   "property_id",
-  "lease_remaining_year",
-  "storey_range_id",
 ]);
 export const transactionStatisticsQuerySchema = z
   .object({
@@ -60,7 +58,6 @@ export const transactionStatisticsQuerySchema = z
     town_id: z.uuid().optional(),
     flat_type_id: z.coerce.number().int().positive().optional(),
     property_id: z.uuid().optional(),
-    storey_range_id: z.coerce.number().int().positive().optional(),
   })
   .strict()
   .refine((data) => new Set(data.groupBy).size === data.groupBy.length, {
@@ -107,8 +104,6 @@ export type TransactionStatisticRow = {
   town_id?: string;
   flat_type_id?: number;
   property_id?: string;
-  lease_remaining_year?: number;
-  storey_range_id?: number | string;
   value: number;
   sample_size: number;
 };
