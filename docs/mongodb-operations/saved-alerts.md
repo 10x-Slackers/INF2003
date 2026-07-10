@@ -113,23 +113,38 @@ Output: boolean, either `true` or `false`.
 db.alerts.find({
   isActive: true,
   $and: [
+    // addArrayFilter — for townId, flatTypeId, flatModelId
     {
       $or: [
-        { "filters.townId": townId },
-        { "filters.townId": { $exists: false } },
-        { "filters.townId": { $size: 0 } },
+        { "filters.<field>": value },
+        { "filters.<field>": { $exists: false } },
+        { "filters.<field>": { $size: 0 } },
+      ],
+    },
+    // addValueInRangeFilter — for price, floorAreaSqm, leaseRemaining
+    {
+      $or: [
+        { "filters.<field>.min": { $exists: false } },
+        { "filters.<field>.min": { $lte: value } },
       ],
     },
     {
       $or: [
-        { "filters.price.min": { $exists: false } },
-        { "filters.price.min": { $lte: price } },
+        { "filters.<field>.max": { $exists: false } },
+        { "filters.<field>.max": { $gte: value } },
+      ],
+    },
+    // addRangeOverlapFilter — for storey
+    {
+      $or: [
+        { "filters.storey.min": { $exists: false } },
+        { "filters.storey.min": { $lte: storey.max } },
       ],
     },
     {
       $or: [
-        { "filters.price.max": { $exists: false } },
-        { "filters.price.max": { $gte: price } },
+        { "filters.storey.max": { $exists: false } },
+        { "filters.storey.max": { $gte: storey.min } },
       ],
     },
   ],
@@ -138,6 +153,12 @@ db.alerts.find({
 
 Optional params: `townId`, `flatTypeId`, `flatModelId`, `price`, `floorAreaSqm`, `storey`, `leaseRemaining`.
 Only provided filters are included in `$and`.
+
+Each filter maps to one of three clause patterns:
+
+- **`addArrayFilter`** (`townId`, `flatTypeId`, `flatModelId`): one `$or` clause matching the value, or the field being absent/empty.
+- **`addValueInRangeFilter`** (`price`, `floorAreaSqm`, `leaseRemaining`): two `$or` clauses checking the alert's `min`/`max` bounds against the transaction value.
+- **`addRangeOverlapFilter`** (`storey`): two `$or` clauses checking the alert's `min`/`max` bounds against the transaction's `min`/`max` range for overlap.
 
 Output:
 
