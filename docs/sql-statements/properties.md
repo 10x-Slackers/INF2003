@@ -159,3 +159,27 @@ LIMIT 1;
 ```
 
 Returned columns: `id`
+
+## `searchPropertiesByAddress(search, limit)`
+
+```sql
+SELECT p.id AS id, p.block AS block, p.street_name AS street_name,
+       p.town_id AS town_id, t.name AS town_name
+FROM properties p
+JOIN towns t ON t.id = p.town_id
+WHERE p.block LIKE ? OR p.street_name LIKE ? OR t.name LIKE ?
+ORDER BY p.block, p.street_name
+LIMIT ?;
+```
+
+Params: `search` (min 2 chars, else returns empty), `limit` (default 20).
+
+Returned columns: `id, block, street_name, town_id, town_name`
+
+## `getPropertyRowById(id)`
+
+```sql
+SELECT id, town_id, block, street_name, lease_commence_year FROM properties WHERE id = ? LIMIT 1;
+```
+
+Returned columns: `id, town_id, block, street_name, lease_commence_year`
