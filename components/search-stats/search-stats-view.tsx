@@ -14,9 +14,19 @@ export function SearchStatsView() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    const cancelled = { current: false };
     getSearchStatsAction()
-      .then(setStats)
-      .catch(() => setError(true));
+      .then((data) => {
+        if (cancelled.current) return;
+        setStats(data);
+      })
+      .catch(() => {
+        if (cancelled.current) return;
+        setError(true);
+      });
+    return () => {
+      cancelled.current = true;
+    };
   }, []);
 
   if (error) {
