@@ -1,36 +1,15 @@
-import {
-  execute,
-  query,
-  queryOne,
-  deleteById,
-  paginatedQuery,
-  buildUpdateFields,
-  executeReturning,
-} from "@/lib/db";
+import { execute, query, executeReturning } from "@/lib/db";
 import { getPropertiesWithLatestTransaction } from "@/lib/tables/properties";
 import { withDbError } from "@/lib/utils";
 import {
   createSavedPropertySchema,
   savedPropertyIdentitySchema,
-  savedPropertyListQuerySchema,
-  updateSavedPropertyParamsSchema,
   type CreateSavedProperty,
   type SavedProperty,
   type SavedPropertyDetail,
   type SavedPropertyIdentity,
-  type SavedPropertyListQuery,
-  type UpdateSavedPropertyParams,
 } from "./types";
 import { idSchema } from "../common";
-
-async function attachProperty(
-  row: SavedProperty,
-): Promise<SavedPropertyDetail> {
-  const [property] = await getPropertiesWithLatestTransaction([
-    row.property_id,
-  ]);
-  return { ...row, property: property ?? null };
-}
 
 async function attachProperties(
   rows: SavedProperty[],
@@ -46,30 +25,14 @@ async function attachProperties(
 }
 
 export async function listSavedProperties(
-  input: SavedPropertyListQuery,
-): Promise<{ data: SavedPropertyDetail[]; total: number }> {
+  userId: string,
+): Promise<SavedPropertyDetail[]> {
   return withDbError(async () => {
-    const data = savedPropertyListQuerySchema.parse(input);
-    const result = await paginatedQuery<SavedProperty>(
-      `SELECT id, user_id, property_id, created_at FROM saved_properties WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      "SELECT COUNT(*) AS total FROM saved_properties WHERE user_id = ?",
-      [data.userId],
-      data.page,
-      data.pageSize,
+    const rows = await query<SavedProperty>(
+      "SELECT id, user_id, property_id, created_at FROM saved_properties WHERE user_id = ? ORDER BY created_at DESC",
+      [idSchema.parse(userId)],
     );
-    return { data: await attachProperties(result.data), total: result.total };
-  });
-}
-
-export async function getSavedPropertyById(
-  id: string,
-): Promise<SavedPropertyDetail | null> {
-  return withDbError(async () => {
-    const row = await queryOne<SavedProperty>(
-      "SELECT id, user_id, property_id, created_at FROM saved_properties WHERE id = ? LIMIT 1",
-      [idSchema.parse(id)],
-    );
-    return row ? attachProperty(row) : null;
+    return attachProperties(rows);
   });
 }
 
@@ -86,28 +49,6 @@ export async function createSavedProperty(
   });
 }
 
-export async function updateSavedProperty(
-  input: UpdateSavedPropertyParams,
-): Promise<SavedPropertyDetail | null> {
-  return withDbError(async () => {
-    const { id, input: data } = updateSavedPropertyParamsSchema.parse(input);
-    const { setClause, params } = buildUpdateFields({
-      user_id: data.userId,
-      property_id: data.propertyId,
-    });
-
-    const result = await execute(
-      `UPDATE saved_properties SET ${setClause} WHERE id = ?`,
-      [...params, id],
-    );
-    return result.affectedRows === 0 ? null : getSavedPropertyById(id);
-  });
-}
-
-export async function deleteSavedProperty(id: string): Promise<boolean> {
-  return deleteById("saved_properties", id);
-}
-
 export async function isPropertySaved(
   input: SavedPropertyIdentity,
 ): Promise<boolean> {
@@ -118,5 +59,18 @@ export async function isPropertySaved(
       [data.userId, data.propertyId],
     );
     return rows.length > 0;
+  });
+}
+
+export async function deleteSavedPropertyByUserAndProperty(
+  input: SavedPropertyIdentity,
+): Promise<boolean> {
+  return withDbError(async () => {
+    const data = savedPropertyIdentitySchema.parse(input);
+    const result = await execute(
+      "DELETE FROM saved_properties WHERE user_id = ? AND property_id = ?",
+      [data.userId, data.propertyId],
+    );
+    return result.affectedRows > 0;
   });
 }
