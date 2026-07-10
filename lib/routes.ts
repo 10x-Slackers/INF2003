@@ -10,5 +10,6 @@ export const ROUTES = {
   BOOKMARKS: "/bookmarks",
   ADMIN: "/admin",
   PROPERTIES_NEW: "/properties/new",
+  PROPERTY_DETAIL: (id: string) => `/properties/${id}`,
   TRANSACTIONS_NEW: "/transactions/new",
 } as const;

@@ -99,6 +99,7 @@ export type TransactionListItem = ResaleTransaction & {
   min_storey: number;
   max_storey: number;
   uploaded_by_user_name: string | null;
+  price_per_sqm: number;
 };
 
 export type TransactionStatisticRow = {

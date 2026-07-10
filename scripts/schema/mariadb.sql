@@ -86,7 +86,8 @@ CREATE TABLE IF NOT EXISTS amenities (
     longitude DECIMAL(10, 7),
     latitude DECIMAL(10, 7),
     CONSTRAINT fk_amenities_town FOREIGN KEY (town_id) REFERENCES towns(id),
-    CONSTRAINT fk_amenities_amenity_type FOREIGN KEY (amenity_type_id) REFERENCES amenity_types(id)
+    CONSTRAINT fk_amenities_amenity_type FOREIGN KEY (amenity_type_id) REFERENCES amenity_types(id),
+    INDEX idx_amenities_town_type (town_id, amenity_type_id)
 );
 -- Create resale_transactions table
 CREATE TABLE IF NOT EXISTS resale_transactions (
@@ -121,5 +122,6 @@ CREATE TABLE IF NOT EXISTS alert_notifications (
     read_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_alert_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_alert_notifications_transaction FOREIGN KEY (transaction_id) REFERENCES resale_transactions(id) ON DELETE CASCADE
+    CONSTRAINT fk_alert_notifications_transaction FOREIGN KEY (transaction_id) REFERENCES resale_transactions(id) ON DELETE CASCADE,
+    INDEX idx_alert_notifications_user_unread (user_id, read_at)
 );

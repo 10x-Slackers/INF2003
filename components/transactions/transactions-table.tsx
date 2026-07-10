@@ -11,10 +11,14 @@ import {
 import { ROUTES } from "@/lib/routes";
 import type { TransactionListItem } from "@/lib/tables/transactions";
 
+const COLUMN_COUNT = 9;
 const LOCALE = "en-SG";
 const pad = (value: number) => String(value).padStart(2, "0");
 const formatNumber = (value: number) =>
-  value.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
+  value.toLocaleString(LOCALE, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 2,
+  });
 
 type TransactionsTableProps = {
   transactions: TransactionListItem[];
@@ -38,6 +42,7 @@ export function TransactionsTable({
             <TableHead>Storey Range</TableHead>
             <TableHead>Floor Area</TableHead>
             <TableHead>Resale Price</TableHead>
+            <TableHead>$/sqm</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -74,6 +79,9 @@ export function TransactionsTable({
                 <TableCell>
                   S${formatNumber(transaction.resale_price)}
                 </TableCell>
+                <TableCell>
+                  S${formatNumber(transaction.price_per_sqm)}
+                </TableCell>
               </TableRow>
             ))
           )}
@@ -86,7 +94,7 @@ export function TransactionsTable({
 function SkeletonRows() {
   return Array.from({ length: 5 }).map((_, i) => (
     <TableRow key={i}>
-      {Array.from({ length: 8 }).map((_, j) => (
+      {Array.from({ length: COLUMN_COUNT }).map((_, j) => (
         <TableCell key={j}>
           <Skeleton className="h-4 w-full" />
         </TableCell>
@@ -98,7 +106,10 @@ function SkeletonRows() {
 function EmptyRow() {
   return (
     <TableRow>
-      <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+      <TableCell
+        colSpan={COLUMN_COUNT}
+        className="py-8 text-center text-muted-foreground"
+      >
         No transactions found.
       </TableCell>
     </TableRow>

@@ -15,13 +15,14 @@ SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
        lt.resale_price AS lt_resale_price,
        lt.transaction_month AS lt_transaction_month
 FROM properties p
-LEFT JOIN resale_transactions lt ON lt.id = (
-  SELECT rt2.id
+LEFT JOIN towns t ON t.id = p.town_id
+LEFT JOIN (
+  SELECT rt2.*, ROW_NUMBER() OVER (
+    PARTITION BY rt2.property_id
+    ORDER BY rt2.transaction_month DESC, rt2.id DESC
+  ) AS rn
   FROM resale_transactions rt2
-  WHERE rt2.property_id = p.id
-  ORDER BY rt2.transaction_month DESC, rt2.id DESC
-  LIMIT 1
-)
+) lt ON lt.property_id = p.id AND lt.rn = 1
 LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
 LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
 LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
@@ -43,23 +44,25 @@ SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
        lt.resale_price AS lt_resale_price,
        lt.transaction_month AS lt_transaction_month
 FROM properties p
-LEFT JOIN resale_transactions lt ON lt.id = (
-  SELECT rt2.id
+LEFT JOIN towns t ON t.id = p.town_id
+LEFT JOIN (
+  SELECT rt2.*, ROW_NUMBER() OVER (
+    PARTITION BY rt2.property_id
+    ORDER BY rt2.transaction_month DESC, rt2.id DESC
+  ) AS rn
   FROM resale_transactions rt2
-  WHERE rt2.property_id = p.id
-  ORDER BY rt2.transaction_month DESC, rt2.id DESC
-  LIMIT 1
-)
+) lt ON lt.property_id = p.id AND lt.rn = 1
 LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
 LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
 LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
-WHERE p.town_id = ? AND lt.flat_type_id = ? AND lt.flat_model_id = ?
+WHERE p.town_id IN (?) AND p.street_name LIKE ? AND p.block LIKE ? AND p.lease_commence_year = ?
+  AND lt.flat_type_id IN (?) AND lt.flat_model_id IN (?)
   AND lt.resale_price >= ? AND lt.resale_price <= ?
-ORDER BY p.block, p.street_name
+ORDER BY p.lease_commence_year DESC, p.block, p.street_name
 LIMIT ? OFFSET ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
+Optional params: `town_ids`, `street_name`, `block`, `lease_commence_year`, `flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`.
 Params: `page`, `pageSize`.
 Only provided filters are included in `WHERE`.
 
@@ -68,41 +71,38 @@ Returned columns: `id, town_id, block, street_name, lease_commence_year, lt_id, 
 ```sql
 SELECT COUNT(*) AS total
 FROM properties p
-LEFT JOIN resale_transactions lt ON lt.id = (
-  SELECT rt2.id
+LEFT JOIN (
+  SELECT rt2.*, ROW_NUMBER() OVER (
+    PARTITION BY rt2.property_id
+    ORDER BY rt2.transaction_month DESC, rt2.id DESC
+  ) AS rn
   FROM resale_transactions rt2
-  WHERE rt2.property_id = p.id
-  ORDER BY rt2.transaction_month DESC, rt2.id DESC
-  LIMIT 1
-)
+) lt ON lt.property_id = p.id AND lt.rn = 1
 LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
 LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
 LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
-WHERE p.town_id = ? AND lt.flat_type_id = ? AND lt.flat_model_id = ?
+WHERE p.town_id IN (?) AND p.street_name LIKE ? AND p.block LIKE ? AND p.lease_commence_year = ?
+  AND lt.flat_type_id IN (?) AND lt.flat_model_id IN (?)
   AND lt.resale_price >= ? AND lt.resale_price <= ?;
 ```
 
-Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `price_min`, `price_max`.
-Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields.
+Optional params: `town_ids`, `street_name`, `block`, `lease_commence_year`, `flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`.
+Only provided filters are included in `WHERE`. The latest-transaction joins are included in the count query only when filtering by latest transaction fields (`flat_type_ids`, `flat_model_ids`, `price_min`, `price_max`). The town join is excluded from the count query (only needed for `town_name` in the data query).
 
 Returned columns: `total`
 
 ## `getPropertyById(id)`
 
 ```sql
-SELECT id, town_id, block, street_name, lease_commence_year
-FROM properties
-WHERE id = ?
+SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+       t.name AS town_name, t.region
+FROM properties p
+JOIN towns t ON t.id = p.town_id
+WHERE p.id = ?
 LIMIT 1;
 ```
 
-Returned columns: `id, town_id, block, street_name, lease_commence_year`
-
-```sql
-SELECT id, region, name FROM towns WHERE id = ? LIMIT 1;
-```
-
-Returned columns: `id, region, name`
+Returned columns: `id, town_id, block, street_name, lease_commence_year, town_name, region`
 
 ```sql
 SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
@@ -110,6 +110,8 @@ FROM amenities
 WHERE town_id = ?
 ORDER BY name;
 ```
+
+The amenities query runs only if the property exists, using `town_id` from the first query result.
 
 Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
 

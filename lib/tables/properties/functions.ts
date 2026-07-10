@@ -1,5 +1,6 @@
 import { execute, query } from "@/lib/db";
-import { getTownById, listAllAmenitiesByTown } from "@/lib/tables/towns";
+import type { Amenity } from "@/lib/tables/amenities";
+import { regionSchema } from "@/lib/tables/towns";
 import { handleDbError } from "@/lib/utils";
 import {
   createPropertySchema,
@@ -19,19 +20,24 @@ import { idSchema } from "../common";
 import { executeReturning } from "@/lib/db/mariadb";
 
 const LATEST_TRANSACTION_JOIN = `
-  LEFT JOIN resale_transactions lt ON lt.id = (
-    SELECT rt2.id FROM resale_transactions rt2
-    WHERE rt2.property_id = p.id
-    ORDER BY rt2.transaction_month DESC, rt2.id DESC
-    LIMIT 1
-  )
+  LEFT JOIN (
+    SELECT rt2.*, ROW_NUMBER() OVER (
+      PARTITION BY rt2.property_id
+      ORDER BY rt2.transaction_month DESC, rt2.id DESC
+    ) AS rn
+    FROM resale_transactions rt2
+  ) lt ON lt.property_id = p.id AND lt.rn = 1
   LEFT JOIN flat_types lft ON lft.id = lt.flat_type_id
   LEFT JOIN flat_models lfm ON lfm.id = lt.flat_model_id
   LEFT JOIN storey_ranges lsr ON lsr.id = lt.storey_range_id
 `;
 
+const TOWN_JOIN = `
+  JOIN towns t ON t.id = p.town_id
+`;
+
 const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
-  p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+  p.id, p.town_id, p.block, p.street_name, p.lease_commence_year, t.name AS town_name,
   lt.id AS lt_id, lt.uploaded_by_user_id AS lt_uploaded_by_user_id,
   lt.property_id AS lt_property_id, lt.flat_type_id AS lt_flat_type_id,
   lt.flat_model_id AS lt_flat_model_id, lt.storey_range_id AS lt_storey_range_id,
@@ -43,6 +49,7 @@ const PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS = `
 `;
 
 type PropertyRow = Property & {
+  town_name: string;
   lt_id: string | null;
   lt_uploaded_by_user_id: string | null;
   lt_property_id: string | null;
@@ -113,6 +120,7 @@ export async function getPropertiesWithLatestTransaction(
       `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
      FROM properties p
      ${LATEST_TRANSACTION_JOIN}
+     ${TOWN_JOIN}
      WHERE p.id IN (${placeholders})`,
       ids,
     );
@@ -154,17 +162,35 @@ export async function listProperties(
     const conditions: string[] = [];
     const params: unknown[] = [];
 
-    if (data.town_id !== undefined) {
-      conditions.push("p.town_id = ?");
-      params.push(data.town_id);
+    if (data.town_ids?.length) {
+      conditions.push(
+        `p.town_id IN (${data.town_ids.map(() => "?").join(", ")})`,
+      );
+      params.push(...data.town_ids);
     }
-    if (data.flat_type_id !== undefined) {
-      conditions.push("lt.flat_type_id = ?");
-      params.push(data.flat_type_id);
+    if (data.street_name !== undefined) {
+      conditions.push("p.street_name LIKE ?");
+      params.push(`%${data.street_name}%`);
     }
-    if (data.flat_model_id !== undefined) {
-      conditions.push("lt.flat_model_id = ?");
-      params.push(data.flat_model_id);
+    if (data.block !== undefined) {
+      conditions.push("p.block LIKE ?");
+      params.push(`%${data.block}%`);
+    }
+    if (data.lease_commence_year !== undefined) {
+      conditions.push("p.lease_commence_year = ?");
+      params.push(data.lease_commence_year);
+    }
+    if (data.flat_type_ids?.length) {
+      conditions.push(
+        `lt.flat_type_id IN (${data.flat_type_ids.map(() => "?").join(", ")})`,
+      );
+      params.push(...data.flat_type_ids);
+    }
+    if (data.flat_model_ids?.length) {
+      conditions.push(
+        `lt.flat_model_id IN (${data.flat_model_ids.map(() => "?").join(", ")})`,
+      );
+      params.push(...data.flat_model_ids);
     }
     if (data.price_min !== undefined) {
       conditions.push("lt.resale_price >= ?");
@@ -178,8 +204,8 @@ export async function listProperties(
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const countJoin =
-      data.flat_type_id !== undefined ||
-      data.flat_model_id !== undefined ||
+      data.flat_type_ids?.length ||
+      data.flat_model_ids?.length ||
       data.price_min !== undefined ||
       data.price_max !== undefined
         ? LATEST_TRANSACTION_JOIN
@@ -190,8 +216,9 @@ export async function listProperties(
         `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
        FROM properties p
        ${LATEST_TRANSACTION_JOIN}
+       ${TOWN_JOIN}
        ${where}
-       ORDER BY p.block, p.street_name
+       ORDER BY p.lease_commence_year DESC, p.block, p.street_name
        LIMIT ? OFFSET ?`,
         [...params, pageSize, (page - 1) * pageSize],
       ),
@@ -226,15 +253,37 @@ export async function getPropertyById(
   id: string,
 ): Promise<PropertyDetail | null> {
   try {
-    const property = await getPropertyRowById(id);
-    if (!property) return null;
+    const parsedId = idSchema.parse(id);
+    const rows = await query<Property & { region: string; town_name: string }>(
+      `SELECT p.id, p.town_id, p.block, p.street_name, p.lease_commence_year,
+              t.name AS town_name, t.region
+       FROM properties p
+       JOIN towns t ON t.id = p.town_id
+       WHERE p.id = ? LIMIT 1`,
+      [parsedId],
+    );
 
-    const [town, amenities] = await Promise.all([
-      getTownById(property.town_id),
-      listAllAmenitiesByTown(property.town_id),
-    ]);
+    if (rows.length === 0) return null;
+    const row = rows[0];
+    const amenities = await query<Amenity>(
+      `SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
+       FROM amenities WHERE town_id = ? ORDER BY name`,
+      [row.town_id],
+    );
 
-    return { ...property, town, amenities };
+    return {
+      id: row.id,
+      town_id: row.town_id,
+      block: row.block,
+      street_name: row.street_name,
+      lease_commence_year: row.lease_commence_year,
+      town: {
+        id: row.town_id,
+        name: row.town_name,
+        region: regionSchema.parse(row.region),
+      },
+      amenities,
+    };
   } catch (error) {
     return handleDbError(error);
   }
