@@ -23,12 +23,14 @@ TRANSACTION_LIST_JOIN = """JOIN properties p ON p.id = rt.property_id
        JOIN storey_ranges sr ON sr.id = rt.storey_range_id
        LEFT JOIN users u ON u.id = rt.uploaded_by_user_id"""
 
+# Metrics mapped to SQL expression
 STATISTIC_METRICS = {
     "avg_price": "CAST(AVG(rt.resale_price) AS DOUBLE)",
     "avg_price_per_sqm": "CAST(AVG(rt.resale_price / rt.floor_area_sqm) AS DOUBLE)",
     "sales_count": "COUNT(*)",
 }
 
+# Groupings mapped to SQL expression
 STATISTIC_GROUPS = {
     "flat_type_id": "rt.flat_type_id",
     "lease_remaining_year": "99 - (YEAR(rt.transaction_month) - p.lease_commence_year)",
@@ -48,6 +50,9 @@ class Operation:
 
 
 def get_context(conn, mongo) -> dict[str, Any]:
+    """
+    get a context dictionary containing a sample for statistic, user and transaction
+    """
     sample = query(
         conn,
         """SELECT rt.property_id, p.town_id, rt.flat_type_id, rt.flat_model_id,
@@ -62,7 +67,6 @@ def get_context(conn, mongo) -> dict[str, Any]:
     )
     users = query(conn, "SELECT id FROM users ORDER BY created_at LIMIT 1")
     statistic = mongo.statistics.find_one({}, sort=[("_id", 1)])
-    town = mongo.towns.find_one({}, sort=[("_id", 1)])
 
     if not sample:
         raise RuntimeError("No resale transaction rows found for benchmarking.")
@@ -73,14 +77,15 @@ def get_context(conn, mongo) -> dict[str, Any]:
 
     return {
         "statisticId": statistic["_id"] if statistic else None,
-        "townProfileId": town["_id"] if town else sample[0]["town_id"],
         "transaction": sample[0],
         "userId": users[0]["id"],
     }
 
 
 def list_transactions(conn, where: str = "", params: tuple[Any, ...] = ()) -> None:
-    # Keep where as a static fragment; pass dynamic values through params.
+    """
+    List resale transactions with optional filtering.
+    """
     query(
         conn,
         f"""SELECT {TRANSACTION_LIST_COLUMNS}

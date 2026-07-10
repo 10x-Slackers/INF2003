@@ -73,23 +73,11 @@ def parse_args() -> Options:
     parser.add_argument("--out", default="docs/db-benchmark.csv")
     parser.add_argument("--no-explain", action="store_true")
     args = parser.parse_args()
-    try:
-        concurrency = [int(value) for value in args.concurrency.split(",") if value]
-    except ValueError:
-        parser.error("--concurrency must be comma-separated integers")
-    if not concurrency:
-        parser.error("--concurrency must include at least one value")
-    if any(value < 1 for value in concurrency):
-        parser.error("--concurrency values must be >= 1")
-    if args.duration < 1:
-        parser.error("--duration must be >= 1")
-    if args.repeats < 1:
-        parser.error("--repeats must be >= 1")
     return Options(
-        concurrency=concurrency,
+        concurrency=[int(value) for value in args.concurrency.split(",") if value],
         duration_seconds=args.duration,
         explain=not args.no_explain,
-        only=set(filter(None, args.only.split(","))) if args.only else None,
+        only=set(args.only.split(",")) if args.only else None,
         out=Path(args.out),
         repeats=args.repeats,
         warmups=args.warmups,
