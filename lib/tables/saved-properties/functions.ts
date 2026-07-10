@@ -82,7 +82,7 @@ export async function createSavedProperty(
   try {
     const data = createSavedPropertySchema.parse(input);
     const result = await executeReturning<{ id: string }>(
-      "INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?)",
+      "INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?) RETURNING id",
       [data.userId, data.propertyId],
     );
     return result[0].id;
