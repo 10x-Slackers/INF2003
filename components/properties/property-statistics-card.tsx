@@ -44,6 +44,14 @@ function PriceChart({
   chartData: { period: string; value: number }[];
   color: string;
 }) {
+  if (chartData.length === 0) {
+    return (
+      <div className="text-muted-foreground flex h-[250px] flex-1 items-center justify-center">
+        No price data available
+      </div>
+    );
+  }
+
   const chartConfig = {
     value: { label: "Avg Price", color },
   } satisfies ChartConfig;
