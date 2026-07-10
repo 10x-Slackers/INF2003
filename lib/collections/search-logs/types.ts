@@ -1,7 +1,4 @@
 import { z } from "zod";
-import { idSchema } from "@/lib/tables/common";
-
-export { idSchema };
 
 const numberRangeSchema = z
   .object({
@@ -25,7 +22,7 @@ const filterShape = {
 
 const hasFields = (value: object) => Object.keys(value).length > 0;
 
-export const querySearchLogSchema = z
+const querySearchLogSchema = z
   .object({
     ...filterShape,
     leaseCommenceYear: z.number().int().min(1960).max(2100).optional(),
@@ -40,16 +37,8 @@ export const createSearchLogSchema = z
   })
   .strict();
 
-export const searchLogListQuerySchema = z
-  .object({
-    userId: idSchema.optional(),
-    limit: z.coerce.number().int().min(0).optional(),
-  })
-  .strict();
-
 type SearchLogQuery = z.infer<typeof querySearchLogSchema>;
 export type SearchLogCreate = z.infer<typeof createSearchLogSchema>;
-export type SearchLogListQuery = z.infer<typeof searchLogListQuerySchema>;
 export type SearchLog = {
   _id: string;
   userId: string | null;

@@ -226,30 +226,6 @@ db.createCollection("searchHistory", {
               },
               additionalProperties: false,
             },
-            floorAreaSqm: {
-              bsonType: "object",
-              properties: {
-                min: { bsonType: ["int", "long", "double", "decimal"] },
-                max: { bsonType: ["int", "long", "double", "decimal"] },
-              },
-              additionalProperties: false,
-            },
-            storey: {
-              bsonType: "object",
-              properties: {
-                min: { bsonType: ["null", "int", "long"] },
-                max: { bsonType: ["null", "int", "long"] },
-              },
-              additionalProperties: false,
-            },
-            leaseRemaining: {
-              bsonType: "object",
-              properties: {
-                min: { bsonType: ["null", "int", "long", "double", "decimal"] },
-                max: { bsonType: ["null", "int", "long", "double", "decimal"] },
-              },
-              additionalProperties: false,
-            },
             leaseCommenceYear: { bsonType: ["null", "int", "long"] },
           },
           additionalProperties: false,
