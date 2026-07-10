@@ -85,10 +85,10 @@ Returned columns: `id, town_id, block, street_name, lease_commence_year, lt_id, 
 ## `createSavedProperty(input)`
 
 ```sql
-INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?);
+INSERT INTO saved_properties (user_id, property_id) VALUES (?, ?) RETURNING id;
 ```
 
-Returned columns: `id` (via `executeReturning`)
+Returned columns: `id`
 
 ## `updateSavedProperty(input)`
 
