@@ -34,14 +34,16 @@ async function fetchRow(id: string): Promise<AlertNotification | null> {
 export async function listAlertNotifications(
   input: AlertNotificationListQuery,
 ): Promise<{ data: AlertNotification[]; total: number }> {
-  const data = alertNotificationListQuerySchema.parse(input);
-  return paginatedQuery<AlertNotification>(
-    `SELECT ${SELECT_COLUMNS} FROM alert_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    "SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?",
-    [data.userId],
-    data.page,
-    data.pageSize,
-  );
+  return withDbError(async () => {
+    const data = alertNotificationListQuerySchema.parse(input);
+    return paginatedQuery<AlertNotification>(
+      `SELECT ${SELECT_COLUMNS} FROM alert_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+      "SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?",
+      [data.userId],
+      data.page,
+      data.pageSize,
+    );
+  });
 }
 
 export async function getAlertNotificationById(
@@ -90,7 +92,12 @@ export async function updateAlertNotification(
     if (isEmptyUpdate(parsed.input)) return fetchRow(parsed.id);
 
     const data = updateAlertNotificationSchema.parse(parsed.input);
-    const { setClause, params } = buildUpdateFields(data);
+    const { setClause, params } = buildUpdateFields({
+      user_id: data.userId,
+      alert_uuid: data.alert_uuid,
+      transaction_id: data.transaction_id,
+      read_at: data.read_at,
+    });
     const result = await execute(
       `UPDATE alert_notifications SET ${setClause} WHERE id = ?`,
       [...params, parsed.id],
@@ -102,9 +109,10 @@ export async function updateAlertNotification(
 export async function listAlertNotificationsWithDetails(
   input: AlertNotificationListQuery,
 ): Promise<{ data: AlertNotificationWithDetails[]; total: number }> {
-  const data = alertNotificationListQuerySchema.parse(input);
-  return paginatedQuery<AlertNotificationWithDetails>(
-    `SELECT n.id, n.user_id, n.alert_uuid, n.transaction_id, n.read_at, n.created_at,
+  return withDbError(async () => {
+    const data = alertNotificationListQuerySchema.parse(input);
+    return paginatedQuery<AlertNotificationWithDetails>(
+      `SELECT n.id, n.user_id, n.alert_uuid, n.transaction_id, n.read_at, n.created_at,
             rt.resale_price, rt.floor_area_sqm, rt.transaction_month,
             p.town_id, t.name AS town_name, p.block, p.street_name,
             ft.name AS flat_type_name, fm.name AS flat_model_name,
@@ -119,11 +127,12 @@ export async function listAlertNotificationsWithDetails(
      WHERE n.user_id = ?
      ORDER BY n.created_at DESC
      LIMIT ? OFFSET ?`,
-    "SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?",
-    [data.userId],
-    data.page,
-    data.pageSize,
-  );
+      "SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?",
+      [data.userId],
+      data.page,
+      data.pageSize,
+    );
+  });
 }
 
 export async function deleteAlertNotification(id: string): Promise<boolean> {

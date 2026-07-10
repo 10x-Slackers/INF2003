@@ -282,16 +282,15 @@ export async function updateTransaction(
     const existing = await getTransactionById(parsed.id);
     if (!existing) return null;
 
-    const transformed = { ...data };
+    const transformed: Record<string, unknown> = { ...data };
     if (transformed.transaction_month !== undefined) {
-      transformed.transaction_month =
-        `${transformed.transaction_month}-01` as never;
+      transformed.transaction_month = `${transformed.transaction_month}-01`;
     }
     const { setClause, params } = buildUpdateFields(transformed);
     await execute(`UPDATE resale_transactions SET ${setClause} WHERE id = ?`, [
       ...params,
       parsed.id,
-    ] as (string | number)[]);
+    ]);
     return getTransactionById(parsed.id);
   });
 }

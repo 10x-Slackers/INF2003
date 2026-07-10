@@ -23,7 +23,7 @@ export async function listSavedAlerts(userId?: string): Promise<SavedAlert[]> {
 export async function getSavedAlertById(
   id: string,
 ): Promise<SavedAlert | null> {
-  return findById(alerts, id);
+  return findById(alerts, idSchema.parse(id));
 }
 
 export async function createSavedAlert(
@@ -41,7 +41,7 @@ export async function createSavedAlert(
 }
 
 export async function deleteSavedAlert(id: string): Promise<boolean> {
-  return deleteDocById(alerts, id);
+  return deleteDocById(alerts, idSchema.parse(id));
 }
 
 function addFilterClause(

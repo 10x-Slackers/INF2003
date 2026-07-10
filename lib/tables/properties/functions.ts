@@ -290,7 +290,7 @@ export async function updateProperty(
     const { setClause, params } = buildUpdateFields(data);
     const result = await execute(
       `UPDATE properties SET ${setClause} WHERE id = ?`,
-      [...params, parsed.id] as (string | number)[],
+      [...params, parsed.id],
     );
     return result.affectedRows === 0 ? null : getPropertyRowById(parsed.id);
   });

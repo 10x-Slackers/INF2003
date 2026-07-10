@@ -19,7 +19,7 @@ export async function listTownProfiles(): Promise<TownProfile[]> {
 export async function getTownProfileById(
   id: string,
 ): Promise<TownProfile | null> {
-  return findById(towns, id);
+  return findById(towns, idSchema.parse(id));
 }
 
 export async function rollDownTownProfileTransaction(
