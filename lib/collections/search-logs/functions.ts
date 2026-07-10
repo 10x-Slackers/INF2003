@@ -34,7 +34,7 @@ export async function createSearchLog(
 ): Promise<SearchLog> {
   const data = createSearchLogSchema.parse(input);
   return createWithUuid(searchHistory, {
-    userId: data.userId,
+    userId: data.userId ?? null,
     query: data.query,
     searchedAt: now(),
   });

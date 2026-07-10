@@ -35,6 +35,8 @@ Output:
 ]
 ```
 
+`userId` may be `null` for anonymous searches.
+
 ## `getSearchLogById(id)`
 
 ```js
@@ -58,7 +60,7 @@ Output:
 }
 ```
 
-Returns `null` when no document matches.
+Returns `null` when no document matches. `userId` may be `null` for anonymous searches.
 
 ## `createSearchLog(input)`
 
@@ -87,6 +89,8 @@ Output:
   "searchedAt": "<timestamp_ms>"
 }
 ```
+
+`userId` may be `null` for anonymous searches. Available filter fields include `townId`, `flatTypeId`, `flatModelId`, `price`, and `leaseCommenceYear`.
 
 ## `deleteSearchLog(id)`
 
