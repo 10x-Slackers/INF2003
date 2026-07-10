@@ -19,80 +19,50 @@ export async function getTotalSearches(): Promise<number> {
   return withDbError(() => searchHistory.countDocuments());
 }
 
-export async function getTopTowns(limit = 10): Promise<NamedCount[]> {
+type LookupItem = { id: number | string; name: string };
+
+async function getTopByField(
+  field: string,
+  lookupFn: () => Promise<LookupItem[]>,
+  limit = 10,
+): Promise<NamedCount[]> {
   return withDbError(async () => {
-    const [rows, towns] = await Promise.all([
+    const [rows, items] = await Promise.all([
       searchHistory
         .aggregate<{
           _id: string;
           count: number;
         }>([
-          { $match: { "query.townId": { $exists: true, $ne: [] } } },
-          { $unwind: "$query.townId" },
-          { $group: { _id: "$query.townId", count: { $sum: 1 } } },
+          { $match: { [field]: { $exists: true, $ne: [] } } },
+          { $unwind: `$${field}` },
+          { $group: { _id: `$${field}`, count: { $sum: 1 } } },
           { $sort: { count: -1 } },
           { $limit: limit },
         ])
         .toArray(),
-      listTowns(),
+      lookupFn(),
     ]);
-    const townMap = new Map(towns.map((t) => [t.id, t.name]));
+    const itemMap = new Map(items.map((item) => [String(item.id), item.name]));
     return rows
       .map((r) => ({
         id: r._id,
-        name: townMap.get(r._id) ?? "",
+        name: itemMap.get(r._id) ?? "",
         count: r.count,
       }))
       .filter((r) => r.name);
   });
 }
 
+export async function getTopTowns(limit = 10): Promise<NamedCount[]> {
+  return getTopByField("query.townId", listTowns, limit);
+}
+
 export async function getTopFlatTypes(limit = 10): Promise<NamedCount[]> {
-  return withDbError(async () => {
-    const [rows, flatTypes] = await Promise.all([
-      searchHistory
-        .aggregate<{
-          _id: string;
-          count: number;
-        }>([
-          { $match: { "query.flatTypeId": { $exists: true, $ne: [] } } },
-          { $unwind: "$query.flatTypeId" },
-          { $group: { _id: "$query.flatTypeId", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-          { $limit: limit },
-        ])
-        .toArray(),
-      listFlatTypes(),
-    ]);
-    const ftMap = new Map(flatTypes.map((ft) => [String(ft.id), ft.name]));
-    return rows
-      .map((r) => ({ id: r._id, name: ftMap.get(r._id) ?? "", count: r.count }))
-      .filter((r) => r.name);
-  });
+  return getTopByField("query.flatTypeId", listFlatTypes, limit);
 }
 
 export async function getTopFlatModels(limit = 10): Promise<NamedCount[]> {
-  return withDbError(async () => {
-    const [rows, flatModels] = await Promise.all([
-      searchHistory
-        .aggregate<{
-          _id: string;
-          count: number;
-        }>([
-          { $match: { "query.flatModelId": { $exists: true, $ne: [] } } },
-          { $unwind: "$query.flatModelId" },
-          { $group: { _id: "$query.flatModelId", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-          { $limit: limit },
-        ])
-        .toArray(),
-      listFlatModels(),
-    ]);
-    const fmMap = new Map(flatModels.map((fm) => [String(fm.id), fm.name]));
-    return rows
-      .map((r) => ({ id: r._id, name: fmMap.get(r._id) ?? "", count: r.count }))
-      .filter((r) => r.name);
-  });
+  return getTopByField("query.flatModelId", listFlatModels, limit);
 }
 
 export async function getPriceRangeStats(): Promise<PriceRangeStat[]> {

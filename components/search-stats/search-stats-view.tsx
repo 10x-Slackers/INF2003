@@ -11,10 +11,19 @@ import { TopFlatModels } from "./top-flat-models";
 
 export function SearchStatsView() {
   const [stats, setStats] = useState<SearchStats | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    getSearchStatsAction().then(setStats);
+    getSearchStatsAction()
+      .then(setStats)
+      .catch(() => setError(true));
   }, []);
+
+  if (error) {
+    return (
+      <p className="text-muted-foreground">Failed to load search statistics.</p>
+    );
+  }
 
   if (!stats) {
     return (
