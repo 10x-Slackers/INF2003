@@ -11,9 +11,10 @@ import {
 import { ROUTES } from "@/lib/routes";
 import type { TransactionListItem } from "@/lib/tables/transactions";
 
+const LOCALE = "en-SG";
 const pad = (value: number) => String(value).padStart(2, "0");
 const formatNumber = (value: number) =>
-  value.toLocaleString("en-SG", { maximumFractionDigits: 2 });
+  value.toLocaleString(LOCALE, { maximumFractionDigits: 2 });
 
 type TransactionsTableProps = {
   transactions: TransactionListItem[];
@@ -56,7 +57,7 @@ export function TransactionsTable({
               <TableRow key={transaction.id}>
                 <TableCell className="font-medium">
                   {new Date(transaction.transaction_month).toLocaleDateString(
-                    "en-SG",
+                    LOCALE,
                     { month: "short", year: "numeric" },
                   )}
                 </TableCell>

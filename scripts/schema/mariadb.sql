@@ -64,7 +64,6 @@ CREATE TABLE IF NOT EXISTS properties (
     street_name VARCHAR(255) NOT NULL,
     lease_commence_year INT NOT NULL,
     UNIQUE (town_id, block, street_name, lease_commence_year),
-    INDEX idx_properties_town (town_id),
     CONSTRAINT fk_properties_town FOREIGN KEY (town_id) REFERENCES towns(id)
 );
 CREATE TABLE IF NOT EXISTS saved_properties (

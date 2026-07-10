@@ -28,7 +28,7 @@ export async function createTransactionAction(
   input: CreateTransaction,
 ): Promise<void> {
   const session = await auth();
-  if (!session || !isAgent(session.user.role)) {
+  if (!session || !isAgent(session.user?.role)) {
     throw new Error("Forbidden");
   }
   await addTransaction({ uploadedByUserId: session.user.id, input });
