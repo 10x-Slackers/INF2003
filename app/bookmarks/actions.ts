@@ -10,16 +10,9 @@ import {
   isPropertySaved,
 } from "@/lib/tables/saved-properties";
 
-export async function listBookmarksAction(input: {
-  page: number;
-  pageSize: number;
-}) {
+export async function listBookmarksAction() {
   const session = await assertSignedIn();
-  return listSavedProperties({
-    userId: session.user.id,
-    page: input.page,
-    pageSize: input.pageSize,
-  });
+  return listSavedProperties(session.user.id);
 }
 
 export async function toggleBookmarkAction(
@@ -53,9 +46,4 @@ export async function removeBookmarkAction(propertyId: string): Promise<{
   });
   revalidatePath(ROUTES.BOOKMARKS);
   return { ok: true };
-}
-
-export async function isBookmarkedAction(propertyId: string): Promise<boolean> {
-  const session = await assertSignedIn();
-  return isPropertySaved({ userId: session.user.id, propertyId });
 }

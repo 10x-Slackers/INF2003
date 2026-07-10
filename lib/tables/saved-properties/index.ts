@@ -1,11 +1,8 @@
 export {
   createSavedProperty,
-  deleteSavedProperty,
   deleteSavedPropertyByUserAndProperty,
-  getSavedPropertyById,
   isPropertySaved,
   listSavedProperties,
-  updateSavedProperty,
 } from "./functions";
 
 export type {
@@ -13,6 +10,4 @@ export type {
   SavedProperty,
   SavedPropertyDetail,
   SavedPropertyIdentity,
-  SavedPropertyListQuery,
-  UpdateSavedPropertyParams,
 } from "./types";
