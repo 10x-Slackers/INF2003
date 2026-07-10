@@ -79,7 +79,7 @@ export function SavedPropertyCard({
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Month</dt>
               <dd>
-                {new Date(tx.transaction_month).toLocaleDateString("en-US", {
+                {new Date(tx.transaction_month).toLocaleDateString("en-SG", {
                   month: "short",
                   year: "numeric",
                 })}

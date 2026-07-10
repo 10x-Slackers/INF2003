@@ -44,6 +44,7 @@ export async function removeBookmarkAction(propertyId: string): Promise<{
     userId: session.user.id,
     propertyId,
   });
+  revalidatePath(ROUTES.PROPERTY_DETAIL(propertyId));
   revalidatePath(ROUTES.BOOKMARKS);
   return { ok: true };
 }
