@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { getPropertyById } from "@/lib/tables/properties";
 import { listTransactions } from "@/lib/tables/transactions";
 import { ROUTES } from "@/lib/routes";
+import { PropertySummaryCard } from "@/components/properties/property-summary-card";
+import { PropertyStatisticsCard } from "@/components/properties/property-statistics-card";
 import { TransactionsTable } from "@/components/properties/transactions-table";
 
 const PAGE_SIZE = 20;
@@ -28,6 +30,10 @@ export default async function PropertyDetailPage({
       <Button asChild variant="outline" className="w-fit">
         <Link href={ROUTES.PROPERTIES}>Back to properties</Link>
       </Button>
+
+      <PropertySummaryCard property={property} />
+
+      <PropertyStatisticsCard />
 
       <TransactionsTable
         propertyId={id}
