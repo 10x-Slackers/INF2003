@@ -38,16 +38,13 @@ Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_mode
 ```sql
 SELECT COUNT(*) AS total
 FROM resale_transactions rt
-JOIN properties p ON p.id = rt.property_id
-JOIN towns t ON t.id = p.town_id
-JOIN flat_types ft ON ft.id = rt.flat_type_id
-JOIN flat_models fm ON fm.id = rt.flat_model_id
-JOIN storey_ranges sr ON sr.id = rt.storey_range_id
-LEFT JOIN users u ON u.id = rt.uploaded_by_user_id
+[JOIN properties p ON p.id = rt.property_id]
 WHERE p.town_id = ? AND rt.flat_type_id = ? AND rt.flat_model_id = ?
   AND rt.storey_range_id = ? AND rt.resale_price >= ? AND rt.resale_price <= ?
   AND YEAR(rt.transaction_month) = ? AND rt.property_id = ?;
 ```
+
+The `JOIN properties` is only included when `town_id` is provided; otherwise the count runs on `resale_transactions` alone.
 
 Optional params: `town_id`, `flat_type_id`, `flat_model_id`, `storey_range_id`, `price_min`, `price_max`, `year`, `property_id`.
 Only provided filters are included in `WHERE`.

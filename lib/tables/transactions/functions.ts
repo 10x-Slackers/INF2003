@@ -120,6 +120,10 @@ export async function listTransactions(
     const where =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
+    const countJoin = data.town_id
+      ? "JOIN properties p ON p.id = rt.property_id"
+      : "";
+
     const [rows, countRows] = await Promise.all([
       query<TransactionListItem>(
         `SELECT ${TRANSACTION_LIST_COLUMNS}
@@ -133,7 +137,7 @@ export async function listTransactions(
       query<{ total: number }>(
         `SELECT COUNT(*) AS total
          FROM resale_transactions rt
-         ${TRANSACTION_LIST_JOIN}
+         ${countJoin}
          ${where}`,
         params,
       ),

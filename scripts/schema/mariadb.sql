@@ -108,7 +108,9 @@ CREATE TABLE IF NOT EXISTS resale_transactions (
         INDEX idx_resale_transactions_month (transaction_month),
         INDEX idx_resale_transactions_property_month (property_id, transaction_month),
         INDEX idx_resale_transactions_flat_type_month (flat_type_id, transaction_month),
-        INDEX idx_resale_transactions_storey_month (storey_range_id, transaction_month)
+        INDEX idx_resale_transactions_storey_month (storey_range_id, transaction_month),
+        INDEX idx_resale_transactions_flat_model_month (flat_model_id, transaction_month),
+        INDEX idx_resale_transactions_price (resale_price)
 );
 -- Create alert_notifications table
 CREATE TABLE IF NOT EXISTS alert_notifications (
