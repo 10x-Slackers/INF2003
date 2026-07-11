@@ -25,13 +25,10 @@ export async function getTownProfileById(
 export async function rollDownTownProfileTransaction(
   townId: string,
   flatTypeId: string,
-  transactionMonth: string,
 ): Promise<void> {
   return withDbError(async () => {
     const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
-    const monthschema = z.string().regex(/^\d{4}-\d{2}$/);
-    const month = monthschema.parse(transactionMonth.slice(0, 7));
 
     await towns.findOneAndUpdate({ _id: validatedTownId }, [
       {
@@ -51,20 +48,6 @@ export async function rollDownTownProfileTransaction(
                 1,
               ],
             },
-          "transactionSummary.earliestTransaction": {
-            $cond: [
-              { $lt: [month, "$transactionSummary.earliestTransaction"] },
-              month,
-              "$transactionSummary.earliestTransaction",
-            ],
-          },
-          "transactionSummary.latestTransaction": {
-            $cond: [
-              { $gt: [month, "$transactionSummary.latestTransaction"] },
-              month,
-              "$transactionSummary.latestTransaction",
-            ],
-          },
           updatedAt: now(),
         },
       },
