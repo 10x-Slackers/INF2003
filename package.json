@@ -6,7 +6,6 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "benchmark:db": "uv run python scripts/db-benchmark.py",
     "init:schema": "bash scripts/init_schema.sh",
     "seed:users": "bash scripts/seed_users.sh",
     "lint": "eslint . && prettier --check .",
