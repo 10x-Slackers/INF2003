@@ -17,21 +17,6 @@ MONGO_DATABASE = os.environ.get("MONGO_DATABASE", "inf2003")
 MONGO_USER = os.environ.get("MONGO_USER", "root")
 MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "P@ssw0rd")
 
-MARIADB_STATUS_COUNTERS = [
-    "Created_tmp_disk_tables",
-    "Handler_read_key",
-    "Handler_read_rnd_next",
-    "Innodb_buffer_pool_read_requests",
-    "Innodb_buffer_pool_reads",
-    "Innodb_data_read",
-    "Innodb_data_reads",
-    "Innodb_data_writes",
-    "Innodb_data_written",
-    "Innodb_rows_read",
-    "Sort_merge_passes",
-    "Sort_rows",
-]
-
 
 def connect_mariadb():
     return open_mariadb(
@@ -61,13 +46,3 @@ def query(conn, sql: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
     with conn.cursor(MySQLdb.cursors.DictCursor) as cursor:
         cursor.execute(sql, params)
         return list(cursor.fetchall())
-
-
-def get_mariadb_status(conn) -> dict[str, float]:
-    placeholders = ", ".join(["%s"] * len(MARIADB_STATUS_COUNTERS))
-    rows = query(
-        conn,
-        f"SHOW GLOBAL STATUS WHERE Variable_name IN ({placeholders})",
-        tuple(MARIADB_STATUS_COUNTERS),
-    )
-    return {row["Variable_name"]: float(row["Value"]) for row in rows}
