@@ -23,6 +23,16 @@ from benchmark.utils import (
     summarize_system_io,
 )
 
+MARIADB_READ_COLUMNS = {
+    "mariadbHandlerReadKey": "Handler_read_key",
+    "mariadbHandlerReadRndNext": "Handler_read_rnd_next",
+    "mariadbBufferPoolReadRequests": "Innodb_buffer_pool_read_requests",
+    "mariadbBufferPoolReads": "Innodb_buffer_pool_reads",
+    "mariadbDataReadBytes": "Innodb_data_read",
+    "mariadbDataReads": "Innodb_data_reads",
+    "mariadbRowsRead": "Innodb_rows_read",
+}
+
 
 @dataclass
 class Options:
@@ -318,6 +328,10 @@ def aggregate_results(
                 "iowaitPercent": average_io(group, "iowaitPercent"),
                 "processCpuMs": average_io(group, "processCpuMs"),
                 "processRssMB": average_io(group, "processRssMB"),
+                **{
+                    column: average_status_counter(group, counter)
+                    for column, counter in MARIADB_READ_COLUMNS.items()
+                },
                 "completed": sum(row["completed"] for row in group),
                 "failed": sum(row["failed"] for row in group),
             }
@@ -351,6 +365,12 @@ def average_io(rows: list[dict[str, Any]], field: str) -> float:
     return summarize_numbers(values)[0]
 
 
+def average_status_counter(rows: list[dict[str, Any]], counter: str) -> float:
+    return summarize_numbers(
+        [row["mariadbStatusDiff"].get(counter, 0) for row in rows]
+    )[0]
+
+
 def write_performance_summary(
     options: Options,
     results: list[dict[str, Any]],
@@ -372,6 +392,7 @@ def write_performance_summary(
         "iowaitPercent",
         "processCpuMs",
         "processRssMB",
+        *MARIADB_READ_COLUMNS,
         "completed",
         "failed",
     ]
