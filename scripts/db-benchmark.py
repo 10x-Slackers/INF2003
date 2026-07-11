@@ -71,8 +71,8 @@ def parse_args() -> Options:
         ),
     )
     parser.add_argument("--duration", type=positive_int, default=20)
-    parser.add_argument("--warmups", type=int, default=5)
-    parser.add_argument("--repeats", type=int, default=3)
+    parser.add_argument("--warmups", type=positive_int, default=5)
+    parser.add_argument("--repeats", type=positive_int, default=3)
     parser.add_argument(
         "--concurrency", type=concurrency_values, default=[1, 5, 10, 20]
     )
@@ -119,6 +119,7 @@ def worker_loop(
     latencies: list[float] = []
     completed = 0
     failed = 0
+    errors: dict[str, int] = {}
     try:
         while now_ms() < ends_at:
             started_at = now_ms()
@@ -126,12 +127,15 @@ def worker_loop(
                 operation.run(state, context)
                 completed += 1
                 latencies.append(now_ms() - started_at)
-            except Exception:
+            except Exception as exc:
                 failed += 1
+                message = str(exc)
+                errors[message] = errors.get(message, 0) + 1
     finally:
         state.close()
     return {
         "completed": completed,
+        "errors": errors,
         "failed": failed,
         "latencies": latencies,
     }
@@ -147,6 +151,7 @@ def run_measured_window(
     ends_at = started_at + duration_seconds * 1000
     completed = 0
     failed = 0
+    errors: dict[str, int] = {}
     latencies: list[float] = []
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
         futures = [
@@ -158,6 +163,11 @@ def run_measured_window(
             completed += result["completed"]
             failed += result["failed"]
             latencies.extend(result["latencies"])
+            for message, count in result["errors"].items():
+                errors[message] = errors.get(message, 0) + count
+
+    if errors:
+        print(f"  Errors: {errors}")
 
     elapsed_seconds = (now_ms() - started_at) / 1000
     average, stddev = summarize_numbers(latencies)
@@ -218,6 +228,7 @@ def benchmark_precompute(
     latencies = []
     completed = 0
     failed = 0
+    errors: dict[str, int] = {}
     try:
         for _ in range(options.repeats):
             started_at = now_ms()
@@ -225,10 +236,14 @@ def benchmark_precompute(
                 operation.run(state, context)
                 completed += 1
                 latencies.append(now_ms() - started_at)
-            except Exception:
+            except Exception as exc:
                 failed += 1
+                message = str(exc)
+                errors[message] = errors.get(message, 0) + 1
     finally:
         state.close()
+    if errors:
+        print(f"  Errors: {errors}")
     average, stddev = summarize_numbers(latencies)
     return {
         "operation": operation.name,
@@ -250,14 +265,19 @@ def benchmark_mongodb_lookup(
     latencies = []
     completed = 0
     failed = 0
+    errors: dict[str, int] = {}
     for _ in range(options.repeats):
         started_at = now_ms()
         try:
             mongo.statistics.find_one({"_id": statistic_id})
             completed += 1
             latencies.append(now_ms() - started_at)
-        except Exception:
+        except Exception as exc:
             failed += 1
+            message = str(exc)
+            errors[message] = errors.get(message, 0) + 1
+    if errors:
+        print(f"  Errors: {errors}")
     average, stddev = summarize_numbers(latencies)
     return {
         "operation": name,
