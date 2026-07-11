@@ -26,20 +26,30 @@ export default function Home() {
 }
 
 async function TownMapSection() {
-  const [profiles, towns] = await Promise.all([
-    listTownProfiles(),
-    listTowns(),
-  ]);
-  const townById = new Map(towns.map((t) => [t.id, t]));
-  const mapTowns: MapTown[] = profiles
-    .filter((p) => townById.has(p._id))
-    .map((p) => ({
-      name: townById.get(p._id)!.name,
-      coordinates: p.coordinates,
-      summary: {
-        totalTransaction: p.transactionSummary.totalTransaction,
-        transactionsLast6Months: p.transactionSummary.transactionsLast6Months,
-      },
-    }));
+  let mapTowns: MapTown[] = [];
+  try {
+    const [profiles, towns] = await Promise.all([
+      listTownProfiles(),
+      listTowns(),
+    ]);
+    const townById = new Map(towns.map((t) => [t.id, t]));
+    mapTowns = profiles
+      .filter((p) => townById.has(p._id))
+      .map((p) => ({
+        name: townById.get(p._id)!.name,
+        coordinates: p.coordinates,
+        summary: {
+          totalTransaction: p.transactionSummary.totalTransaction,
+          transactionsLast6Months: p.transactionSummary.transactionsLast6Months,
+        },
+      }));
+  } catch (error) {
+    console.error("Error fetching town map data:", error);
+    return (
+      <p className="text-muted-foreground p-4 text-center">
+        Failed to load town map.
+      </p>
+    );
+  }
   return <TownMap towns={mapTowns} />;
 }
