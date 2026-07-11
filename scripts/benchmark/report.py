@@ -2,7 +2,7 @@ import csv
 from typing import Any
 
 from .measure import round_number, summarize_numbers
-from .mariadb import run_maria_explain
+from .suite import run_maria_explain
 
 
 def write_performance_summary(options, results, index_summary):

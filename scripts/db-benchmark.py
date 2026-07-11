@@ -2,7 +2,7 @@ import argparse
 from pathlib import Path
 
 from benchmark.db import connect_mariadb, connect_mongodb, mongo_db
-from benchmark.mariadb import (
+from benchmark.suite import (
     build_precompute_operation,
     build_suites,
     get_context,
@@ -38,7 +38,6 @@ def parse_args():
     args = parser.parse_args()
     args.only = set(args.only.split(",")) if args.only else None
     args.duration_seconds = args.duration
-    args.comparison_out = args.comparison_out
     return args
 
 
