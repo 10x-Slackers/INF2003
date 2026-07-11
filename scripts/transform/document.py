@@ -28,12 +28,10 @@ class DocumentTransformer:
         month_periods = pd.to_datetime(
             resale_transactions_df["transaction_month"]
         ).dt.to_period("M")
-        month_str = month_periods.dt.strftime("%Y-%m")
         last_6_months_start = month_periods.max() - 5
 
         for town_key, group in resale_transactions_df.groupby("town_key", sort=True):
             town_key = str(town_key)
-            group_months = month_str.loc[group.index]
             transactions_last_6_months = int(
                 (month_periods.loc[group.index] >= last_6_months_start).sum()
             )
@@ -44,8 +42,6 @@ class DocumentTransformer:
                     "town_key": town_key,
                     "transactionSummary": {
                         "totalTransaction": len(group),
-                        "earliestTransaction": str(group_months.min()),
-                        "latestTransaction": str(group_months.max()),
                         "transactionsLast6Months": transactions_last_6_months,
                         "transactionCountByFlatType": {
                             str(flat_type_key): int(value)

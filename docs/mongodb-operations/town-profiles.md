@@ -18,8 +18,6 @@ Output:
     "_id": "<uuid>",
     "transactionSummary": {
       "totalTransaction": "<number>",
-      "earliestTransaction": "<yyyy-mm>",
-      "latestTransaction": "<yyyy-mm>",
       "transactionsLast6Months": "<number>",
       "transactionCountByFlatType": {
         "<flat_type_id>": "<number>"
@@ -51,8 +49,6 @@ Output:
   "_id": "<uuid>",
   "transactionSummary": {
     "totalTransaction": "<number>",
-    "earliestTransaction": "<yyyy-mm>",
-    "latestTransaction": "<yyyy-mm>",
     "transactionsLast6Months": "<number>",
     "transactionCountByFlatType": {
       "<flat_type_id>": "<number>"
@@ -72,7 +68,7 @@ Output:
 
 Returns `null` when no document matches.
 
-## `rollDownTownProfileTransaction(townId, flatTypeId, transactionMonth)`
+## `rollDownTownProfileTransaction(townId, flatTypeId)`
 
 ```js
 db.towns.findOneAndUpdate({ _id: townId }, [
@@ -90,20 +86,6 @@ db.towns.findOneAndUpdate({ _id: townId }, [
             ],
           },
           1,
-        ],
-      },
-      "transactionSummary.earliestTransaction": {
-        $cond: [
-          { $lt: [month, "$transactionSummary.earliestTransaction"] },
-          month,
-          "$transactionSummary.earliestTransaction",
-        ],
-      },
-      "transactionSummary.latestTransaction": {
-        $cond: [
-          { $gt: [month, "$transactionSummary.latestTransaction"] },
-          month,
-          "$transactionSummary.latestTransaction",
         ],
       },
       updatedAt,

@@ -164,15 +164,11 @@ db.createCollection("towns", {
           bsonType: "object",
           required: [
             "totalTransaction",
-            "earliestTransaction",
-            "latestTransaction",
             "transactionsLast6Months",
             "transactionCountByFlatType",
           ],
           properties: {
             totalTransaction: { bsonType: ["int", "long"], minimum: 0 },
-            earliestTransaction: { bsonType: "string" },
-            latestTransaction: { bsonType: "string" },
             transactionsLast6Months: { bsonType: ["int", "long"], minimum: 0 },
             transactionCountByFlatType: {
               bsonType: "object",

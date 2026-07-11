@@ -24,7 +24,6 @@ export async function addTransaction(
     await rollDownTownProfileTransaction(
       property.town_id,
       String(input.flat_type_id),
-      input.transaction_month,
     );
     await Promise.all([
       markStatisticsTownDirty(property.town_id),

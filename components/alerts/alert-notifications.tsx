@@ -137,7 +137,7 @@ export function AlertNotifications({
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {n.flat_type_name} · {n.flat_model_name} · {n.block}{" "}
-                  {n.street_name} · {n.min_storey}–{n.max_storey} storey ·{" "}
+                  {n.street_name} · {n.min_storey}-{n.max_storey} storey ·{" "}
                   {n.floor_area_sqm} sqm
                 </p>
                 <div className="flex items-center justify-between">
