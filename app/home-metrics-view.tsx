@@ -9,12 +9,7 @@ export async function HomeMetrics() {
       <MetricCard label="Price trend" caption="No data yet" />
     </>
   );
-  let metrics;
-  try {
-    metrics = await getHomeMetrics();
-  } catch (error) {
-    console.error("Error fetching home metrics:", error);
-  }
+  const metrics = await getHomeMetrics();
   if (!metrics) {
     return metricsFallback;
   }
