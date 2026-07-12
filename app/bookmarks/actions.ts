@@ -25,8 +25,6 @@ export async function toggleBookmarkAction(
   } else {
     await createSavedProperty({ userId: session.user.id, propertyId });
   }
-  revalidatePath(ROUTES.PROPERTY_DETAIL(propertyId));
-  revalidatePath(ROUTES.BOOKMARKS);
   return { saved: !saved };
 }
 
@@ -38,7 +36,6 @@ export async function removeBookmarkAction(propertyId: string): Promise<{
     userId: session.user.id,
     propertyId,
   });
-  revalidatePath(ROUTES.PROPERTY_DETAIL(propertyId));
   revalidatePath(ROUTES.BOOKMARKS);
   return { ok: true };
 }

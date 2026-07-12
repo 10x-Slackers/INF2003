@@ -20,14 +20,14 @@ _USERS_ is where the platform’s identity and access management. The _role_ enu
 
 | Collection    | Purpose                                                                   | Main Schema Fields                                                           |
 | :------------ | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------- |
-| saved_alerts  | Saves user alerts, independent data.                                      | \_id, user_id, filters, is_active, created_at, updated_at, last_triggered_at |
-| search_logs   | Stores user search activity and identify demand trends, independent data. | \_id, user_id, query, searched_at                                            |
-| town_profiles | Stores summarised data and polygons for towns, derived data.              | \_id, transaction_summary, coordinates, updated_at                           |
+| alerts        | Saves user alerts, independent data.                                      | \_id, user_id, filters, is_active, created_at, updated_at, last_triggered_at |
+| searchHistory | Stores user search activity and identify demand trends, independent data. | \_id, user_id, query, searched_at                                            |
+| towns         | Stores summarised data and polygons for towns, derived data.              | \_id, transaction_summary, coordinates, updated_at                           |
 | statistics    | Stores pre-computed data for charts and trends, derived data.             | \_id, metric, granularity, time_range, dimensions, series, computed_at       |
 
 The document database stores flexible and nested data, and the above table summarises the main collections that will be created. Independent data are records created directly from user activity on the platform, such as the search log. Derived data are records generated from existing data such as the resale transaction data stored in the relational database.
 
-A document model is suitable because users may provide different filter combinations for saved_alerts and search_logs, making the data flexible.
+A document model is suitable because users may provide different filter combinations for alerts and searchHistory, making the data flexible.
 
 ## **Datasets**
 

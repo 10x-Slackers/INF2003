@@ -46,11 +46,9 @@ export function PropertySearchCombobox({
     try {
       const data = await searchPropertiesAction(search);
       setResults(data);
-    } catch (err) {
+    } catch {
       setResults([]);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to search properties",
-      );
+      toast.error("Failed to search properties");
     } finally {
       setLoading(false);
     }
@@ -88,12 +86,7 @@ export function PropertySearchCombobox({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
+        <Button variant="outline" className="w-full justify-between">
           {selectedLabel ?? "Search property..."}
           <ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
@@ -107,7 +100,6 @@ export function PropertySearchCombobox({
             placeholder="Search property..."
             value={query}
             onValueChange={handleInputChange}
-            aria-label="Search property"
           />
           <CommandList>
             {tooShort ? (

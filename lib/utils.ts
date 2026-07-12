@@ -36,8 +36,8 @@ export class ForeignKeyConstraintError extends DbError {
   }
 }
 
-export function handleDbError(error: unknown): never {
-  if (error instanceof Error && error.name === "MongoError") {
+export function handleDbError(error: unknown, isMongoError = false): never {
+  if (isMongoError && error instanceof Error) {
     throw new DbError(error.message);
   }
   if (typeof (error as { code?: unknown })?.code === "string") {

@@ -16,7 +16,7 @@ import {
   type TransactionStatisticsMetric,
   type TransactionStatisticsQuery,
 } from "@/lib/tables/transactions";
-import { withDbError } from "@/lib/utils";
+import { listTowns } from "@/lib/tables/towns";
 
 type StatsBuild = {
   metric: StatisticsUpsert["metric"];
@@ -96,51 +96,76 @@ export async function buildGlobalStats(): Promise<StatisticsUpsert[]> {
   return [...flatTypeStats, ...perSqmStats];
 }
 
+export async function regenerateGeneralAndTownStatistics(): Promise<{
+  statistics: number;
+  towns: number;
+}> {
+  const townIds = (await listTowns()).map((town) => town.id);
+  const [globalStats, townStats, townUpdates] = await Promise.all([
+    buildGlobalStats(),
+    buildAllTownStats(),
+    buildTownCountUpdates(townIds),
+  ]);
+  const stats = [...globalStats, ...townStats];
+
+  await saveStats(stats);
+  await bulkUpdateTownProfileTransactionsLast6Months(townUpdates);
+  await flushStatisticsTrigger();
+
+  return { statistics: stats.length, towns: townIds.length };
+}
+
+export async function regeneratePropertyStatistics(): Promise<{
+  statistics: number;
+  properties: number;
+}> {
+  const stats = await buildAllPropertyStats();
+  const propertyIds = new Set(
+    stats.flatMap((stat) =>
+      stat.dimensions.propertyId ? [stat.dimensions.propertyId] : [],
+    ),
+  );
+
+  await saveStats(stats);
+
+  return { statistics: stats.length, properties: propertyIds.size };
+}
+
 async function refreshTownStats(townId: string) {
-  return withDbError(async () => {
-    await saveStats(await buildTownStats(townId));
-  });
+  await saveStats(await buildTownStats(townId));
 }
 
 export async function refreshPropertyStats(propertyId: string) {
-  return withDbError(async () => {
-    await saveStats(await buildPropertyStats(propertyId));
-  });
+  await saveStats(await buildPropertyStats(propertyId));
 }
 
 async function refreshStats() {
-  return withDbError(async () => {
-    await saveStats(await buildGlobalStats());
-  });
+  await saveStats(await buildGlobalStats());
 }
 
 export async function syncStats() {
-  return withDbError(async () => {
-    const { dirtyTownIds } = await getStatisticsTrigger();
-    await refreshStats();
+  const { dirtyTownIds } = await getStatisticsTrigger();
+  await refreshStats();
 
-    if (dirtyTownIds.length > 0) {
-      await bulkUpdateTownProfileTransactionsLast6Months(
-        await buildTownCountUpdates(dirtyTownIds),
-      );
-      await Promise.all(dirtyTownIds.map((townId) => refreshTownStats(townId)));
-    }
-    await flushStatisticsTrigger();
-  });
+  if (dirtyTownIds.length > 0) {
+    await bulkUpdateTownProfileTransactionsLast6Months(
+      await buildTownCountUpdates(dirtyTownIds),
+    );
+    await Promise.all(dirtyTownIds.map((townId) => refreshTownStats(townId)));
+  }
+  await flushStatisticsTrigger();
 }
 
 export async function buildTownCountUpdates(
   townIds: string[],
 ): Promise<{ townId: string; transactionsLast6Months: number }[]> {
-  return withDbError(async () => {
-    const rows = await getTownSalesCounts6Months();
-    const countByTown = new Map(
-      rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
-    );
+  const rows = await getTownSalesCounts6Months();
+  const countByTown = new Map(
+    rows.filter((row) => row.town_id).map((row) => [row.town_id!, row.value]),
+  );
 
-    return townIds.map((townId) => ({
-      townId,
-      transactionsLast6Months: countByTown.get(townId) ?? 0,
-    }));
-  });
+  return townIds.map((townId) => ({
+    townId,
+    transactionsLast6Months: countByTown.get(townId) ?? 0,
+  }));
 }

@@ -49,6 +49,7 @@ export type AlertNotificationWithDetails = AlertNotification & {
   resale_price: number;
   floor_area_sqm: number;
   transaction_month: string;
+  property_id: string;
   town_id: string;
   town_name: string;
   block: string;

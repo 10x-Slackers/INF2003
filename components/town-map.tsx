@@ -39,6 +39,8 @@ function heatClass(t: number): string {
   return HEAT_CLASSES[index];
 }
 
+const SINGAPORE_COORDINATES: [number, number] = [1.3521, 103.8198];
+
 export function TownMap({ towns }: { towns: MapTown[] }) {
   const maxTransactions = Math.max(
     1,
@@ -46,36 +48,41 @@ export function TownMap({ towns }: { towns: MapTown[] }) {
   );
 
   return (
-    <Map center={[1.3521, 103.8198]} zoom={11} className="h-[440px]">
-      <MapTileLayer />
-      {towns.map((town) => (
-        <MapPolygon
-          key={town.name}
-          positions={toLeafletPositions(town.coordinates)}
-          className={`${heatClass(town.summary.transactionsLast6Months / maxTransactions)} stroke-1`}
-          pathOptions={{ fillOpacity: 0.4 }}
-        >
-          <MapPopup>
-            <div className="space-y-1">
-              <div className="text-sm font-semibold">{town.name}</div>
-              <div className="text-muted-foreground text-xs">
-                {town.summary.totalTransaction.toLocaleString()} transactions
+    <div className="flex flex-col gap-2">
+      <Map center={SINGAPORE_COORDINATES} zoom={11} className="h-[440px]">
+        <MapTileLayer />
+        {towns.map((town) => (
+          <MapPolygon
+            key={town.name}
+            positions={toLeafletPositions(town.coordinates)}
+            className={`${heatClass(town.summary.transactionsLast6Months / maxTransactions)} stroke-1`}
+            pathOptions={{ fillOpacity: 0.4 }}
+          >
+            <MapPopup>
+              <div className="space-y-1">
+                <div className="text-sm font-semibold">{town.name}</div>
+                <div className="text-muted-foreground text-xs">
+                  {town.summary.totalTransaction.toLocaleString()} transactions
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {town.summary.transactionsLast6Months.toLocaleString()} in
+                  last 6 months
+                </div>
+                <Link
+                  className="text-primary text-xs underline"
+                  href={ROUTES.TOWN_DETAIL(town.id)}
+                >
+                  View town
+                </Link>
               </div>
-              <div className="text-muted-foreground text-xs">
-                {town.summary.transactionsLast6Months.toLocaleString()} in last
-                6 months
-              </div>
-              <Link
-                className="text-primary text-xs underline"
-                href={ROUTES.TOWN_DETAIL(town.id)}
-              >
-                View town
-              </Link>
-            </div>
-          </MapPopup>
-        </MapPolygon>
-      ))}
-    </Map>
+            </MapPopup>
+          </MapPolygon>
+        ))}
+      </Map>
+      <p className="text-sm text-muted-foreground">
+        Darker areas have more transactions in the last 6 months.
+      </p>
+    </div>
   );
 }
 

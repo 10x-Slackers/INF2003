@@ -25,29 +25,23 @@ export function UserFormFields({
   return (
     <div className="grid gap-4 py-4">
       <div className="grid gap-2">
-        <Label htmlFor="user-name">Name</Label>
-        <Input id="user-name" name="name" defaultValue={defaultName} required />
+        <Label>Name</Label>
+        <Input name="name" defaultValue={defaultName} required />
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="user-email">Email</Label>
-        <Input
-          id="user-email"
-          name="email"
-          type="email"
-          defaultValue={defaultEmail}
-          required
-        />
+        <Label>Email</Label>
+        <Input name="email" type="email" defaultValue={defaultEmail} required />
       </div>
       {withPassword && (
         <div className="grid gap-2">
-          <Label htmlFor="user-password">Password</Label>
-          <Input id="user-password" name="password" type="password" required />
+          <Label>Password</Label>
+          <Input name="password" type="password" required />
         </div>
       )}
       <div className="grid gap-2">
-        <Label htmlFor="user-role">Role</Label>
+        <Label>Role</Label>
         <Select value={role} onValueChange={(v) => onRoleChange(v as UserRole)}>
-          <SelectTrigger id="user-role">
+          <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

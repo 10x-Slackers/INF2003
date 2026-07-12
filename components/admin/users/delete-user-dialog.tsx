@@ -32,8 +32,8 @@ export function DeleteUserDialog({
       await deleteUserAction(user.id);
       onDeleted();
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete user.");
+    } catch {
+      setError("Failed to delete user.");
     } finally {
       setPending(false);
     }

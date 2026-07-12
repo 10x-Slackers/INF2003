@@ -2,8 +2,6 @@
 
 import { assertSignedIn, hashPassword, verifyUserPassword } from "@/lib/auth";
 import { updateUser } from "@/lib/tables/users";
-import { revalidatePath } from "next/cache";
-import { ROUTES } from "@/lib/routes";
 
 export type UpdateProfileInput = {
   name: string;
@@ -12,11 +10,15 @@ export type UpdateProfileInput = {
   newPassword?: string;
 };
 
-export async function updateProfileAction(input: UpdateProfileInput) {
+export type UpdateProfileResult = { error?: "Incorrect password" };
+
+export async function updateProfileAction(
+  input: UpdateProfileInput,
+): Promise<UpdateProfileResult> {
   const session = await assertSignedIn();
 
   const ok = await verifyUserPassword(session.user.id, input.currentPassword);
-  if (!ok) throw new Error("Incorrect password");
+  if (!ok) return { error: "Incorrect password" };
 
   const password_hash = input.newPassword
     ? await hashPassword(input.newPassword)
@@ -30,5 +32,5 @@ export async function updateProfileAction(input: UpdateProfileInput) {
       ...(password_hash ? { password_hash } : {}),
     },
   });
-  revalidatePath(ROUTES.PROFILE);
+  return {};
 }

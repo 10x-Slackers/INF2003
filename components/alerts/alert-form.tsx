@@ -107,9 +107,9 @@ export function AlertForm({
     try {
       await createAlertAction(parsed.data);
       toast.success("Alert created");
-      setTimeout(() => router.push(ROUTES.ALERTS), 1500);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create alert.");
+      router.push(ROUTES.ALERTS);
+    } catch {
+      setError("Failed to create alert.");
       setPending(false);
     }
   }
@@ -142,8 +142,8 @@ export function AlertForm({
             />
           </div>
 
-          <div className="grid gap-2">
-            <Label>Flat types</Label>
+          <fieldset className="grid gap-2">
+            <legend>Flat types</legend>
             <div className="flex flex-wrap gap-2">
               {flatTypes.map((type) => (
                 <Button
@@ -166,7 +166,7 @@ export function AlertForm({
                 </Button>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <div className="grid gap-2">
             <Label>Flat models</Label>
@@ -231,12 +231,7 @@ function MultiCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
-        >
+        <Button variant="outline" className="w-full justify-between">
           {selected.length > 0 ? `${selected.length} selected` : placeholder}
           <ChevronsUpDownIcon className="opacity-50" />
         </Button>

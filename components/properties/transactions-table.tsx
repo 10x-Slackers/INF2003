@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationControls } from "@/components/pagination-controls";
 import {
   Table,
   TableBody,
@@ -117,13 +117,14 @@ export function TransactionsTable({
         </Table>
       </div>
 
-      <Pagination
+      <PaginationControls
         page={page}
         totalPages={totalPages}
         totalLabel={`${total} transactions total`}
         loading={loading}
         onPrev={() => goToPage(Math.max(1, page - 1))}
         onNext={() => goToPage(Math.min(totalPages, page + 1))}
+        onGoToPage={goToPage}
       />
     </div>
   );

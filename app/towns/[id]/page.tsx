@@ -11,12 +11,13 @@ export default async function TownDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [town, amenities, stats] = await Promise.all([
-    getTownById(id),
+  const town = await getTownById(id);
+  if (!town) notFound();
+
+  const [amenities, stats] = await Promise.all([
     listAllAmenitiesByTown(id),
     getTownStats(id),
   ]);
-  if (!town) notFound();
 
   const amenitiesByType = amenities.reduce((groups, amenity) => {
     const type = amenity.amenity_type_name;
@@ -44,10 +45,7 @@ export default async function TownDetailPage({
                 defaultValue={`amenity-type-${amenities[0].amenity_type_name}`}
                 className="h-full min-h-0"
               >
-                <TabsList
-                  aria-label="Amenity categories"
-                  className="h-auto w-full flex-wrap justify-start"
-                >
+                <TabsList className="h-auto w-full flex-wrap justify-start">
                   {[...amenitiesByType].map(([type]) => (
                     <TabsTrigger key={type} value={`amenity-type-${type}`}>
                       {type}

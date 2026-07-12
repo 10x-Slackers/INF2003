@@ -71,7 +71,6 @@ export function UsersTable({
                       onClick={() => onEdit(user)}
                     >
                       <Pencil />
-                      <span className="sr-only">Edit {user.name}</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -79,7 +78,6 @@ export function UsersTable({
                       onClick={() => onDelete(user)}
                     >
                       <Trash2 />
-                      <span className="sr-only">Delete {user.name}</span>
                     </Button>
                   </div>
                 </TableCell>

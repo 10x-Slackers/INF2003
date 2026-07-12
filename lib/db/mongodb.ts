@@ -1,4 +1,4 @@
-import { MongoClient, type Collection, type Db } from "mongodb";
+import { MongoClient, MongoError, type Collection, type Db } from "mongodb";
 import { randomUUID } from "node:crypto";
 import { handleDbError, requireEnv } from "@/lib/utils";
 
@@ -28,16 +28,23 @@ if (process.env.NODE_ENV !== "production") {
 /** Default database handle */
 export const db: Db = client.db(database);
 
+export async function withMongoError<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (error instanceof MongoError) return handleDbError(error, true);
+    throw error;
+  }
+}
+
 /** Find a document by its `_id`. */
 export async function findById<T extends { _id: string }>(
   collection: Collection<T>,
   id: string,
 ): Promise<T | null> {
-  try {
+  return withMongoError(async () => {
     return (await collection.findOne({ _id: id } as never)) as T | null;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 /** Delete a document by its `_id`, returning true if a document was deleted. */
@@ -45,12 +52,10 @@ export async function deleteDocById<T extends { _id: string }>(
   collection: Collection<T>,
   id: string,
 ): Promise<boolean> {
-  try {
+  return withMongoError(async () => {
     const result = await collection.deleteOne({ _id: id } as never);
     return result.deletedCount > 0;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }
 
 /** Insert a document with a generated uuid `_id` and return it. */
@@ -58,11 +63,9 @@ export async function createWithUuid<T extends { _id: string }>(
   collection: Collection<T>,
   data: Omit<T, "_id">,
 ): Promise<T> {
-  try {
+  return withMongoError(async () => {
     const document = { _id: randomUUID(), ...data } as T;
     await collection.insertOne(document as never);
     return document;
-  } catch (error) {
-    return handleDbError(error);
-  }
+  });
 }

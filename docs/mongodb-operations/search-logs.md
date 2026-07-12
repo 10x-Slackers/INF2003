@@ -28,7 +28,7 @@ Output:
       "max": "<number>"
     }
   },
-  "searchedAt": "<timestamp_ms>"
+  "searchedAt": "<unix_timestamp_seconds>"
 }
 ```
 

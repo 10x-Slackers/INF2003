@@ -66,12 +66,12 @@ function LoginForm() {
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required />
+            <Label>Email</Label>
+            <Input name="email" type="email" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
+            <Label>Password</Label>
+            <Input name="password" type="password" required />
           </div>
           <Button type="submit" disabled={pending}>
             {pending ? "Logging in..." : "Login"}

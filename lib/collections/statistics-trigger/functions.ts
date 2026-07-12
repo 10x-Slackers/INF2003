@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
-import { withDbError, now } from "@/lib/utils";
+import { db, withMongoError } from "@/lib/db/mongodb";
+import { now } from "@/lib/utils";
 import { z } from "zod";
 import {
   STATISTICS_TRIGGER_INTERVAL_SECONDS,
@@ -13,7 +13,7 @@ const statisticsTriggers =
 const townIdSchema = z.uuid();
 
 export async function markStatisticsTownDirty(townId: string): Promise<void> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     await statisticsTriggers.updateOne(
       { _id: statisticsTriggerId },
       {
@@ -26,7 +26,7 @@ export async function markStatisticsTownDirty(townId: string): Promise<void> {
 }
 
 export async function getStatisticsTrigger(): Promise<StatisticsTrigger> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const trigger = await statisticsTriggers.findOne({
       _id: statisticsTriggerId,
     });
@@ -38,14 +38,12 @@ export async function getStatisticsTrigger(): Promise<StatisticsTrigger> {
 }
 
 export async function isStatisticsTriggerDue(): Promise<boolean> {
-  return withDbError(async () => {
-    const trigger = await getStatisticsTrigger();
-    return now() - trigger.updatedAt >= STATISTICS_TRIGGER_INTERVAL_SECONDS;
-  });
+  const trigger = await getStatisticsTrigger();
+  return now() - trigger.updatedAt >= STATISTICS_TRIGGER_INTERVAL_SECONDS;
 }
 
 export async function flushStatisticsTrigger(): Promise<void> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     await statisticsTriggers.updateOne(
       { _id: statisticsTriggerId },
       { $set: { dirtyTownIds: [], updatedAt: now() } },

@@ -99,7 +99,7 @@ export async function listAlertNotificationsWithDetails(
     return paginatedQuery<AlertNotificationWithDetails>(
       `SELECT n.id, n.user_id, n.alert_uuid, n.transaction_id, n.read_at, n.created_at,
             rt.resale_price, rt.floor_area_sqm, rt.transaction_month,
-            p.town_id, t.name AS town_name, p.block, p.street_name,
+            p.id AS property_id, p.town_id, t.name AS town_name, p.block, p.street_name,
             ft.name AS flat_type_name, fm.name AS flat_model_name,
             sr.min_storey, sr.max_storey
      FROM alert_notifications n

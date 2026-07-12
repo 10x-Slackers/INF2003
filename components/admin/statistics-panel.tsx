@@ -31,8 +31,8 @@ export function StatisticsPanel() {
     try {
       const { statistics } = await action();
       toast.success(`${successMsg} (${statistics} statistics generated)`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : errorMsg);
+    } catch {
+      toast.error(errorMsg);
     } finally {
       setPending(null);
     }

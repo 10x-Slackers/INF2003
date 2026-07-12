@@ -44,11 +44,9 @@ export function PropertyForm({ towns }: { towns: Town[] }) {
     try {
       await createPropertyAction(parsed.data);
       toast.success("Property created");
-      setTimeout(() => router.push(ROUTES.PROPERTIES), 1500);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create property.",
-      );
+      router.push(ROUTES.PROPERTIES);
+    } catch {
+      setError("Failed to create property.");
       setPending(false);
     }
   }
@@ -59,21 +57,20 @@ export function PropertyForm({ towns }: { towns: Town[] }) {
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="grid gap-2">
-            <Label htmlFor="town">Town</Label>
+            <Label>Town</Label>
             <TownCombobox towns={towns} value={townId} onChange={setTownId} />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="block">Block</Label>
-            <Input id="block" name="block" required />
+            <Label>Block</Label>
+            <Input name="block" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="street_name">Street name</Label>
-            <Input id="street_name" name="street_name" required />
+            <Label>Street name</Label>
+            <Input name="street_name" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="lease_commence_year">Lease commence year</Label>
+            <Label>Lease commence year</Label>
             <Input
-              id="lease_commence_year"
               name="lease_commence_year"
               type="number"
               min={1960}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationControls } from "@/components/pagination-controls";
 import {
   fetchPropertyFilters,
   fetchProperties,
@@ -185,9 +185,8 @@ export function PropertiesPanel() {
         </div>
 
         <div className="flex min-w-40 flex-1 flex-col gap-2">
-          <Label htmlFor="street-name">Street Name</Label>
+          <Label>Street Name</Label>
           <Input
-            id="street-name"
             value={draft.streetName}
             onChange={(e) =>
               setDraft((prev) => ({ ...prev, streetName: e.target.value }))
@@ -196,9 +195,8 @@ export function PropertiesPanel() {
         </div>
 
         <div className="flex min-w-40 flex-1 flex-col gap-2">
-          <Label htmlFor="block">Block</Label>
+          <Label>Block</Label>
           <Input
-            id="block"
             value={draft.block}
             onChange={(e) =>
               setDraft((prev) => ({ ...prev, block: e.target.value }))
@@ -207,9 +205,8 @@ export function PropertiesPanel() {
         </div>
 
         <div className="flex min-w-40 flex-1 flex-col gap-2">
-          <Label htmlFor="lease-year">Lease Commence Year</Label>
+          <Label>Lease Commence Year</Label>
           <Input
-            id="lease-year"
             type="number"
             min={1960}
             max={2100}
@@ -237,13 +234,14 @@ export function PropertiesPanel() {
 
       <PropertiesTable properties={properties} loading={loading} />
 
-      <Pagination
+      <PaginationControls
         page={page}
         totalPages={totalPages}
         totalLabel={`${total} properties total`}
         loading={loading}
         onPrev={() => goToPage(Math.max(1, page - 1))}
         onNext={() => goToPage(Math.min(totalPages, page + 1))}
+        onGoToPage={goToPage}
       />
     </div>
   );
