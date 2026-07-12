@@ -3,17 +3,9 @@ export {
   deleteAlertNotification,
   getAlertNotificationById,
   getUnreadCount,
-  listAlertNotifications,
   listAlertNotificationsWithDetails,
   markAllNotificationsRead,
   updateAlertNotification,
 } from "./functions";
 
-export type {
-  AlertNotification,
-  AlertNotificationWithDetails,
-  CreateAlertNotification,
-  AlertNotificationListQuery,
-  UpdateAlertNotification,
-  UpdateAlertNotificationParams,
-} from "./types";
+export type { AlertNotificationWithDetails } from "./types";

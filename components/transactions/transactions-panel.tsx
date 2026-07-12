@@ -5,12 +5,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationControls } from "@/components/pagination-controls";
 import { FilterSelect } from "@/components/filter-select";
-import {
-  fetchTransactionFilters,
-  fetchTransactions,
-} from "@/app/transactions/actions";
+import { fetchTransactions } from "@/app/transactions/actions";
+import { fetchPropertyFilters } from "@/app/properties/actions";
 import type { FlatModel, FlatType } from "@/lib/tables/lookups";
 import type { Town } from "@/lib/tables/towns";
 import type { TransactionListItem } from "@/lib/tables/transactions";
@@ -51,7 +49,7 @@ export function TransactionsPanel() {
 
   useEffect(() => {
     const cancelled = { current: false };
-    fetchTransactionFilters()
+    fetchPropertyFilters()
       .then(({ towns, flatTypes, flatModels }) => {
         if (cancelled.current) return;
         setTowns(towns);
@@ -141,7 +139,6 @@ export function TransactionsPanel() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-4">
         <FilterSelect
-          id="townId"
           label="Town"
           allLabel="All towns"
           value={draft.townId}
@@ -151,7 +148,6 @@ export function TransactionsPanel() {
           options={towns}
         />
         <FilterSelect
-          id="flatTypeId"
           label="Flat Type"
           allLabel="All flat types"
           value={draft.flatTypeId}
@@ -161,7 +157,6 @@ export function TransactionsPanel() {
           options={flatTypes}
         />
         <FilterSelect
-          id="flatModelId"
           label="Flat Model"
           allLabel="All flat models"
           value={draft.flatModelId}
@@ -172,9 +167,8 @@ export function TransactionsPanel() {
         />
 
         <div className="flex min-w-40 flex-1 flex-col gap-2">
-          <Label htmlFor="min-price">Min Price</Label>
+          <Label>Min Price</Label>
           <Input
-            id="min-price"
             min="0"
             type="number"
             value={draft.minPrice}
@@ -185,9 +179,8 @@ export function TransactionsPanel() {
         </div>
 
         <div className="flex min-w-40 flex-1 flex-col gap-2">
-          <Label htmlFor="max-price">Max Price</Label>
+          <Label>Max Price</Label>
           <Input
-            id="max-price"
             min="0"
             type="number"
             value={draft.maxPrice}
@@ -211,13 +204,14 @@ export function TransactionsPanel() {
 
       <TransactionsTable transactions={transactions} loading={loading} />
 
-      <Pagination
+      <PaginationControls
         page={page}
         totalPages={totalPages}
         totalLabel={`${total} transactions total`}
         loading={loading}
         onPrev={() => goToPage(Math.max(1, page - 1))}
         onNext={() => goToPage(Math.min(totalPages, page + 1))}
+        onGoToPage={goToPage}
       />
     </div>
   );

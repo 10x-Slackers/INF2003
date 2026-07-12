@@ -38,9 +38,6 @@ export type AlertNotification = {
 export type CreateAlertNotification = z.infer<
   typeof createAlertNotificationSchema
 >;
-export type UpdateAlertNotification = z.infer<
-  typeof updateAlertNotificationSchema
->;
 export type UpdateAlertNotificationParams = z.infer<
   typeof updateAlertNotificationParamsSchema
 >;
@@ -52,6 +49,7 @@ export type AlertNotificationWithDetails = AlertNotification & {
   resale_price: number;
   floor_area_sqm: number;
   transaction_month: string;
+  property_id: string;
   town_id: string;
   town_name: string;
   block: string;

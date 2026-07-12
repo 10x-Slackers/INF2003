@@ -100,9 +100,7 @@ export function TownStatisticsCard({ data }: { data: TownStatsData }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle role="heading" aria-level={2}>
-          Statistics
-        </CardTitle>
+        <CardTitle>Statistics</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {data.profile ? (
@@ -156,15 +154,13 @@ export function TownStatisticsCard({ data }: { data: TownStatsData }) {
         )}
 
         {trendFlatTypes.length ? (
-          <section className="space-y-3" aria-labelledby="price-trend-heading">
-            <h2 id="price-trend-heading" className="font-medium">
-              Average resale price
-            </h2>
+          <section className="space-y-3">
+            <h2 className="font-medium">Average resale price</h2>
             <Tabs
               defaultValue={trendFlatTypes[0].name}
               className="flex flex-wrap items-center gap-2"
             >
-              <TabsList aria-label="Flat type" className="h-auto flex-wrap">
+              <TabsList className="h-auto flex-wrap">
                 {trendFlatTypes.map((flatType) => (
                   <TabsTrigger key={flatType.name} value={flatType.name}>
                     {flatType.name}
@@ -185,10 +181,7 @@ export function TownStatisticsCard({ data }: { data: TownStatsData }) {
                       defaultValue={defaultGranularity}
                       className="contents"
                     >
-                      <TabsList
-                        aria-label={`${flatType.name} price trend granularity`}
-                        className="sm:ml-auto"
-                      >
+                      <TabsList className="sm:ml-auto">
                         {flatType.monthly && (
                           <TabsTrigger value="monthly">Monthly</TabsTrigger>
                         )}

@@ -30,9 +30,9 @@ Output:
       }
     },
     "isActive": "<boolean>",
-    "createdAt": "<timestamp_ms>",
-    "updatedAt": "<timestamp_ms>",
-    "lastTriggeredAt": "<timestamp_ms_optional>"
+    "createdAt": "<unix_timestamp_seconds>",
+    "updatedAt": "<unix_timestamp_seconds>",
+    "lastTriggeredAt": "<unix_timestamp_seconds_optional>"
   }
 ]
 ```
@@ -57,9 +57,9 @@ Output:
     }
   },
   "isActive": "<boolean>",
-  "createdAt": "<timestamp_ms>",
-  "updatedAt": "<timestamp_ms>",
-  "lastTriggeredAt": "<timestamp_ms_optional>"
+  "createdAt": "<unix_timestamp_seconds>",
+  "updatedAt": "<unix_timestamp_seconds>",
+  "lastTriggeredAt": "<unix_timestamp_seconds_optional>"
 }
 ```
 
@@ -94,8 +94,8 @@ Output:
     }
   },
   "isActive": "<boolean>",
-  "createdAt": "<timestamp_ms>",
-  "updatedAt": "<timestamp_ms>"
+  "createdAt": "<unix_timestamp_seconds>",
+  "updatedAt": "<unix_timestamp_seconds>"
 }
 ```
 

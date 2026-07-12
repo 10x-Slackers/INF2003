@@ -13,28 +13,6 @@ LIMIT 1;
 
 Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
 
-## `listAlertNotifications(input)`
-
-```sql
-SELECT id, user_id, alert_uuid, transaction_id, read_at, created_at
-FROM alert_notifications
-WHERE user_id = ?
-ORDER BY created_at DESC
-LIMIT ? OFFSET ?;
-```
-
-Params: `page`, `pageSize`.
-
-Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
-
-```sql
-SELECT COUNT(*) AS total
-FROM alert_notifications
-WHERE user_id = ?;
-```
-
-Returned columns: `total`
-
 ## `getUnreadCount(userId)`
 
 ```sql
@@ -76,7 +54,7 @@ Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
 ```sql
 SELECT n.id, n.user_id, n.alert_uuid, n.transaction_id, n.read_at, n.created_at,
        rt.resale_price, rt.floor_area_sqm, rt.transaction_month,
-       p.town_id, t.name AS town_name, p.block, p.street_name,
+       p.id AS property_id, p.town_id, t.name AS town_name, p.block, p.street_name,
        ft.name AS flat_type_name, fm.name AS flat_model_name,
        sr.min_storey, sr.max_storey
 FROM alert_notifications n
@@ -91,9 +69,9 @@ ORDER BY n.created_at DESC
 LIMIT ? OFFSET ?;
 ```
 
-Params: `page`, `pageSize`.
+Params: `userId`, `page`, `pageSize` for the data query; `userId` for the count query.
 
-Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at, resale_price, floor_area_sqm, transaction_month, town_id, town_name, block, street_name, flat_type_name, flat_model_name, min_storey, max_storey`
+Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at, resale_price, floor_area_sqm, transaction_month, property_id, town_id, town_name, block, street_name, flat_type_name, flat_model_name, min_storey, max_storey`
 
 ```sql
 SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?;

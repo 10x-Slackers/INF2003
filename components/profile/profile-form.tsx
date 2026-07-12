@@ -56,19 +56,22 @@ export function ProfileForm({ user }: { user: PublicUser }) {
 
     setPending(true);
     try {
-      await updateProfileAction({
+      const result = await updateProfileAction({
         name: parsed.data.name,
         email: parsed.data.email,
         newPassword: parsed.data.newPassword || undefined,
         currentPassword: parsed.data.currentPassword,
       });
+      if (result.error) {
+        setError(result.error);
+        setPending(false);
+        return;
+      }
       await updateSession({});
       toast.success("Profile updated");
-      setTimeout(() => router.push(ROUTES.HOME), 1500);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to update profile.",
-      );
+      router.push(ROUTES.HOME);
+    } catch {
+      setError("Failed to update profile.");
       setPending(false);
     }
   }
@@ -79,13 +82,12 @@ export function ProfileForm({ user }: { user: PublicUser }) {
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" defaultValue={user.name} required />
+            <Label>Name</Label>
+            <Input name="name" defaultValue={user.name} required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label>Email</Label>
             <Input
-              id="email"
               name="email"
               type="email"
               defaultValue={user.email}
@@ -93,31 +95,24 @@ export function ProfileForm({ user }: { user: PublicUser }) {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="newPassword">New password (optional)</Label>
+            <Label>New password (optional)</Label>
             <Input
-              id="newPassword"
               name="newPassword"
               type="password"
               placeholder="Leave blank to keep current"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="confirmPassword">Confirm new password</Label>
+            <Label>Confirm new password</Label>
             <Input
-              id="confirmPassword"
               name="confirmPassword"
               type="password"
               placeholder="Re-enter new password"
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="currentPassword">Current password</Label>
-            <Input
-              id="currentPassword"
-              name="currentPassword"
-              type="password"
-              required
-            />
+            <Label>Current password</Label>
+            <Input name="currentPassword" type="password" required />
           </div>
           <Button type="submit" disabled={pending}>
             {pending ? "Saving..." : "Save changes"}

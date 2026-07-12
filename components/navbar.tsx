@@ -10,7 +10,14 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "./ui/dropdown-menu";
-import { BarChart3, Bookmark, Bell, Plus, ShieldUser } from "lucide-react";
+import {
+  BarChart3,
+  Bookmark,
+  Bell,
+  Menu,
+  Plus,
+  ShieldUser,
+} from "lucide-react";
 import { ROUTES } from "@/lib/routes";
 import { useEffect, useMemo, useState } from "react";
 import { getUnreadCountAction } from "@/app/alerts/actions";
@@ -107,12 +114,61 @@ export function Navbar() {
         ))}
       </nav>
 
-      <div className="flex flex-1 items-center justify-end gap-2">
+      <div className="md:hidden">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost">
+              <Menu />
+              Menu
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {links.map((link) => (
+              <DropdownMenuItem key={link.href} asChild>
+                <Link href={link.href}>{link.label}</Link>
+              </DropdownMenuItem>
+            ))}
+            {session?.user ? (
+              <>
+                {visibleActions.map(({ href, label }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>{label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                {visibleCreate.map(({ href, label }) => (
+                  <DropdownMenuItem key={href} asChild>
+                    <Link href={href}>{label}</Link>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.PROFILE}>Edit profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => signOut({ redirectTo: ROUTES.HOME })}
+                >
+                  Logout
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.LOGIN}>Login</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={ROUTES.SIGNUP}>Signup</Link>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="hidden flex-1 items-center justify-end gap-2 md:flex">
         {session?.user ? (
           <>
             {visibleActions.map(({ href, label, icon: Icon }) => (
               <Button key={href} asChild variant="ghost" size="icon">
-                <Link href={href} aria-label={label} className="relative">
+                <Link href={href} className="relative">
                   <Icon className="size-5" />
                   {label === "Alerts" && unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
@@ -125,7 +181,7 @@ export function Navbar() {
             {visibleCreate.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" aria-label="Create">
+                  <Button variant="ghost" size="icon">
                     <Plus className="size-5" />
                   </Button>
                 </DropdownMenuTrigger>

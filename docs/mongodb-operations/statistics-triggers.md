@@ -29,7 +29,7 @@ Output:
 {
   "_id": "statistics",
   "dirtyTownIds": ["<uuid>"],
-  "updatedAt": "<timestamp_ms>"
+  "updatedAt": "<unix_timestamp_seconds>"
 }
 ```
 

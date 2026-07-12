@@ -66,25 +66,20 @@ export default function SignupPage() {
           <form className="grid gap-4" onSubmit={handleSubmit}>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" required />
+              <Label>Name</Label>
+              <Input name="name" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" required />
+              <Label>Email</Label>
+              <Input name="email" type="email" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
+              <Label>Password</Label>
+              <Input name="password" type="password" required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-              />
+              <Label>Confirm Password</Label>
+              <Input name="confirmPassword" type="password" required />
             </div>
             <Button type="submit" disabled={pending}>
               {pending ? "Signing up..." : "Sign up"}

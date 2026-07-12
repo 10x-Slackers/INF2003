@@ -8,18 +8,20 @@ import { getUserWithPasswordById } from "@/lib/tables/users";
 
 export type UserRole = "ADMIN" | "AGENT" | "USER";
 
-export async function assertAdmin() {
+export async function assertAdmin(): Promise<Session> {
   const session = await auth();
-  if (!isAdmin(session?.user?.role)) {
+  if (!session || !isAdmin(session.user.role)) {
     throw new Error("Forbidden");
   }
+  return session;
 }
 
-export async function assertAgent() {
+export async function assertAgent(): Promise<Session> {
   const session = await auth();
-  if (!isAgent(session?.user?.role)) {
+  if (!session || !isAgent(session.user.role)) {
     throw new Error("Forbidden");
   }
+  return session;
 }
 
 export async function assertSignedIn(): Promise<Session> {
@@ -30,7 +32,7 @@ export async function assertSignedIn(): Promise<Session> {
   return session;
 }
 
-export async function verifyPassword(
+async function verifyPassword(
   password: string,
   hash: string,
 ): Promise<boolean> {
@@ -58,7 +60,7 @@ type DbUser = {
   role: UserRole;
 };
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: "/login",

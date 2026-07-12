@@ -1,9 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
-import { isAgent } from "@/lib/permissions";
-import { revalidatePath } from "next/cache";
-import { ROUTES } from "@/lib/routes";
+import { assertAgent, auth } from "@/lib/auth";
 import { addTransaction } from "@/lib/services/transaction";
 import { searchPropertiesByAddress } from "@/lib/tables/properties";
 import type { PropertySearchResult } from "@/lib/tables/properties";
@@ -13,26 +10,20 @@ import {
   type TransactionListItem,
   type TransactionListQuery,
 } from "@/lib/tables/transactions";
-import { fetchPropertyFilters } from "@/app/filters";
 import { createSearchLog } from "@/lib/collections/search-logs";
 
 export async function searchPropertiesAction(
   query: string,
 ): Promise<PropertySearchResult[]> {
-  const session = await auth();
-  if (!isAgent(session?.user?.role)) throw new Error("Forbidden");
+  await assertAgent();
   return searchPropertiesByAddress(query);
 }
 
 export async function createTransactionAction(
   input: CreateTransaction,
 ): Promise<void> {
-  const session = await auth();
-  if (!session || !isAgent(session.user?.role)) {
-    throw new Error("Forbidden");
-  }
+  const session = await assertAgent();
   await addTransaction({ uploadedByUserId: session.user.id, input });
-  revalidatePath(ROUTES.TRANSACTIONS);
 }
 
 export async function fetchTransactions(
@@ -62,5 +53,3 @@ async function logTransactionSearch(input: TransactionListQuery) {
     query,
   }).catch(() => {});
 }
-
-export { fetchPropertyFilters as fetchTransactionFilters };

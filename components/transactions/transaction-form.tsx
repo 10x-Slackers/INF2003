@@ -67,11 +67,9 @@ export function TransactionForm({
     try {
       await createTransactionAction(parsed.data);
       toast.success("Transaction created");
-      setTimeout(() => router.push(ROUTES.TRANSACTIONS), 1500);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to create transaction.",
-      );
+      router.push(ROUTES.TRANSACTIONS);
+    } catch {
+      setError("Failed to create transaction.");
       setPending(false);
     }
   }
@@ -82,16 +80,16 @@ export function TransactionForm({
         <form className="grid gap-4" onSubmit={handleSubmit}>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="grid gap-2">
-            <Label htmlFor="property">Property</Label>
+            <Label>Property</Label>
             <PropertySearchCombobox
               value={propertyId}
               onChange={(id) => setPropertyId(id)}
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="flat_type_id">Flat type</Label>
+            <Label>Flat type</Label>
             <Select value={flatTypeId ?? ""} onValueChange={setFlatTypeId}>
-              <SelectTrigger id="flat_type_id">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a flat type" />
               </SelectTrigger>
               <SelectContent>
@@ -104,9 +102,9 @@ export function TransactionForm({
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="flat_model_id">Flat model</Label>
+            <Label>Flat model</Label>
             <Select value={flatModelId ?? ""} onValueChange={setFlatModelId}>
-              <SelectTrigger id="flat_model_id">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a flat model" />
               </SelectTrigger>
               <SelectContent>
@@ -119,12 +117,12 @@ export function TransactionForm({
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="storey_range_id">Storey range</Label>
+            <Label>Storey range</Label>
             <Select
               value={storeyRangeId ?? ""}
               onValueChange={setStoreyRangeId}
             >
-              <SelectTrigger id="storey_range_id">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a storey range" />
               </SelectTrigger>
               <SelectContent>
@@ -137,9 +135,8 @@ export function TransactionForm({
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="floor_area_sqm">Floor area (sqm)</Label>
+            <Label>Floor area (sqm)</Label>
             <Input
-              id="floor_area_sqm"
               name="floor_area_sqm"
               type="number"
               min={1}
@@ -148,18 +145,12 @@ export function TransactionForm({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="transaction_month">Transaction month</Label>
-            <Input
-              id="transaction_month"
-              name="transaction_month"
-              type="month"
-              required
-            />
+            <Label>Transaction month</Label>
+            <Input name="transaction_month" type="month" required />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="resale_price">Resale price</Label>
+            <Label>Resale price</Label>
             <Input
-              id="resale_price"
               name="resale_price"
               type="number"
               min={1}

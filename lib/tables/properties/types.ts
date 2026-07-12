@@ -2,21 +2,11 @@ import { z } from "zod";
 import type { Town } from "@/lib/tables/towns";
 import { paginationSchema, idSchema } from "../common";
 
-export const propertyIdentitySchema = z.object({
+export const createPropertySchema = z.object({
   town_id: idSchema,
   block: z.string().trim().min(1).max(20),
   street_name: z.string().trim().min(1).max(255),
   lease_commence_year: z.coerce.number().int().min(1960).max(2100),
-});
-export const createPropertySchema = propertyIdentitySchema;
-export const updatePropertySchema = propertyIdentitySchema
-  .partial()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided.",
-  });
-export const updatePropertyParamsSchema = z.object({
-  id: idSchema,
-  input: updatePropertySchema.or(z.object({}).strict()),
 });
 export const propertyListQuerySchema = paginationSchema.extend({
   town_ids: z.array(idSchema).optional(),
@@ -37,7 +27,7 @@ export type Property = {
   lease_commence_year: number;
 };
 
-export type LatestTransactionSummary = {
+type LatestTransactionSummary = {
   id: string;
   uploaded_by_user_id: string | null;
   property_id: string;
@@ -63,8 +53,6 @@ export type PropertyDetail = Property & {
 };
 
 export type CreateProperty = z.infer<typeof createPropertySchema>;
-export type UpdateProperty = z.infer<typeof updatePropertySchema>;
-export type UpdatePropertyParams = z.infer<typeof updatePropertyParamsSchema>;
 export type PropertyListQuery = z.infer<typeof propertyListQuerySchema>;
 
 export type PropertySearchResult = {

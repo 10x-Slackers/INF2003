@@ -86,7 +86,7 @@ export function PriceTrendCard({
       </CardHeader>
       <CardContent>
         <Tabs defaultValue={flatTypes[0].name}>
-          <TabsList aria-label="Flat type" className="h-auto flex-wrap">
+          <TabsList className="h-auto flex-wrap">
             {flatTypes.map((ft) => (
               <TabsTrigger key={ft.name} value={ft.name}>
                 {ft.name}
@@ -133,10 +133,7 @@ export function PriceTrendCard({
                     />
                   </div>
                   <Tabs defaultValue={defaultGranularity}>
-                    <TabsList
-                      aria-label={`${ft.name} price trend granularity`}
-                      className="sm:ml-auto"
-                    >
+                    <TabsList className="sm:ml-auto">
                       {ft.monthly && (
                         <TabsTrigger value="monthly">Monthly</TabsTrigger>
                       )}

@@ -38,7 +38,7 @@ if (process.env.NODE_ENV !== "production") {
 /**
  * Result of an INSERT/UPDATE/DELETE
  */
-export interface QueryResult {
+interface QueryResult {
   affectedRows: number;
   insertId: number;
 }
@@ -64,12 +64,6 @@ export async function execute(
   const [result] = await pool.execute(sql, params as ExecuteValues);
   const { affectedRows, insertId } = result as ResultSetHeader;
   return { affectedRows, insertId };
-}
-
-export async function executeReturning<
-  T extends Record<string, unknown> = RowDataPacket,
->(sql: string, params: unknown[] = []): Promise<T[]> {
-  return query<T>(sql, params);
 }
 
 /**

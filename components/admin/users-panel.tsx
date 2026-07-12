@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { fetchUsers } from "@/app/admin/actions";
 import type { PublicUser } from "@/lib/tables/users";
 import { UsersTable } from "./users/users-table";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationControls } from "@/components/pagination-controls";
 import { CreateUserDialog } from "./users/create-user-dialog";
 import { EditUserDialog } from "./users/edit-user-dialog";
 import { DeleteUserDialog } from "./users/delete-user-dialog";
@@ -79,7 +79,7 @@ export function UsersPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Input
           placeholder="Search name or email..."
           onChange={(e) => debouncedSearch(e.target.value)}
@@ -98,13 +98,14 @@ export function UsersPanel() {
         onDelete={setDeleteUser}
       />
 
-      <Pagination
+      <PaginationControls
         page={page}
         totalPages={totalPages}
         totalLabel={`${total} users total`}
         loading={loading}
         onPrev={() => goToPage(Math.max(1, page - 1))}
         onNext={() => goToPage(Math.min(totalPages, page + 1))}
+        onGoToPage={goToPage}
       />
 
       <CreateUserDialog

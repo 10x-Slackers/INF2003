@@ -1,7 +1,7 @@
 import type { AnyBulkWriteOperation } from "mongodb";
-import { db, findById } from "@/lib/db";
+import { db, findById, withMongoError } from "@/lib/db/mongodb";
 import { idSchema, type TownProfile } from "./types";
-import { withDbError, now } from "@/lib/utils";
+import { now } from "@/lib/utils";
 import { z } from "zod";
 
 const towns = db.collection<TownProfile>("towns");
@@ -11,7 +11,7 @@ const townProfileLast6MonthsUpdateSchema = z.object({
 });
 
 export async function listTownProfiles(): Promise<TownProfile[]> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     return await towns.find({}).toArray();
   });
 }
@@ -26,7 +26,7 @@ export async function rollDownTownProfileTransaction(
   townId: string,
   flatTypeId: string,
 ): Promise<void> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const validatedFlatId = z.coerce.number().int().min(1).parse(flatTypeId);
     const validatedTownId = idSchema.parse(townId);
 
@@ -58,7 +58,7 @@ export async function rollDownTownProfileTransaction(
 export async function bulkUpdateTownProfileTransactionsLast6Months(
   input: { townId: string; transactionsLast6Months: number }[],
 ): Promise<void> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const timestamp = now();
     const operations: AnyBulkWriteOperation<TownProfile>[] = input.map(
       (item) => {

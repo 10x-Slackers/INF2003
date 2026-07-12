@@ -1,7 +1,7 @@
 import { TownMap, TownMapSkeleton, type MapTown } from "@/components/town-map";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listTownProfiles } from "@/lib/collections/town-profile/functions";
+import { listTownProfiles } from "@/lib/collections/town-profile";
 import { listTowns } from "@/lib/tables/towns/functions";
 import { Suspense } from "react";
 import { getAvgPriceByFlatType, getPricePerSqmByFlatType } from "./home-stats";
@@ -10,6 +10,12 @@ import { PriceTrendCard } from "@/components/home/price-trend-card";
 export default function Home() {
   return (
     <main className="container mx-auto flex flex-col gap-7 px-5 py-6">
+      <section>
+        <h1 className="text-2xl font-semibold">HDB resale overview</h1>
+        <p className="text-muted-foreground">
+          Explore town activity and resale price trends across Singapore.
+        </p>
+      </section>
       <Card>
         <CardContent>
           <Suspense fallback={<TownMapSkeleton />}>

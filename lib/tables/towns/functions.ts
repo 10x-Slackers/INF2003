@@ -1,13 +1,7 @@
 import { cache } from "react";
-import { query, queryOne, paginatedQuery } from "@/lib/db";
+import { query, queryOne } from "@/lib/db";
 import { withDbError } from "@/lib/utils";
-import type { Property } from "@/lib/tables/properties";
-import {
-  type Town,
-  type TownRelationListQuery,
-  type TownAmenity,
-  townRelationListQuerySchema,
-} from "./types";
+import { type Town, type TownAmenity } from "./types";
 import { idSchema } from "../common";
 
 export const listTowns = cache(async (): Promise<Town[]> => {
@@ -24,19 +18,6 @@ export const getTownById = cache(async (id: string): Promise<Town | null> => {
     );
   });
 });
-
-export async function listPropertiesByTown(
-  input: TownRelationListQuery,
-): Promise<{ data: Property[]; total: number }> {
-  const data = townRelationListQuerySchema.parse(input);
-  return paginatedQuery<Property>(
-    `SELECT id, town_id, block, street_name, lease_commence_year FROM properties WHERE town_id = ? ORDER BY block, street_name LIMIT ? OFFSET ?`,
-    "SELECT COUNT(*) AS total FROM properties WHERE town_id = ?",
-    [data.townId],
-    data.page,
-    data.pageSize,
-  );
-}
 
 export async function listAllAmenitiesByTown(
   townId: string,

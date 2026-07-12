@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Pagination } from "@/components/ui/pagination";
+import { PaginationControls } from "@/components/pagination-controls";
 import {
   listNotificationsAction,
   markNotificationReadAction,
@@ -105,7 +105,7 @@ export function AlertNotifications({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-medium">Notifications</h2>
         <div className="flex items-center gap-2">
           {hasUnread && (
@@ -140,7 +140,7 @@ export function AlertNotifications({
                   {n.street_name} · {n.min_storey}-{n.max_storey} storey ·{" "}
                   {n.floor_area_sqm} sqm
                 </p>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">
                       ${n.resale_price.toLocaleString()}
@@ -149,7 +149,7 @@ export function AlertNotifications({
                       {new Date(n.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-1">
                     {n.read_at === null && (
                       <Button
                         variant="ghost"
@@ -161,9 +161,9 @@ export function AlertNotifications({
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={ROUTES.TRANSACTIONS}>
+                      <Link href={ROUTES.PROPERTY_DETAIL(n.property_id)}>
                         <ExternalLink />
-                        View transaction
+                        View property
                       </Link>
                     </Button>
                     <Button
@@ -181,13 +181,14 @@ export function AlertNotifications({
         </div>
       )}
 
-      <Pagination
+      <PaginationControls
         page={page}
         totalPages={totalPages}
         totalLabel={`${total} notifications`}
         loading={loading}
         onPrev={() => loadPage(Math.max(1, page - 1))}
         onNext={() => loadPage(Math.min(totalPages, page + 1))}
+        onGoToPage={loadPage}
       />
 
       <SavedAlertsDialog open={dialogOpen} onOpenChange={setDialogOpen} />

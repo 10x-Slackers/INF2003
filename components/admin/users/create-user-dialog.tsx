@@ -44,8 +44,8 @@ export function CreateUserDialog({
       setRole("USER");
       onSaved();
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create user.");
+    } catch {
+      setError("Failed to create user.");
     } finally {
       setPending(false);
     }

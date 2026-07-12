@@ -1,4 +1,10 @@
-import { db, findById, deleteDocById, createWithUuid } from "@/lib/db";
+import {
+  db,
+  findById,
+  deleteDocById,
+  createWithUuid,
+  withMongoError,
+} from "@/lib/db/mongodb";
 import {
   createSavedAlertSchema,
   alertTransactionFilterSchema,
@@ -7,12 +13,12 @@ import {
   type SavedAlert,
   type SavedAlertCreate,
 } from "./types";
-import { withDbError, now } from "@/lib/utils";
+import { now } from "@/lib/utils";
 
 const alerts = db.collection<SavedAlert>("alerts");
 
 export async function listSavedAlerts(userId?: string): Promise<SavedAlert[]> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     return await alerts
       .find(userId ? { userId: idSchema.parse(userId) } : {})
       .sort({ createdAt: -1 })
@@ -112,7 +118,7 @@ function addValueInRangeFilter(
 export async function findAlertsByTransaction(
   filters: AlertTransactionFilter,
 ): Promise<{ userId: string; alertId: string }[]> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const data = alertTransactionFilterSchema.parse(filters);
     const query: Record<string, unknown> = {};
     query.isActive = true;
@@ -152,7 +158,7 @@ export async function findAlertsByTransaction(
 }
 
 export async function triggerSavedAlerts(alertIds: string[]): Promise<void> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const parsedIds = alertIds.map((id) => idSchema.parse(id));
     await alerts.updateMany(
       { _id: { $in: parsedIds } },

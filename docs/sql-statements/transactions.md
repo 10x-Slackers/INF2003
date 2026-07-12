@@ -122,21 +122,6 @@ ORDER BY town_id;
 
 Returned columns: `town_id, value, sample_size`
 
-## `getTransactionById(id)`
-
-```sql
-SELECT rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
-       rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
-       rt.flat_model_id AS flat_model_id, rt.storey_range_id AS storey_range_id,
-       rt.floor_area_sqm AS floor_area_sqm, rt.transaction_month AS transaction_month,
-       rt.resale_price AS resale_price
-FROM resale_transactions rt
-WHERE rt.id = ?
-LIMIT 1;
-```
-
-Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`
-
 ## `createTransaction(input)`
 
 ```sql
@@ -148,47 +133,3 @@ RETURNING id;
 ```
 
 Returned columns: `id`
-
-## `updateTransaction(input)`
-
-```sql
-SELECT rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
-       rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
-       rt.flat_model_id AS flat_model_id, rt.storey_range_id AS storey_range_id,
-       rt.floor_area_sqm AS floor_area_sqm, rt.transaction_month AS transaction_month,
-       rt.resale_price AS resale_price
-FROM resale_transactions rt
-WHERE rt.id = ?
-LIMIT 1;
-```
-
-Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`
-
-```sql
-UPDATE resale_transactions
-SET flat_type_id = ?, flat_model_id = ?, storey_range_id = ?,
-    floor_area_sqm = ?, transaction_month = ?, resale_price = ?
-WHERE id = ?;
-```
-
-Optional params: `flat_type_id`, `flat_model_id`, `storey_range_id`, `floor_area_sqm`, `transaction_month`, `resale_price`.
-Only provided fields are included in `SET`.
-
-```sql
-SELECT rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
-       rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
-       rt.flat_model_id AS flat_model_id, rt.storey_range_id AS storey_range_id,
-       rt.floor_area_sqm AS floor_area_sqm, rt.transaction_month AS transaction_month,
-       rt.resale_price AS resale_price
-FROM resale_transactions rt
-WHERE rt.id = ?
-LIMIT 1;
-```
-
-Returned columns: `id, uploaded_by_user_id, property_id, flat_type_id, flat_model_id, storey_range_id, floor_area_sqm, transaction_month, resale_price`
-
-## `deleteTransaction(id)`
-
-```sql
-DELETE FROM resale_transactions WHERE id = ?;
-```

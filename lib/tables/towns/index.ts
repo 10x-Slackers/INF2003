@@ -1,10 +1,5 @@
-export {
-  getTownById,
-  listAllAmenitiesByTown,
-  listPropertiesByTown,
-  listTowns,
-} from "./functions";
+export { getTownById, listAllAmenitiesByTown, listTowns } from "./functions";
 
 export { regionSchema } from "./types";
 
-export type { Region, Town, TownAmenity, TownRelationListQuery } from "./types";
+export type { Town } from "./types";

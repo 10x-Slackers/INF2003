@@ -4,16 +4,10 @@ import { assertSignedIn } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
 import {
-  listSavedProperties,
   createSavedProperty,
   deleteSavedPropertyByUserAndProperty,
   isPropertySaved,
 } from "@/lib/tables/saved-properties";
-
-export async function listBookmarksAction() {
-  const session = await assertSignedIn();
-  return listSavedProperties(session.user.id);
-}
 
 export async function toggleBookmarkAction(
   propertyId: string,
@@ -31,8 +25,6 @@ export async function toggleBookmarkAction(
   } else {
     await createSavedProperty({ userId: session.user.id, propertyId });
   }
-  revalidatePath(ROUTES.PROPERTY_DETAIL(propertyId));
-  revalidatePath(ROUTES.BOOKMARKS);
   return { saved: !saved };
 }
 
@@ -44,7 +36,6 @@ export async function removeBookmarkAction(propertyId: string): Promise<{
     userId: session.user.id,
     propertyId,
   });
-  revalidatePath(ROUTES.PROPERTY_DETAIL(propertyId));
   revalidatePath(ROUTES.BOOKMARKS);
   return { ok: true };
 }

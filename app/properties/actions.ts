@@ -8,15 +8,12 @@ import {
   type PropertyListQuery,
   type PropertyWithLatestTransaction,
 } from "@/lib/tables/properties";
-import { revalidatePath } from "next/cache";
-import { ROUTES } from "@/lib/routes";
 import { fetchPropertyFilters } from "@/app/filters";
 import { createSearchLog } from "@/lib/collections/search-logs";
 
 export async function createPropertyAction(input: CreateProperty) {
   await assertAgent();
   const id = await createProperty(input);
-  revalidatePath(ROUTES.PROPERTIES);
   return id;
 }
 

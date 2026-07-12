@@ -41,8 +41,8 @@ export function EditUserDialog({
       });
       onSaved();
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update user.");
+    } catch {
+      setError("Failed to update user.");
     } finally {
       setPending(false);
     }

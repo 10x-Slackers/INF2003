@@ -1,16 +1,10 @@
 "use server";
 
 import { assertAdmin, hashPassword } from "@/lib/auth";
-import { bulkUpdateTownProfileTransactionsLast6Months } from "@/lib/collections/town-profile";
-import { flushStatisticsTrigger } from "@/lib/collections/statistics-trigger";
-import { saveStats } from "@/lib/collections/statistics";
 import {
-  buildAllPropertyStats,
-  buildAllTownStats,
-  buildGlobalStats,
-  buildTownCountUpdates,
+  regenerateGeneralAndTownStatistics,
+  regeneratePropertyStatistics,
 } from "@/lib/services/statistics";
-import { listTowns } from "@/lib/tables/towns";
 import {
   createUser,
   deleteUser,
@@ -68,24 +62,7 @@ export async function generateStatsAction(): Promise<{
   towns: number;
 }> {
   await assertAdmin();
-  try {
-    const townIds = (await listTowns()).map((town) => town.id);
-    const [globalStats, townStats, townUpdates] = await Promise.all([
-      buildGlobalStats(),
-      buildAllTownStats(),
-      buildTownCountUpdates(townIds),
-    ]);
-    const stats = [...globalStats, ...townStats];
-
-    await saveStats(stats);
-    await bulkUpdateTownProfileTransactionsLast6Months(townUpdates);
-    await flushStatisticsTrigger();
-
-    return { statistics: stats.length, towns: townIds.length };
-  } catch (error) {
-    console.error("Error generating stats:", error);
-    throw error;
-  }
+  return regenerateGeneralAndTownStatistics();
 }
 
 export async function generatePropertyStatsAction(): Promise<{
@@ -93,20 +70,5 @@ export async function generatePropertyStatsAction(): Promise<{
   properties: number;
 }> {
   await assertAdmin();
-  try {
-    const stats = await buildAllPropertyStats();
-    const propertyIds = new Set<string>();
-
-    for (const stat of stats) {
-      if (stat.dimensions.propertyId)
-        propertyIds.add(stat.dimensions.propertyId);
-    }
-
-    await saveStats(stats);
-
-    return { statistics: stats.length, properties: propertyIds.size };
-  } catch (error) {
-    console.error("Error generating property stats:", error);
-    throw error;
-  }
+  return regeneratePropertyStatistics();
 }

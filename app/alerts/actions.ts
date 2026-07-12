@@ -35,7 +35,6 @@ async function getOwnedNotification(id: string, userId: string) {
 export async function createAlertAction(filters: SavedAlertFilters) {
   const session = await assertSignedIn();
   await createSavedAlert({ userId: session.user.id, filters });
-  revalidatePath(ROUTES.ALERTS);
 }
 
 export async function listNotificationsAction(input: {
@@ -100,7 +99,6 @@ export async function deleteSavedAlertAction(
   const alert = ownedBy(await getSavedAlertById(id), session.user.id);
   if (!alert) return { ok: false };
   await deleteSavedAlert(id);
-  revalidatePath(ROUTES.ALERTS);
   return { ok: true };
 }
 

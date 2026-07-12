@@ -20,26 +20,6 @@ SELECT id, region, name FROM towns WHERE id = ? LIMIT 1;
 
 Returned columns: `id, region, name`
 
-## `listPropertiesByTown(input)`
-
-```sql
-SELECT id, town_id, block, street_name, lease_commence_year
-FROM properties
-WHERE town_id = ?
-ORDER BY block, street_name
-LIMIT ? OFFSET ?;
-```
-
-Params: `page`, `pageSize`.
-
-Returned columns: `id, town_id, block, street_name, lease_commence_year`
-
-```sql
-SELECT COUNT(*) AS total FROM properties WHERE town_id = ?;
-```
-
-Returned columns: `total`
-
 ## `listAllAmenitiesByTown(townId)`
 
 ```sql

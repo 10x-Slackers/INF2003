@@ -22,12 +22,13 @@ export default async function PropertyDetailPage({
 }) {
   const { id } = await params;
 
-  const [property, { data: transactions, total }, stats] = await Promise.all([
-    getPropertyById(id),
+  const property = await getPropertyById(id);
+  if (!property) notFound();
+
+  const [{ data: transactions, total }, stats] = await Promise.all([
     listTransactions({ property_id: id, page: 1, pageSize: PAGE_SIZE }),
     getPropertyStats(id),
   ]);
-  if (!property) notFound();
 
   const session = await auth();
   const initialSaved =

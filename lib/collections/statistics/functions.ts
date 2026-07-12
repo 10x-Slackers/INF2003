@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db, withMongoError } from "@/lib/db/mongodb";
 import {
   bulkUpsertStatisticsSchema,
   statisticsSearchSchema,
@@ -8,14 +8,14 @@ import {
   type StatisticsUpsert,
 } from "./types";
 import { toStatisticsBulkOperations } from "./utils";
-import { withDbError, now } from "@/lib/utils";
+import { now } from "@/lib/utils";
 
 const statistics = db.collection<Statistics>("statistics");
 
 async function bulkUpsertStatistics(
   input: StatisticsUpsert[],
 ): Promise<BulkUpsertStatisticsResult> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const data = bulkUpsertStatisticsSchema.parse(input);
     const computedAt = now();
     const operations = toStatisticsBulkOperations(data, computedAt);
@@ -37,7 +37,7 @@ export async function saveStats(input: StatisticsUpsert[]): Promise<void> {
 export async function getStatisticsByMetricAndDimensions(
   input: StatisticsSearch,
 ): Promise<Statistics | null> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const data = statisticsSearchSchema.parse(input);
     return await statistics.findOne(
       Object.fromEntries(

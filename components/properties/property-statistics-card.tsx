@@ -134,12 +134,12 @@ export function PropertyStatisticsCard({ data }: PropertyStatisticsCardProps) {
 
           {data.flatTypes.map((ft, i) => (
             <TabsContent key={ft.name} value={ft.name}>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
                 <PriceChart
                   chartData={ft.chartData}
                   color={CHART_COLORS[i % CHART_COLORS.length]}
                 />
-                <div className="flex w-40 shrink-0 flex-col gap-4">
+                <div className="flex flex-col gap-4 sm:w-40 sm:shrink-0">
                   <StatBox label="Lowest price" value={ft.minPrice} />
                   <StatBox label="Highest price" value={ft.maxPrice} />
                 </div>

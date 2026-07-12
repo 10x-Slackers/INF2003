@@ -1,5 +1,4 @@
-import { db } from "@/lib/db";
-import { withDbError } from "@/lib/utils";
+import { db, withMongoError } from "@/lib/db/mongodb";
 import { listTowns } from "@/lib/tables/towns";
 import { listFlatTypes, listFlatModels } from "@/lib/tables/lookups";
 import type { SearchLog } from "./types";
@@ -16,7 +15,7 @@ const RANGES = [
 ] as const;
 
 export async function getTotalSearches(): Promise<number> {
-  return withDbError(() => searchHistory.countDocuments());
+  return withMongoError(() => searchHistory.countDocuments());
 }
 
 type LookupItem = { id: number | string; name: string };
@@ -26,7 +25,7 @@ async function getTopByField(
   lookupFn: () => Promise<LookupItem[]>,
   limit = 10,
 ): Promise<NamedCount[]> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const [rows, items] = await Promise.all([
       searchHistory
         .aggregate<{
@@ -66,7 +65,7 @@ export async function getTopFlatModels(limit = 10): Promise<NamedCount[]> {
 }
 
 export async function getPriceRangeStats(): Promise<PriceRangeStat[]> {
-  return withDbError(async () => {
+  return withMongoError(async () => {
     const docs = await searchHistory
       .find(
         {
