@@ -5,7 +5,6 @@ type NamedLookup = {
 
 export type FlatType = NamedLookup;
 export type FlatModel = NamedLookup;
-export type AmenityType = NamedLookup;
 
 export type StoreyRange = {
   id: number;

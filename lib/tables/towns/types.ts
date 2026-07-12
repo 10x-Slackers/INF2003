@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Amenity } from "../amenities";
 import { paginationSchema, idSchema } from "../common";
 
 export const regionSchema = z.enum([
@@ -12,13 +11,9 @@ export const regionSchema = z.enum([
 export const townRelationListQuerySchema = paginationSchema.extend({
   townId: idSchema,
 });
-export const townAmenityListQuerySchema = townRelationListQuerySchema.extend({
-  amenityTypeId: z.coerce.number().int().positive().optional(),
-});
 
 export type Region = z.infer<typeof regionSchema>;
 export type TownRelationListQuery = z.infer<typeof townRelationListQuerySchema>;
-export type TownAmenityListQuery = z.infer<typeof townAmenityListQuerySchema>;
 
 export type Town = {
   id: string;
@@ -26,4 +21,14 @@ export type Town = {
   name: string;
 };
 
-export type TownAmenity = Amenity & { amenity_type_name: string };
+export type TownAmenity = {
+  id: string;
+  town_id: string;
+  amenity_type_id: number;
+  name: string;
+  street_name: string | null;
+  postal_code: string | null;
+  longitude: number | null;
+  latitude: number | null;
+  amenity_type_name: string;
+};

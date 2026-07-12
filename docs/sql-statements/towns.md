@@ -40,33 +40,6 @@ SELECT COUNT(*) AS total FROM properties WHERE town_id = ?;
 
 Returned columns: `total`
 
-## `listAmenitiesByTown(input)`
-
-```sql
-SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
-FROM amenities
-WHERE town_id = ? AND amenity_type_id = ?
-ORDER BY name
-LIMIT ? OFFSET ?;
-```
-
-Params: `page`, `pageSize`.
-Optional params: `amenityTypeId`.
-The `amenity_type_id` filter is included only when `amenityTypeId` is provided.
-
-Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
-
-```sql
-SELECT COUNT(*) AS total
-FROM amenities
-WHERE town_id = ? AND amenity_type_id = ?;
-```
-
-Optional params: `amenityTypeId`.
-The `amenity_type_id` filter is included only when `amenityTypeId` is provided.
-
-Returned columns: `total`
-
 ## `listAllAmenitiesByTown(townId)`
 
 ```sql

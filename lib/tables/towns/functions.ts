@@ -1,14 +1,11 @@
 import { cache } from "react";
 import { query, queryOne, paginatedQuery } from "@/lib/db";
-import { listAmenities, type Amenity } from "@/lib/tables/amenities";
 import { withDbError } from "@/lib/utils";
 import type { Property } from "@/lib/tables/properties";
 import {
   type Town,
-  type TownAmenityListQuery,
   type TownRelationListQuery,
   type TownAmenity,
-  townAmenityListQuerySchema,
   townRelationListQuerySchema,
 } from "./types";
 import { idSchema } from "../common";
@@ -39,18 +36,6 @@ export async function listPropertiesByTown(
     data.page,
     data.pageSize,
   );
-}
-
-export async function listAmenitiesByTown(
-  input: TownAmenityListQuery,
-): Promise<{ data: Amenity[]; total: number }> {
-  const data = townAmenityListQuerySchema.parse(input);
-  return listAmenities({
-    town_id: data.townId,
-    amenity_type_id: data.amenityTypeId,
-    page: data.page,
-    pageSize: data.pageSize,
-  });
 }
 
 export async function listAllAmenitiesByTown(
