@@ -70,10 +70,12 @@ Returned columns: `total`
 ## `listAllAmenitiesByTown(townId)`
 
 ```sql
-SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
-FROM amenities
-WHERE town_id = ?
-ORDER BY name;
+SELECT a.id, a.town_id, a.amenity_type_id, a.name, a.street_name, a.postal_code,
+       a.longitude, a.latitude, at.name AS amenity_type_name
+FROM amenities a
+JOIN amenity_types at ON at.id = a.amenity_type_id
+WHERE a.town_id = ?
+ORDER BY at.name, a.name;
 ```
 
-Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
+Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude, amenity_type_name`

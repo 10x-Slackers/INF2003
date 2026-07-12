@@ -31,7 +31,7 @@ Output:
         ["<longitude>", "<latitude>"]
       ]
     ],
-    "updatedAt": "<timestamp_ms>"
+    "updatedAt": "<timestamp_seconds>"
   }
 ]
 ```
@@ -62,7 +62,7 @@ Output:
       ["<longitude>", "<latitude>"]
     ]
   ],
-  "updatedAt": "<timestamp_ms>"
+  "updatedAt": "<timestamp_seconds>"
 }
 ```
 

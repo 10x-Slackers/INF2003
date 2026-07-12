@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     // Additional ignores:
     ".venv/**",
     ".pnpm-store/**",
+    "components/ui/map.tsx",
+    "components/ui/place-autocomplete.tsx",
   ]),
 ]);
 

@@ -2,8 +2,11 @@
 
 import { Map, MapPolygon, MapPopup, MapTileLayer } from "@/components/ui/map";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ROUTES } from "@/lib/routes";
+import Link from "next/link";
 
 export type MapTown = {
+  id: string;
   name: string;
   coordinates: number[][][];
   summary: {
@@ -62,6 +65,12 @@ export function TownMap({ towns }: { towns: MapTown[] }) {
                 {town.summary.transactionsLast6Months.toLocaleString()} in last
                 6 months
               </div>
+              <Link
+                className="text-primary text-xs underline"
+                href={ROUTES.TOWN_DETAIL(town.id)}
+              >
+                View town
+              </Link>
             </div>
           </MapPopup>
         </MapPolygon>

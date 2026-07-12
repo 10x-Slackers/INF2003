@@ -12,5 +12,6 @@ export const ROUTES = {
   SEARCH_STATS: "/search-stats",
   PROPERTIES_NEW: "/properties/new",
   PROPERTY_DETAIL: (id: string) => `/properties/${id}`,
+  TOWN_DETAIL: (id: string) => `/towns/${id}`,
   TRANSACTIONS_NEW: "/transactions/new",
 } as const;

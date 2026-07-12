@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Amenity } from "../amenities";
 import { paginationSchema, idSchema } from "../common";
 
 export const regionSchema = z.enum([
@@ -24,3 +25,5 @@ export type Town = {
   region: Region;
   name: string;
 };
+
+export type TownAmenity = Amenity & { amenity_type_name: string };

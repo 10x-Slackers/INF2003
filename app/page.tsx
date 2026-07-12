@@ -36,6 +36,7 @@ async function TownMapSection() {
     mapTowns = profiles
       .filter((p) => townById.has(p._id))
       .map((p) => ({
+        id: p._id,
         name: townById.get(p._id)!.name,
         coordinates: p.coordinates,
         summary: {
