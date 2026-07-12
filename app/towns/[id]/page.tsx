@@ -18,10 +18,12 @@ export default async function TownDetailPage({
   ]);
   if (!town) notFound();
 
-  const amenitiesByType = Map.groupBy(
-    amenities,
-    (amenity) => amenity.amenity_type_name,
-  );
+  const amenitiesByType = amenities.reduce((groups, amenity) => {
+    const type = amenity.amenity_type_name;
+    const items = groups.get(type) ?? [];
+    items.push(amenity);
+    return groups.set(type, items);
+  }, new Map<string, typeof amenities>());
   return (
     <main className="container mx-auto flex flex-col gap-6 px-5 py-6">
       <section>
