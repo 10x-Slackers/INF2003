@@ -1,5 +1,9 @@
-import { getStatisticsByMetricAndDimensions } from "@/lib/collections/statistics";
+import {
+  getStatisticsByMetricAndDimensions,
+  metricsSchema,
+} from "@/lib/collections/statistics";
 import { listFlatTypes } from "@/lib/tables/lookups";
+import type { z } from "zod";
 
 type FlatTypeSeries = {
   series: { period: string; value: number; sampleSize: number }[];
@@ -19,7 +23,7 @@ export type FlatTypeTrends = {
 };
 
 async function getTrendsByMetric(
-  metric: "AVG_PRICE_BY_FLAT_TYPE" | "AVG_PRICE_PER_SQM_BY_FLAT_TYPE",
+  metric: z.infer<typeof metricsSchema>,
 ): Promise<FlatTypeTrends> {
   const flatTypes = await listFlatTypes();
 
@@ -67,9 +71,9 @@ async function getTrendsByMetric(
 }
 
 export function getAvgPriceByFlatType() {
-  return getTrendsByMetric("AVG_PRICE_BY_FLAT_TYPE");
+  return getTrendsByMetric(metricsSchema.enum.AVG_PRICE_BY_FLAT_TYPE);
 }
 
 export function getPricePerSqmByFlatType() {
-  return getTrendsByMetric("AVG_PRICE_PER_SQM_BY_FLAT_TYPE");
+  return getTrendsByMetric(metricsSchema.enum.AVG_PRICE_PER_SQM_BY_FLAT_TYPE);
 }
