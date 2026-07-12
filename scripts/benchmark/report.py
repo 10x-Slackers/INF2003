@@ -12,6 +12,7 @@ def write_performance_summary(options, results, index_summary):
         "usesIndex",
         "scan",
         "index",
+        "mariadbHandlerReadRndNext",
         "runs",
         "averageLatencyMs",
         "standardDeviationMs",
@@ -62,6 +63,7 @@ def aggregate_results(rows, index_summary=None):
                 "concurrency": concurrency,
                 **(index_summary or {}).get(operation, {}),
                 "runs": len(group),
+                "mariadbHandlerReadRndNext": average_handler_read_rnd_next(group),
                 "averageLatencyMs": latency_average,
                 "standardDeviationMs": latency_stddev,
                 "averageOpsPerSecond": ops_average,
@@ -69,6 +71,15 @@ def aggregate_results(rows, index_summary=None):
             }
         )
     return sorted(summary, key=lambda row: (row["operation"], row["concurrency"]))
+
+
+def average_handler_read_rnd_next(rows):
+    completed = sum(row["sampleCount"] for row in rows)
+    if completed == 0:
+        return 0
+    return round_number(
+        sum(row["handlerReadRndNextTotal"] for row in rows) / completed
+    )
 
 
 def aggregate_latency(rows):

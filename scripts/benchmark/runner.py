@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from .db import connect_mariadb
+from .db import connect_mariadb, get_handler_read_rnd_next
 from .measure import now_ms, round_number, summarize_numbers
 
 
@@ -9,34 +9,41 @@ def worker_loop(operation, ends_at):
     latencies = []
     completed = 0
     try:
+        handler_read_rnd_next = get_handler_read_rnd_next(conn)
         while now_ms() < ends_at:
             started_at = now_ms()
             operation.run(conn)
             completed += 1
             latencies.append(now_ms() - started_at)
+        handler_read_rnd_next = (
+            get_handler_read_rnd_next(conn) - handler_read_rnd_next
+        )
     finally:
         conn.close()
-    return completed, latencies
+    return completed, latencies, handler_read_rnd_next
 
 
 def run_measured_window(operation, duration_seconds, concurrency):
     started_at = now_ms()
     ends_at = started_at + duration_seconds * 1000
     completed = 0
+    handler_read_rnd_next = 0
     latencies = []
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
         futures = [
             executor.submit(worker_loop, operation, ends_at) for _ in range(concurrency)
         ]
         for future in as_completed(futures):
-            count, lats = future.result()
+            count, lats, reads = future.result()
             completed += count
+            handler_read_rnd_next += reads
             latencies.extend(lats)
 
     elapsed_seconds = (now_ms() - started_at) / 1000
     average, stddev = summarize_numbers(latencies)
     return {
         "averageLatencyMs": average,
+        "handlerReadRndNextTotal": handler_read_rnd_next,
         "operationsPerSecond": round_number(completed / elapsed_seconds),
         "sampleCount": len(latencies),
         "standardDeviationMs": stddev,

@@ -46,3 +46,8 @@ def query(conn, sql: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
     with conn.cursor(MySQLdb.cursors.DictCursor) as cursor:
         cursor.execute(sql, params)
         return list(cursor.fetchall())
+
+
+def get_handler_read_rnd_next(conn) -> int:
+    rows = query(conn, "SHOW SESSION STATUS LIKE 'Handler_read_rnd_next'")
+    return int(rows[0]["Value"])
