@@ -38,6 +38,8 @@ Initialise the schemas, run the ETL pipeline, and seed test users:
 DATAGOV_API_KEY=<your_key> docker compose --profile tools run --rm bootstrap
 ```
 
+Then access the application at [http://localhost:3000](http://localhost:3000).
+
 To stop the application and databases:
 
 ```sh
