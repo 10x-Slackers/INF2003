@@ -33,11 +33,3 @@ SELECT min_storey, max_storey FROM storey_ranges WHERE id = ? LIMIT 1;
 ```
 
 Returned columns: `min_storey, max_storey`
-
-## `listAmenityTypes()`
-
-```sql
-SELECT id, name FROM amenity_types ORDER BY name;
-```
-
-Returned columns: `id, name`

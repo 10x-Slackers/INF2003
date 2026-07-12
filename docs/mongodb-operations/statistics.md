@@ -5,6 +5,17 @@ Source: `lib/collections/statistics/functions.ts`
 Output examples use placeholder strings to show shape and type, not real data.
 Dimension fields can be `null`; object examples show the non-null shape.
 
+## Stored metrics and document shape
+
+The collection stores these four computed resale-transaction series only. Every metric is generated at both `monthly` and `yearly` granularities.
+
+| Metric enum                           | `series[].value`                      | Populated dimensions       |
+| ------------------------------------- | ------------------------------------- | -------------------------- |
+| `AVG_PRICE_BY_FLAT_TYPE`              | Average resale price                  | `flatTypeId`               |
+| `AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE` | Average resale price                  | `propertyId`, `flatTypeId` |
+| `AVG_PRICE_PER_SQM_BY_FLAT_TYPE`      | Average resale price per square metre | `flatTypeId`               |
+| `AVG_PRICE_BY_TOWN_AND_FLAT_TYPE`     | Average resale price                  | `townId`, `flatTypeId`     |
+
 ## `listStatistics(input)`
 
 ```js
@@ -33,15 +44,7 @@ Output:
     "dimensions": {
       "townId": "<uuid_or_null>",
       "flatTypeId": "<string_or_null>",
-      "propertyId": "<string_or_null>",
-      "leaseRemaining": {
-        "year": "<number_or_null>"
-      },
-      "storey": {
-        "min": "<number_or_null>",
-        "max": "<number_or_null>",
-        "label": "<string_or_null>"
-      }
+      "propertyId": "<string_or_null>"
     },
     "series": [
       {
@@ -50,7 +53,7 @@ Output:
         "sampleSize": "<number>"
       }
     ],
-    "computedAt": "<timestamp_ms>"
+    "computedAt": "<unix_timestamp_seconds>"
   }
 ]
 ```
@@ -75,15 +78,7 @@ Output:
   "dimensions": {
     "townId": "<uuid_or_null>",
     "flatTypeId": "<string_or_null>",
-    "propertyId": "<string_or_null>",
-    "leaseRemaining": {
-      "year": "<number_or_null>"
-    },
-    "storey": {
-      "min": "<number_or_null>",
-      "max": "<number_or_null>",
-      "label": "<string_or_null>"
-    }
+    "propertyId": "<string_or_null>"
   },
   "series": [
     {
@@ -92,7 +87,7 @@ Output:
       "sampleSize": "<number>"
     }
   ],
-  "computedAt": "<timestamp_ms>"
+  "computedAt": "<unix_timestamp_seconds>"
 }
 ```
 
@@ -121,15 +116,7 @@ Output:
   "dimensions": {
     "townId": "<uuid_or_null>",
     "flatTypeId": "<string_or_null>",
-    "propertyId": "<string_or_null>",
-    "leaseRemaining": {
-      "year": "<number_or_null>"
-    },
-    "storey": {
-      "min": "<number_or_null>",
-      "max": "<number_or_null>",
-      "label": "<string_or_null>"
-    }
+    "propertyId": "<string_or_null>"
   },
   "series": [
     {
@@ -138,7 +125,7 @@ Output:
       "sampleSize": "<number>"
     }
   ],
-  "computedAt": "<timestamp_ms>"
+  "computedAt": "<unix_timestamp_seconds>"
 }
 ```
 
@@ -184,7 +171,7 @@ db.statistics.findOne({
 });
 ```
 
-Optional params: `metric`, `dimensions`.
+Optional params: `metric`, `granularity`, `dimensions`.
 
 Output:
 
@@ -200,15 +187,7 @@ Output:
   "dimensions": {
     "townId": "<uuid_or_null>",
     "flatTypeId": "<string_or_null>",
-    "propertyId": "<string_or_null>",
-    "leaseRemaining": {
-      "year": "<number_or_null>"
-    },
-    "storey": {
-      "min": "<number_or_null>",
-      "max": "<number_or_null>",
-      "label": "<string_or_null>"
-    }
+    "propertyId": "<string_or_null>"
   },
   "series": [
     {
@@ -217,7 +196,7 @@ Output:
       "sampleSize": "<number>"
     }
   ],
-  "computedAt": "<timestamp_ms>"
+  "computedAt": "<unix_timestamp_seconds>"
 }
 ```
 

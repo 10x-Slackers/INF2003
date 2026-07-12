@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { Amenity } from "@/lib/tables/amenities";
 import type { Town } from "@/lib/tables/towns";
 import { paginationSchema, idSchema } from "../common";
 
@@ -61,7 +60,6 @@ export type PropertyWithLatestTransaction = Property & {
 
 export type PropertyDetail = Property & {
   town: Town | null;
-  amenities: Amenity[];
 };
 
 export type CreateProperty = z.infer<typeof createPropertySchema>;

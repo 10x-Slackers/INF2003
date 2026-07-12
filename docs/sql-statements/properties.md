@@ -104,17 +104,6 @@ LIMIT 1;
 
 Returned columns: `id, town_id, block, street_name, lease_commence_year, town_name, region`
 
-```sql
-SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
-FROM amenities
-WHERE town_id = ?
-ORDER BY name;
-```
-
-The amenities query runs only if the property exists, using `town_id` from the first query result.
-
-Returned columns: `id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude`
-
 ## `createProperty(input)`
 
 ```sql

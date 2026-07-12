@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { query } from "@/lib/db";
 import { withDbError } from "@/lib/utils";
-import type { AmenityType, FlatModel, FlatType, StoreyRange } from "./types";
+import type { FlatModel, FlatType, StoreyRange } from "./types";
 
 export const listFlatTypes = cache(
   async (): Promise<FlatType[]> =>
@@ -26,15 +26,6 @@ export const listStoreyRanges = cache(
     withDbError(async () => {
       return await query<StoreyRange>(
         "SELECT id, min_storey, max_storey FROM storey_ranges ORDER BY min_storey",
-      );
-    }),
-);
-
-export const listAmenityTypes = cache(
-  async (): Promise<AmenityType[]> =>
-    withDbError(async () => {
-      return await query<AmenityType>(
-        "SELECT id, name FROM amenity_types ORDER BY name",
       );
     }),
 );

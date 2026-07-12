@@ -17,6 +17,8 @@ const eslintConfig = defineConfig([
     // Additional ignores:
     ".venv/**",
     ".pnpm-store/**",
+    // Vendored shadcn primitives
+    "components/ui/**",
   ]),
 ]);
 

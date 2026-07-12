@@ -9,7 +9,6 @@ import {
   deleteById,
   isEmptyUpdate,
 } from "@/lib/db";
-import type { Amenity } from "@/lib/tables/amenities";
 import { regionSchema } from "@/lib/tables/towns";
 import { withDbError } from "@/lib/utils";
 import {
@@ -246,12 +245,6 @@ export async function getPropertyById(
 
     if (rows.length === 0) return null;
     const row = rows[0];
-    const amenities = await query<Amenity>(
-      `SELECT id, town_id, amenity_type_id, name, street_name, postal_code, longitude, latitude
-       FROM amenities WHERE town_id = ? ORDER BY name`,
-      [row.town_id],
-    );
-
     return {
       id: row.id,
       town_id: row.town_id,
@@ -263,7 +256,6 @@ export async function getPropertyById(
         name: row.town_name,
         region: regionSchema.parse(row.region),
       },
-      amenities,
     };
   });
 }
