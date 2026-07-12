@@ -24,6 +24,26 @@ HDB Resale Analytics and Tracker Web Application
 
 ## Usage
 
+### Run with Docker
+
+Start the application and database first:
+
+```sh
+docker compose up -d
+```
+
+Initialise the schemas, run the ETL pipeline, and seed test users:
+
+```sh
+DATAGOV_API_KEY=<your_key> docker compose --profile tools run --rm bootstrap
+```
+
+To stop the application and databases:
+
+```sh
+docker compose down
+```
+
 ### Initialise the database schema
 
 Applies the relational schema to MariaDB and the document schema/validation to MongoDB. Run once before the first ETL run.
