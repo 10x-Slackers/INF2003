@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getTownProfileById } from "@/lib/collections/town-profile";
 import { getTownById, listAllAmenitiesByTown } from "@/lib/tables/towns";
+import { TownStatisticsCard } from "@/components/towns/town-statistics-card";
+import { getTownStats } from "./town-stats";
 
 export default async function TownDetailPage({
   params,
@@ -12,10 +11,10 @@ export default async function TownDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [town, profile, amenities] = await Promise.all([
+  const [town, amenities, stats] = await Promise.all([
     getTownById(id),
-    getTownProfileById(id),
     listAllAmenitiesByTown(id),
+    getTownStats(id),
   ]);
   if (!town) notFound();
 
@@ -23,10 +22,6 @@ export default async function TownDetailPage({
     amenities,
     (amenity) => amenity.amenity_type_name,
   );
-  const flatTypeCounts = Object.entries(
-    profile?.transactionSummary.transactionCountByFlatType ?? {},
-  );
-
   return (
     <main className="container mx-auto flex flex-col gap-6 px-5 py-6">
       <section>
@@ -34,63 +29,9 @@ export default async function TownDetailPage({
         <p className="text-muted-foreground">{town.region}</p>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Summary</CardTitle>
-            {profile && (
-              <p className="text-sm text-muted-foreground">
-                Last updated{" "}
-                {new Date(profile.updatedAt * 1000).toLocaleDateString()}
-              </p>
-            )}
-          </CardHeader>
-          <CardContent>
-            {profile ? (
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border p-3">
-                  <dt className="text-sm text-muted-foreground">
-                    Total transactions
-                  </dt>
-                  <dd className="font-heading text-xl font-semibold">
-                    {profile.transactionSummary.totalTransaction.toLocaleString()}
-                  </dd>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <dt className="text-sm text-muted-foreground">
-                    Transactions in last 6 months
-                  </dt>
-                  <dd className="font-heading text-xl font-semibold">
-                    {profile.transactionSummary.transactionsLast6Months.toLocaleString()}
-                  </dd>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <dt className="text-sm text-muted-foreground">
-                    Transactions by flat type
-                  </dt>
-                  <dd className="mt-1 flex flex-wrap gap-1">
-                    {flatTypeCounts.length
-                      ? flatTypeCounts.map(([type, count]) => (
-                          <span
-                            key={type}
-                            className="inline-flex items-center gap-1"
-                          >
-                            <Badge variant="secondary">{type}-room</Badge>
-                            <span>{count.toLocaleString()}</span>
-                          </span>
-                        ))
-                      : "None"}
-                  </dd>
-                </div>
-              </dl>
-            ) : (
-              <p className="text-muted-foreground">
-                No profile summary is available for this town.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      <TownStatisticsCard data={stats} />
 
+      <section>
         <Card className="flex h-[22rem] min-w-0 flex-col">
           <CardHeader>
             <CardTitle>Amenities</CardTitle>
@@ -145,15 +86,6 @@ export default async function TownDetailPage({
           </CardContent>
         </Card>
       </section>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Statistics (deferred)</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-48 w-full" />
-        </CardContent>
-      </Card>
     </main>
   );
 }

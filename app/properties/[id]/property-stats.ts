@@ -55,6 +55,7 @@ export async function getPropertyStats(
     flatTypeIdsInUse.map((flatTypeId) =>
       getStatisticsByMetricAndDimensions({
         metric: "AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE",
+        granularity: "monthly",
         dimensions: {
           townId: null,
           flatTypeId: String(flatTypeId),

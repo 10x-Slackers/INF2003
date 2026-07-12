@@ -37,6 +37,7 @@ export const statisticsSeriesPointSchema = z
 export const statisticsSearchSchema = z
   .object({
     metric: metricsSchema.optional(),
+    granularity: statisticsGranularitySchema.optional(),
     dimensions: statisticsDimensionsSchema.optional(),
   })
   .strict()
