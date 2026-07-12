@@ -1,11 +1,3 @@
-G20
-Isaac Choong Zhu En (2503999@sit.singaporetech.edu.sg)
-Tan Yong Meng (2500658@sit.singaporetech.edu.sg)
-Ng Ying Xuan (2503998@sit.singaporetech.edu.sg)
-Teo Kai Wen (2500859@sit.singaporetech.edu.sg)
-Felicia Chua (2503811@sit.singaporetech.edu.sg)
-Ann Maria Jiji (2503286@sit.singaporetech.edu.sg)
-
 # **Application Description**
 
 Singapore's HDB resale market is an important part of the country's housing landscape, but existing platforms like PropertyGuru and the HDB Resale Portal are primarily designed for facilitating property transactions and provide limited tools for researching and analysing historical resale data. Our project addresses this gap with a database-driven web application that brings together search, analytics and other features for historical HDB transactions. Ultimately, we aim to provide casual users and property agents a better way to explore and understand the HDB resale market.
