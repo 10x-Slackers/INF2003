@@ -41,7 +41,7 @@ export default async function TownDetailPage({
           <CardContent className="min-h-0 flex-1">
             {amenities.length ? (
               <Tabs
-                defaultValue={`amenity-type-${amenitiesByType.keys().next().value}`}
+                defaultValue={`amenity-type-${amenities[0].amenity_type_name}`}
                 className="h-full min-h-0"
               >
                 <TabsList
