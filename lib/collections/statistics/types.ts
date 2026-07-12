@@ -45,13 +45,6 @@ export const statisticsSearchSchema = z
     message: "At least one search field is required",
   });
 
-export const statisticsListQuerySchema = z
-  .object({
-    page: z.coerce.number().int().min(0),
-    pageSize: z.coerce.number().int().min(1).max(100),
-  })
-  .strict();
-
 export const upsertStatisticsSchema = z
   .object({
     _id: idSchema.optional(),
@@ -81,7 +74,6 @@ export const statisticsSchema = z
 
 export type StatisticsUpsert = z.infer<typeof upsertStatisticsSchema>;
 export type Statistics = z.infer<typeof statisticsSchema>;
-export type StatisticsListQuery = z.infer<typeof statisticsListQuerySchema>;
 export type StatisticsSearch = z.infer<typeof statisticsSearchSchema>;
 export type BulkUpsertStatisticsResult = {
   matchedCount: number;
