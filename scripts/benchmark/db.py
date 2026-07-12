@@ -48,6 +48,7 @@ def query(conn, sql: str, params: tuple[Any, ...] = ()) -> list[dict[str, Any]]:
         return list(cursor.fetchall())
 
 
-def get_handler_read_rnd_next(conn) -> int:
-    rows = query(conn, "SHOW SESSION STATUS LIKE 'Handler_read_rnd_next'")
+def get_rows_scanned(conn) -> int:
+    # Rows_read counts storage-engine row requests, not result rows.
+    rows = query(conn, "SHOW SESSION STATUS LIKE 'Rows_read'")
     return int(rows[0]["Value"])

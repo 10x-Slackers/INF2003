@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from .db import connect_mariadb, get_handler_read_rnd_next
+from .db import connect_mariadb, get_rows_scanned
 from .measure import now_ms, round_number, summarize_numbers
 
 
@@ -9,25 +9,23 @@ def worker_loop(operation, ends_at):
     latencies = []
     completed = 0
     try:
-        handler_read_rnd_next = get_handler_read_rnd_next(conn)
+        rows_scanned = get_rows_scanned(conn)
         while now_ms() < ends_at:
             started_at = now_ms()
             operation.run(conn)
             completed += 1
             latencies.append(now_ms() - started_at)
-        handler_read_rnd_next = (
-            get_handler_read_rnd_next(conn) - handler_read_rnd_next
-        )
+        rows_scanned = get_rows_scanned(conn) - rows_scanned
     finally:
         conn.close()
-    return completed, latencies, handler_read_rnd_next
+    return completed, latencies, rows_scanned
 
 
 def run_measured_window(operation, duration_seconds, concurrency):
     started_at = now_ms()
     ends_at = started_at + duration_seconds * 1000
     completed = 0
-    handler_read_rnd_next = 0
+    rows_scanned = 0
     latencies = []
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
         futures = [
@@ -36,14 +34,14 @@ def run_measured_window(operation, duration_seconds, concurrency):
         for future in as_completed(futures):
             count, lats, reads = future.result()
             completed += count
-            handler_read_rnd_next += reads
+            rows_scanned += reads
             latencies.extend(lats)
 
     elapsed_seconds = (now_ms() - started_at) / 1000
     average, stddev = summarize_numbers(latencies)
     return {
         "averageLatencyMs": average,
-        "handlerReadRndNextTotal": handler_read_rnd_next,
+        "rowsScannedTotal": rows_scanned,
         "operationsPerSecond": round_number(completed / elapsed_seconds),
         "sampleCount": len(latencies),
         "standardDeviationMs": stddev,
