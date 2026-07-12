@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { paginationSchema, idSchema } from "../common";
 
 export const regionSchema = z.enum([
   "NORTH REGION",
@@ -8,12 +7,8 @@ export const regionSchema = z.enum([
   "WEST REGION",
   "CENTRAL REGION",
 ]);
-export const townRelationListQuerySchema = paginationSchema.extend({
-  townId: idSchema,
-});
 
-export type Region = z.infer<typeof regionSchema>;
-export type TownRelationListQuery = z.infer<typeof townRelationListQuerySchema>;
+type Region = z.infer<typeof regionSchema>;
 
 export type Town = {
   id: string;

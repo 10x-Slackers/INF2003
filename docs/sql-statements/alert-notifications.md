@@ -13,28 +13,6 @@ LIMIT 1;
 
 Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
 
-## `listAlertNotifications(input)`
-
-```sql
-SELECT id, user_id, alert_uuid, transaction_id, read_at, created_at
-FROM alert_notifications
-WHERE user_id = ?
-ORDER BY created_at DESC
-LIMIT ? OFFSET ?;
-```
-
-Params: `page`, `pageSize`.
-
-Returned columns: `id, user_id, alert_uuid, transaction_id, read_at, created_at`
-
-```sql
-SELECT COUNT(*) AS total
-FROM alert_notifications
-WHERE user_id = ?;
-```
-
-Returned columns: `total`
-
 ## `getUnreadCount(userId)`
 
 ```sql

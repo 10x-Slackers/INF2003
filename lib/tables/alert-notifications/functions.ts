@@ -31,21 +31,6 @@ async function fetchRow(id: string): Promise<AlertNotification | null> {
   );
 }
 
-export async function listAlertNotifications(
-  input: AlertNotificationListQuery,
-): Promise<{ data: AlertNotification[]; total: number }> {
-  return withDbError(async () => {
-    const data = alertNotificationListQuerySchema.parse(input);
-    return paginatedQuery<AlertNotification>(
-      `SELECT ${SELECT_COLUMNS} FROM alert_notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-      "SELECT COUNT(*) AS total FROM alert_notifications WHERE user_id = ?",
-      [data.userId],
-      data.page,
-      data.pageSize,
-    );
-  });
-}
-
 export async function getAlertNotificationById(
   id: string,
 ): Promise<AlertNotification | null> {

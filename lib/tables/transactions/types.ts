@@ -10,18 +10,6 @@ export const createTransactionSchema = z.object({
   transaction_month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
   resale_price: z.coerce.number().positive(),
 });
-export const updateTransactionSchema = z
-  .object({
-    flat_type_id: z.coerce.number().int().positive().optional(),
-    flat_model_id: z.coerce.number().int().positive().optional(),
-    storey_range_id: z.coerce.number().int().positive().optional(),
-    floor_area_sqm: z.coerce.number().positive().optional(),
-    transaction_month: z.string().optional(),
-    resale_price: z.coerce.number().positive().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided.",
-  });
 export const transactionListQuerySchema = paginationSchema.extend({
   town_id: z.uuid().optional(),
   flat_type_id: z.coerce.number().int().positive().optional(),
@@ -68,12 +56,8 @@ export const createTransactionParamsSchema = z.object({
   input: createTransactionSchema,
   uploadedByUserId: idSchema,
 });
-export const updateTransactionParamsSchema = z.object({
-  id: idSchema,
-  input: updateTransactionSchema.or(z.object({}).strict()),
-});
 
-export type ResaleTransaction = {
+type ResaleTransaction = {
   id: string;
   uploaded_by_user_id: string | null;
   property_id: string;
@@ -111,10 +95,6 @@ export type TransactionStatisticRow = {
 export type CreateTransaction = z.infer<typeof createTransactionSchema>;
 export type CreateTransactionParams = z.infer<
   typeof createTransactionParamsSchema
->;
-export type UpdateTransaction = z.infer<typeof updateTransactionSchema>;
-export type UpdateTransactionParams = z.infer<
-  typeof updateTransactionParamsSchema
 >;
 export type TransactionListQuery = z.infer<typeof transactionListQuerySchema>;
 export type TransactionStatisticsMetric = z.infer<

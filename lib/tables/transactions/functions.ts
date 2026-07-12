@@ -1,18 +1,8 @@
-import {
-  execute,
-  query,
-  queryOne,
-  executeReturning,
-  addCondition,
-  buildUpdateFields,
-  deleteById,
-  isEmptyUpdate,
-} from "@/lib/db";
+import { query, addCondition } from "@/lib/db";
 import { withDbError } from "@/lib/utils";
 import {
   createTransactionSchema,
   type CreateTransactionParams,
-  type ResaleTransaction,
   type TransactionStatisticRow,
   type TransactionStatisticsGranularity,
   type TransactionStatisticsGroup,
@@ -20,14 +10,10 @@ import {
   type TransactionStatisticsQuery,
   type TransactionListItem,
   type TransactionListQuery,
-  type UpdateTransactionParams,
   createTransactionParamsSchema,
   transactionStatisticsQuerySchema,
   transactionListQuerySchema,
-  updateTransactionParamsSchema,
-  updateTransactionSchema,
 } from "./types";
-import { idSchema } from "../common";
 
 const TRANSACTION_COLUMNS = `rt.id AS id, rt.uploaded_by_user_id AS uploaded_by_user_id,
             rt.property_id AS property_id, rt.flat_type_id AS flat_type_id,
@@ -215,25 +201,13 @@ export async function getTownSalesCounts6Months(): Promise<
   });
 }
 
-export async function getTransactionById(
-  id: string,
-): Promise<ResaleTransaction | null> {
-  return withDbError(() =>
-    queryOne<ResaleTransaction>(
-      `SELECT ${TRANSACTION_COLUMNS}
-     FROM resale_transactions rt WHERE rt.id = ? LIMIT 1`,
-      [idSchema.parse(id)],
-    ),
-  );
-}
-
 export async function createTransaction(
   input: CreateTransactionParams,
 ): Promise<string> {
   return withDbError(async () => {
     const params = createTransactionParamsSchema.parse(input);
     const data = createTransactionSchema.parse(params.input);
-    const result = await executeReturning<{ id: string }>(
+    const result = await query<{ id: string }>(
       `INSERT INTO resale_transactions
          (uploaded_by_user_id, property_id, flat_type_id, flat_model_id,
           storey_range_id, floor_area_sqm, transaction_month, resale_price)
@@ -251,32 +225,4 @@ export async function createTransaction(
     );
     return result[0].id;
   });
-}
-
-export async function updateTransaction(
-  input: UpdateTransactionParams,
-): Promise<ResaleTransaction | null> {
-  return withDbError(async () => {
-    const parsed = updateTransactionParamsSchema.parse(input);
-    if (isEmptyUpdate(parsed.input)) return getTransactionById(parsed.id);
-
-    const data = updateTransactionSchema.parse(parsed.input);
-    const existing = await getTransactionById(parsed.id);
-    if (!existing) return null;
-
-    const transformed: Record<string, unknown> = { ...data };
-    if (transformed.transaction_month !== undefined) {
-      transformed.transaction_month = `${transformed.transaction_month}-01`;
-    }
-    const { setClause, params } = buildUpdateFields(transformed);
-    await execute(`UPDATE resale_transactions SET ${setClause} WHERE id = ?`, [
-      ...params,
-      parsed.id,
-    ]);
-    return getTransactionById(parsed.id);
-  });
-}
-
-export async function deleteTransaction(id: string): Promise<boolean> {
-  return deleteById("resale_transactions", id);
 }

@@ -4,16 +4,10 @@ import { assertSignedIn } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { ROUTES } from "@/lib/routes";
 import {
-  listSavedProperties,
   createSavedProperty,
   deleteSavedPropertyByUserAndProperty,
   isPropertySaved,
 } from "@/lib/tables/saved-properties";
-
-export async function listBookmarksAction() {
-  const session = await assertSignedIn();
-  return listSavedProperties(session.user.id);
-}
 
 export async function toggleBookmarkAction(
   propertyId: string,

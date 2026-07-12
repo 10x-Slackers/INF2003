@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type FilterOption = { id: string | number; name: string };
+type FilterOption = { id: string | number; name: string };
 
 type FilterSelectProps = {
   id: string;

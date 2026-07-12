@@ -7,10 +7,4 @@ export {
   triggerSavedAlerts,
 } from "./functions";
 
-export {
-  createSavedAlertSchema,
-  savedAlertFiltersSchema,
-  type SavedAlert,
-  type SavedAlertCreate,
-  type SavedAlertFilters,
-} from "./types";
+export type { SavedAlert, SavedAlertFilters } from "./types";

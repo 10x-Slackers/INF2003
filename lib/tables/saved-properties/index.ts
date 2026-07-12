@@ -5,9 +5,4 @@ export {
   listSavedProperties,
 } from "./functions";
 
-export type {
-  CreateSavedProperty,
-  SavedProperty,
-  SavedPropertyDetail,
-  SavedPropertyIdentity,
-} from "./types";
+export type { SavedPropertyDetail } from "./types";

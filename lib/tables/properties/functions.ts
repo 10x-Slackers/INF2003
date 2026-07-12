@@ -1,28 +1,15 @@
-import {
-  execute,
-  query,
-  queryOne,
-  executeReturning,
-  addCondition,
-  addInCondition,
-  buildUpdateFields,
-  deleteById,
-  isEmptyUpdate,
-} from "@/lib/db";
+import { query, queryOne, addCondition, addInCondition } from "@/lib/db";
 import { regionSchema } from "@/lib/tables/towns";
 import { withDbError } from "@/lib/utils";
 import {
   createPropertySchema,
   propertyListQuerySchema,
-  updatePropertyParamsSchema,
-  updatePropertySchema,
   type CreateProperty,
   type Property,
   type PropertyDetail,
   type PropertyListQuery,
   type PropertySearchResult,
   type PropertyWithLatestTransaction,
-  type UpdatePropertyParams,
 } from "./types";
 import { idSchema } from "../common";
 
@@ -113,27 +100,6 @@ function toPropertyWithLatestTransaction(
           }
         : null,
   };
-}
-
-export async function getPropertiesWithLatestTransaction(
-  propertyIds: string[],
-): Promise<PropertyWithLatestTransaction[]> {
-  return withDbError(async () => {
-    const ids = idSchema.array().parse(propertyIds);
-    if (ids.length === 0) return [];
-
-    const placeholders = ids.map(() => "?").join(", ");
-    const rows = await query<PropertyRow>(
-      `SELECT ${PROPERTY_WITH_LATEST_TRANSACTION_COLUMNS}
-     FROM properties p
-     ${LATEST_TRANSACTION_JOIN}
-     ${TOWN_JOIN}
-     WHERE p.id IN (${placeholders})`,
-      ids,
-    );
-
-    return rows.map(toPropertyWithLatestTransaction);
-  });
 }
 
 export async function searchPropertiesByAddress(
@@ -263,49 +229,10 @@ export async function getPropertyById(
 export async function createProperty(input: CreateProperty): Promise<string> {
   return withDbError(async () => {
     const data = createPropertySchema.parse(input);
-    const result = await executeReturning<{ id: string }>(
+    const result = await query<{ id: string }>(
       "INSERT INTO properties (town_id, block, street_name, lease_commence_year) VALUES (?, ?, ?, ?) RETURNING id",
       [data.town_id, data.block, data.street_name, data.lease_commence_year],
     );
     return result[0].id;
-  });
-}
-
-export async function updateProperty(
-  input: UpdatePropertyParams,
-): Promise<Property | null> {
-  return withDbError(async () => {
-    const parsed = updatePropertyParamsSchema.parse(input);
-    if (isEmptyUpdate(parsed.input)) return getPropertyRowById(parsed.id);
-
-    const data = updatePropertySchema.parse(parsed.input);
-    const { setClause, params } = buildUpdateFields(data);
-    const result = await execute(
-      `UPDATE properties SET ${setClause} WHERE id = ?`,
-      [...params, parsed.id],
-    );
-    return result.affectedRows === 0 ? null : getPropertyRowById(parsed.id);
-  });
-}
-
-export async function deleteProperty(id: string): Promise<boolean> {
-  return deleteById("properties", id);
-}
-
-export async function lookupProperty(
-  input: CreateProperty,
-): Promise<{ found: boolean; property_id?: string }> {
-  return withDbError(async () => {
-    const data = createPropertySchema.parse(input);
-    const rows = await query<{ id: string }>(
-      `SELECT id FROM properties
-     WHERE town_id = ? AND block = ? AND street_name = ? AND lease_commence_year = ?
-     LIMIT 1`,
-      [data.town_id, data.block, data.street_name, data.lease_commence_year],
-    );
-
-    return rows[0]
-      ? { found: true, property_id: rows[0].id }
-      : { found: false };
   });
 }

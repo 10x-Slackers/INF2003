@@ -30,7 +30,7 @@ export async function assertSignedIn(): Promise<Session> {
   return session;
 }
 
-export async function verifyPassword(
+async function verifyPassword(
   password: string,
   hash: string,
 ): Promise<boolean> {
@@ -58,7 +58,7 @@ type DbUser = {
   role: UserRole;
 };
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const { handlers, auth } = NextAuth({
   secret: process.env.AUTH_SECRET,
   pages: {
     signIn: "/login",

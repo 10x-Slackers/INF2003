@@ -43,5 +43,4 @@ export type User = {
 export type PublicUser = Omit<User, "password_hash">;
 export type UserListQuery = z.infer<typeof userListQuerySchema>;
 export type CreateUser = z.infer<typeof createUserSchema>;
-export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type UpdateUserParams = z.infer<typeof updateUserParamsSchema>;

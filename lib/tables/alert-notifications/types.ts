@@ -38,9 +38,6 @@ export type AlertNotification = {
 export type CreateAlertNotification = z.infer<
   typeof createAlertNotificationSchema
 >;
-export type UpdateAlertNotification = z.infer<
-  typeof updateAlertNotificationSchema
->;
 export type UpdateAlertNotificationParams = z.infer<
   typeof updateAlertNotificationParamsSchema
 >;

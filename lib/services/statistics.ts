@@ -53,7 +53,7 @@ async function buildStats({
   ];
 }
 
-async function buildTownStats(townId: string) {
+async function buildTownStats(townId?: string) {
   return buildStats({
     metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
@@ -63,14 +63,10 @@ async function buildTownStats(townId: string) {
 }
 
 export async function buildAllTownStats(): Promise<StatisticsUpsert[]> {
-  return buildStats({
-    metric: metricsSchema.enum.AVG_PRICE_BY_TOWN_AND_FLAT_TYPE,
-    transactionMetric: "avg_price",
-    groupBy: ["town_id", "flat_type_id"],
-  });
+  return buildTownStats();
 }
 
-async function buildPropertyStats(propertyId: string) {
+async function buildPropertyStats(propertyId?: string) {
   return buildStats({
     metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
     transactionMetric: "avg_price",
@@ -80,11 +76,7 @@ async function buildPropertyStats(propertyId: string) {
 }
 
 export async function buildAllPropertyStats(): Promise<StatisticsUpsert[]> {
-  return buildStats({
-    metric: metricsSchema.enum.AVG_PRICE_BY_PROPERTY_AND_FLAT_TYPE,
-    transactionMetric: "avg_price",
-    groupBy: ["property_id", "flat_type_id"],
-  });
+  return buildPropertyStats();
 }
 
 export async function buildGlobalStats(): Promise<StatisticsUpsert[]> {

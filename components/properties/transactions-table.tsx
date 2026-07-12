@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { TransactionListItem } from "@/lib/tables/transactions";
-import { fetchTransactionsAction } from "@/app/properties/[id]/actions";
+import { fetchTransactions } from "@/app/transactions/actions";
 
 const PAGE_SIZE = 8;
 const COLUMN_COUNT = 7;
@@ -38,7 +38,7 @@ export function TransactionsTable({
   async function goToPage(p: number) {
     setLoading(true);
     try {
-      const { data, total } = await fetchTransactionsAction({
+      const { data, total } = await fetchTransactions({
         property_id: propertyId,
         page: p,
         pageSize: PAGE_SIZE,
