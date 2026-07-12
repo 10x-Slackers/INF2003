@@ -9,14 +9,11 @@ import {
 } from "@/components/ui/chart";
 
 function formatPeriod(period: string): string {
-  if (period.includes("-")) {
-    const [year, month] = period.split("-");
-    return new Date(Number(year), Number(month) - 1).toLocaleDateString(
-      "en-SG",
-      { month: "short", year: "numeric" },
-    );
-  }
-  return period;
+  const [year, month] = period.split("-");
+  return new Date(Number(year), Number(month ?? 1) - 1).toLocaleDateString(
+    "en-SG",
+    month ? { month: "short", year: "numeric" } : { year: "numeric" },
+  );
 }
 
 type PriceTrendPoint = {
