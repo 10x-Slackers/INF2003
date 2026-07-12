@@ -7,7 +7,7 @@ type StatisticRow = TransactionStatisticRow;
 
 type StatisticsMetrics = z.infer<typeof metricsSchema>;
 
-export type StatisticGranularity = StatisticsUpsert["granularity"];
+type StatisticGranularity = StatisticsUpsert["granularity"];
 
 function baseDimensions(): StatisticsUpsert["dimensions"] {
   return {
@@ -17,7 +17,7 @@ function baseDimensions(): StatisticsUpsert["dimensions"] {
   };
 }
 
-export function getStatisticsId(data: StatisticsUpsert): string {
+function getStatisticsId(data: StatisticsUpsert): string {
   const id: string[] = [];
 
   id.push(data.metric);
@@ -32,7 +32,7 @@ export function getStatisticsId(data: StatisticsUpsert): string {
   return id.join("|");
 }
 
-export function toStatisticsDocument(
+function toStatisticsDocument(
   data: StatisticsUpsert,
   computedAt: number,
 ): Statistics {

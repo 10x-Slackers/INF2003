@@ -1,9 +1,11 @@
 import { TownMap, TownMapSkeleton, type MapTown } from "@/components/town-map";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { listTownProfiles } from "@/lib/collections/town-profile/functions";
 import { listTowns } from "@/lib/tables/towns/functions";
 import { Suspense } from "react";
-import { HomeMetrics, HomeMetricsSkeleton } from "./home-metrics-view";
+import { getAvgPriceByFlatType, getPricePerSqmByFlatType } from "./home-stats";
+import { PriceTrendCard } from "@/components/home/price-trend-card";
 
 export default function Home() {
   return (
@@ -16,12 +18,50 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      <section className="flex flex-col gap-4 md:flex-row [&>*]:flex-1">
-        <Suspense fallback={<HomeMetricsSkeleton />}>
-          <HomeMetrics />
-        </Suspense>
-      </section>
+      <Suspense fallback={<PriceTrendCardSkeleton />}>
+        <AvgPriceSection />
+      </Suspense>
+
+      <Suspense fallback={<PriceTrendCardSkeleton />}>
+        <PricePerSqmSection />
+      </Suspense>
     </main>
+  );
+}
+
+async function AvgPriceSection() {
+  const data = await getAvgPriceByFlatType();
+  if (!data.flatTypes.length) return null;
+  return (
+    <PriceTrendCard
+      data={data}
+      title="Average price by flat type"
+      description="Average resale price across Singapore"
+      variant="avgPrice"
+    />
+  );
+}
+
+async function PricePerSqmSection() {
+  const data = await getPricePerSqmByFlatType();
+  if (!data.flatTypes.length) return null;
+  return (
+    <PriceTrendCard
+      data={data}
+      title="Price per sqm by flat type"
+      description="Average resale price per square metre across Singapore"
+      variant="perSqm"
+    />
+  );
+}
+
+function PriceTrendCardSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <Skeleton className="h-[400px] w-full rounded-md" />
+      </CardContent>
+    </Card>
   );
 }
 
