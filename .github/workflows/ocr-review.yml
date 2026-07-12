@@ -86,10 +86,12 @@ jobs:
 
       - name: Run OpenCodeReview
         uses: alibaba/open-code-review@main
+        env:
+          OCR_BACKGROUND: ${{ steps.agents.outputs.content }}
         with:
           llm_url: ${{ secrets.OCR_LLM_URL }}
           llm_auth_token: ${{ secrets.OCR_LLM_AUTH_TOKEN }}
           llm_model: ${{ secrets.OCR_LLM_MODEL }}
-          background: ${{ steps.agents.outputs.content }}
+          llm_extra_body: "{}"
           base_ref: ${{ steps.pr-context.outputs.base_ref }}
           head_sha: ${{ steps.pr-context.outputs.head_sha }}
