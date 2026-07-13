@@ -64,9 +64,7 @@ To stop the application and databases:
 docker compose down
 ```
 
-### Initialise the Database Schema
-
-Applies the relational schema to MariaDB and the document schema/validation to MongoDB. Run once before the first ETL run.
+### Initialise Database Schema
 
 ```sh
 pnpm init:schema
@@ -75,9 +73,7 @@ pnpm init:schema
 - Optional overrides: `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_DATABASE`, `MONGO_USER`, `MONGO_PASSWORD`
   - Connection defaults match dev-container services, override via the `MARIADB_*` / `MONGO_*` environment variables.
 
-### Run the ETL Pipeline
-
-Extracts datasets from data.gov.sg, transforms them, and loads the results into MariaDB then MongoDB.
+### ETL Pipeline
 
 ```sh
 DATAGOV_API_KEY=<your_key> uv run scripts/etl.py
@@ -86,6 +82,17 @@ DATAGOV_API_KEY=<your_key> uv run scripts/etl.py
 - `DATAGOV_API_KEY` (optional)
   - [data.gov.sg API key](https://guide.data.gov.sg/developer-guide/api-overview/how-to-request-an-api-key) for the extract stage
 - Override the DB connection with the `MARIADB_*` environment variables.
+
+### Database Benchmarks
+
+Results are written to `docs/db-benchmark.csv` and `docs/db-statistic-precompute.csv`.
+
+```sh
+uv run scripts/db-benchmark.py
+```
+
+- Run `uv run scripts/db-benchmark.py --help` for workload, duration, concurrency, repeat, and output options.
+- Override the DB connections with the `MARIADB_*` and `MONGO_*` environment variables.
 
 ### Seed Test Users
 
