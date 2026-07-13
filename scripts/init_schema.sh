@@ -15,11 +15,13 @@ MONGO_PASSWORD="${MONGO_PASSWORD:-P@ssw0rd}"
 MONGO_HOST="${MONGO_HOST:-mongo}"
 
 echo "Executing mariadb.sql against MariaDB..."
-mysql -h "${MARIADB_HOST}" -u "${MARIADB_USER}" -p"${MARIADB_PASSWORD}" < "${SCRIPT_DIR}/schema/mariadb.sql"
+mysql -h "${MARIADB_HOST}" -P "${MARIADB_PORT}" -u "${MARIADB_USER}" -p"${MARIADB_PASSWORD}" < "${SCRIPT_DIR}/schema/mariadb.sql"
 echo "MariaDB schema applied."
 
 echo "Executing mongodb.js against MongoDB..."
-npx -- mongosh "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/inf2003?authSource=admin" --file "${SCRIPT_DIR}/schema/mongodb.js"
+npx --yes mongosh@2.9.2 --quiet --norc \
+  "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@${MONGO_HOST}:${MONGO_PORT}/inf2003?authSource=admin" \
+  --file "${SCRIPT_DIR}/schema/mongodb.js"
 echo "MongoDB schema applied."
 
 echo "Schema initialised."

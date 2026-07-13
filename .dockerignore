@@ -1,0 +1,14 @@
+.git
+node_modules
+.next
+.pnpm-store
+.ruff_cache
+scripts/.ruff_cache
+scripts/benchmark/__pycache__
+scripts/load/__pycache__
+scripts/transform/__pycache__
+tsconfig.tsbuildinfo
+.env.local
+.venv
+.vscode
+.devcontainer

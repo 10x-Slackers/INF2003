@@ -18,8 +18,7 @@ fi
 
 PASSWORD="${USER_PASSWORD}"
 
-# bcrypt hash with the same cost as the app
-HASH="$(node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 10))" "$PASSWORD")"
+HASH="$(npx --yes --package=bcryptjs@3.0.3 -- bcrypt "$PASSWORD" 10)"
 
 echo "Seeding users into MariaDB..."
 
