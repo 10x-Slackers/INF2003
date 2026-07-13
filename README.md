@@ -1,17 +1,24 @@
 # INF2003 Database Systems Project
 
-> [!NOTE]
-> WIP, remove this note when project is ready.
-
 HDB Resale Analytics and Tracker Web Application
 
 ---
 
 ## Project Scope
 
-- Database Schema definitions
-  - [`scripts/schema/mariadb.sql`](scripts/schema/mariadb.sql)
-  - [`scripts/schema/mongodb.js`](scripts/schema/mongodb.js)
+- HDB resale discovery and analytics
+  - Interactive town map and resale price trends ([`app/page.tsx`](app/page.tsx), [`components/town-map.tsx`](components/town-map.tsx))
+  - Searchable property and transaction listings ([`app/properties/`](app/properties/), [`app/transactions/`](app/transactions/))
+  - Town amenities, property histories, and resale statistics ([`app/towns/`](app/towns/), [`app/properties/[id]/`](app/properties/%5Bid%5D/))
+- User workflows
+  - Authentication, profile management, and role-based access control ([`lib/auth/`](lib/auth/), [`lib/permissions.ts`](lib/permissions.ts))
+  - Property and transaction management with search analytics for agents ([`app/properties/new/`](app/properties/new/), [`app/transactions/new/`](app/transactions/new/), [`app/search-stats/`](app/search-stats/), [`lib/collections/search-logs/`](lib/collections/search-logs/))
+  - User and statistics management for administrators ([`app/admin/`](app/admin/))
+  - Property bookmarks, saved search alerts, and matching transaction notifications ([`app/bookmarks/`](app/bookmarks/), [`app/alerts/`](app/alerts/), [`lib/services/alerts.ts`](lib/services/alerts.ts))
+- Data platform
+  - MariaDB relational data for users, properties, transactions, amenities, and notifications ([`lib/tables/`](lib/tables/))
+  - MongoDB document data for alerts, statistics, town profiles, and search logs ([`lib/collections/`](lib/collections/))
+  - Schema definitions under [`scripts/schema/`](scripts/schema/)
 - ETL pipeline
   - Extracts, transforms, and loads datasets from [data.gov.sg](https://data.gov.sg) into MariaDB (relational data) and MongoDB (document data)
   - Pipeline stages live under [`scripts/`](scripts/) (`extract/`, `transform/`, `load/`), orchestrated by [`scripts/etl.py`](scripts/etl.py)
@@ -21,10 +28,13 @@ HDB Resale Analytics and Tracker Web Application
     - Gyms
     - Parks
     - Region/Towns mapping
+- Database benchmarking and utility scripts
+  - Database benchmark runner and workloads ([`scripts/db-benchmark.py`](scripts/db-benchmark.py), [`scripts/benchmark/`](scripts/benchmark/))
+  - Schema initialisation and test-user seeding ([`scripts/init_schema.sh`](scripts/init_schema.sh), [`scripts/seed_users.sh`](scripts/seed_users.sh))
 
 ## Usage
 
-### Run with Docker
+### Run with Docker (Recommended)
 
 Start the application and database first:
 
@@ -32,13 +42,21 @@ Start the application and database first:
 docker compose up -d
 ```
 
-Initialise the schemas, run the ETL pipeline, and seed test users:
+To initialise the schemas, run the ETL pipeline, and seed test users:
 
 ```sh
 DATAGOV_API_KEY=<your_key> docker compose --profile tools run --rm bootstrap
 ```
 
+> [!NOTE]
+> The data.gov.sg API key is optional, but rate-limiting may occur when fetching the datasets.
+
 Then access the application at [http://localhost:3000](http://localhost:3000).
+You may use the following credentials:
+
+- Administrator user: `admin@example.com:P@ssw0rd`
+- Agent user: `agent@example.com:P@ssw0rd`
+- Regular user: `user@example.com:P@ssw0rd`
 
 To stop the application and databases:
 
@@ -46,7 +64,7 @@ To stop the application and databases:
 docker compose down
 ```
 
-### Initialise the database schema
+### Initialise the Database Schema
 
 Applies the relational schema to MariaDB and the document schema/validation to MongoDB. Run once before the first ETL run.
 
@@ -54,9 +72,10 @@ Applies the relational schema to MariaDB and the document schema/validation to M
 pnpm init:schema
 ```
 
-Connection defaults match dev-container services, override via the `MARIADB_*` / `MONGO_*` environment variables.
+- Optional overrides: `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_DATABASE`, `MONGO_USER`, `MONGO_PASSWORD`
+  - Connection defaults match dev-container services, override via the `MARIADB_*` / `MONGO_*` environment variables.
 
-### Run the ETL pipeline
+### Run the ETL Pipeline
 
 Extracts datasets from data.gov.sg, transforms them, and loads the results into MariaDB then MongoDB.
 
@@ -66,9 +85,9 @@ DATAGOV_API_KEY=<your_key> uv run scripts/etl.py
 
 - `DATAGOV_API_KEY` (optional)
   - [data.gov.sg API key](https://guide.data.gov.sg/developer-guide/api-overview/how-to-request-an-api-key) for the extract stage
-- Optional overrides: `MARIADB_HOST`, `MARIADB_PORT`, `MARIADB_DATABASE`, `MARIADB_USER`, `MARIADB_PASSWORD`, `MONGO_HOST`, `MONGO_PORT`, `MONGO_DATABASE`, `MONGO_USER`, `MONGO_PASSWORD`
+- Override the DB connection with the `MARIADB_*` environment variables.
 
-### Seed test users
+### Seed Test Users
 
 Inserts one user per role (`ADMIN`, `AGENT`, `USER`) into MariaDB for testing. `USER_PASSWORD` is required.
 
@@ -82,9 +101,9 @@ USER_PASSWORD=P@ssw0rd pnpm seed:users
 | agent@example.com | AGENT |
 | user@example.com  | USER  |
 
-Override the DB connection with the `MARIADB_*` environment variables.
+- Override the DB connection with the `MARIADB_*` environment variables.
 
-## Getting Started
+## Development
 
 ### Prerequisites
 
@@ -114,7 +133,7 @@ Override the DB connection with the `MARIADB_*` environment variables.
 
 4. Start working!
 
-### Database Connection
+### Database Connection Configuration
 
 1. MariaDB:
    - Host: `mariadb`
