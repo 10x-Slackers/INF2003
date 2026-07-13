@@ -48,15 +48,16 @@ To initialise the schemas, run the ETL pipeline, and seed test users:
 DATAGOV_API_KEY=<your_key> docker compose --profile tools run --rm bootstrap
 ```
 
-> [!NOTE]
-> The data.gov.sg API key is optional, but rate-limiting may occur when fetching the datasets.
+- The data.gov.sg API key is optional, but rate-limiting may occur when fetching the datasets.
 
-Then access the application at [http://localhost:3000](http://localhost:3000).
-You may use the following credentials:
+Then access the application at <http://localhost:3000>. You may use the following credentials:
 
 - Administrator user: `admin@example.com:P@ssw0rd`
 - Agent user: `agent@example.com:P@ssw0rd`
 - Regular user: `user@example.com:P@ssw0rd`
+
+> [!IMPORTANT]
+> You WILL need to generate all statistics first at <http://localhost:3000/admin> (log in as an administrator) in order to get the graphs and analytics to display.
 
 To stop the application and databases:
 
